@@ -8,6 +8,7 @@ import { HOME_PATH } from './shared/navigation'
 import { pathsRoutes } from './modules/paths'
 import { captureTriageRoutes } from './modules/capture-triage'
 import { goalsRoutes } from './modules/goals'
+import { todayRoutes } from './modules/today'
 
 function App() {
   return (
@@ -23,6 +24,8 @@ function App() {
             {captureTriageRoutes}
             {/* goals — third module through proto-lofi. */}
             {goalsRoutes}
+            {/* today — fourth module through proto-lofi; also the landing screen. */}
+            {todayRoutes}
             {/* Other modules — proto-lofi replaces this catch-all as each is built. */}
             <Route path=":moduleName" element={<ModulePlaceholder />} />
             {/* Unknown paths fall back home. */}

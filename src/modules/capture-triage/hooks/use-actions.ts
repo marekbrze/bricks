@@ -173,10 +173,127 @@ export function useActions() {
     return (pathId: string) => counts.get(pathId) ?? 0
   }, [actions])
 
+  // --- Cross-module surface for `today` ------------------------------------
+  // `today` owns scheduling, completion, and the abandon/reschedule loop —
+  // these let it drive the same `Action` lifecycle without capture-triage
+  // needing to know anything about day views.
+
+  /**
+   * Set `scheduledDate`. Also used to *reschedule* an `abandoned` Action
+   * from the Review-abandoned surface, which is why it flips the state back
+   * to `assigned` — an abandoned Action re-entering a day view is active
+   * again, not still abandoned.
+   */
+  const scheduleAction = useCallback(
+    (id: string, dateIso: string) => {
+      setActions(
+        actions.map((a) =>
+          a.id === id ? touch({ ...a, scheduledDate: dateIso, state: 'assigned' }) : a,
+        ),
+      )
+    },
+    [actions, setActions],
+  )
+
+  /** Clears `scheduledDate` — the Action returns to its Goal/Path backlog, not deleted or abandoned. */
+  const unscheduleAction = useCallback(
+    (id: string) => {
+      setActions(actions.map((a) => (a.id === id ? touch({ ...a, scheduledDate: null }) : a)))
+    },
+    [actions, setActions],
+  )
+
+  /** Marks done. The row stays visible (in its completed style) for the rest of that day — see docs/modules/today.md. */
+  const completeAction = useCallback(
+    (id: string) => {
+      setActions(
+        actions.map((a) =>
+          a.id === id ? touch({ ...a, state: 'done', completedAt: new Date().toISOString() }) : a,
+        ),
+      )
+    },
+    [actions, setActions],
+  )
+
+  /** Reverses completion — back to `assigned`, clears `completedAt`. Removes the Win from `winlog`. */
+  const uncompleteAction = useCallback(
+    (id: string) => {
+      setActions(
+        actions.map((a) => (a.id === id ? touch({ ...a, state: 'assigned', completedAt: null }) : a)),
+      )
+    },
+    [actions, setActions],
+  )
+
+  /** Scheduled-for-today but decided against entirely (distinct from moving it to another day). */
+  const abandonAction = useCallback(
+    (id: string) => {
+      setActions(actions.map((a) => (a.id === id ? touch({ ...a, state: 'abandoned' }) : a)))
+    },
+    [actions, setActions],
+  )
+
+  /** Permanent removal — only reachable from Review-abandoned, never from an active day view. */
+  const deleteAction = useCallback(
+    (id: string): UndoFn => {
+      const snapshot = actions
+      setActions(actions.filter((a) => a.id !== id))
+      return restoreSnapshot(snapshot)
+    },
+    [actions, setActions, restoreSnapshot],
+  )
+
+  /** Actions in view on a given day: scheduled for that date and not abandoned (completed ones stay). */
+  const scheduledActionsForDate = useCallback(
+    (dateIso: string) =>
+      actions
+        .filter((a) => a.scheduledDate === dateIso && (a.state === 'assigned' || a.state === 'done'))
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [actions],
+  )
+
+  /** Assigned but not yet scheduled — the pool the "Add to today" picker draws from. */
+  const unscheduledActions = useMemo(
+    () =>
+      actions
+        .filter((a) => a.state === 'assigned' && !a.scheduledDate)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [actions],
+  )
+
+  const abandonedActions = useMemo(
+    () => actions.filter((a) => a.state === 'abandoned').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [actions],
+  )
+
+  /** Every distinct date (today or later) that has at least one scheduled Action, ascending — drives the Schedule (agenda) view. */
+  const upcomingScheduledDates = useCallback(
+    (fromDateIso: string) => {
+      const dates = new Set<string>()
+      for (const a of actions) {
+        if (a.scheduledDate && a.scheduledDate >= fromDateIso && (a.state === 'assigned' || a.state === 'done')) {
+          dates.add(a.scheduledDate)
+        }
+      }
+      return [...dates].sort()
+    },
+    [actions],
+  )
+
   return {
     actions,
     inboxActions,
     actionCountForPath,
+    scheduleAction,
+    unscheduleAction,
+    completeAction,
+    uncompleteAction,
+    abandonAction,
+    deleteAction,
+    scheduledActionsForDate,
+    unscheduledActions,
+    abandonedActions,
+    upcomingScheduledDates,
     /** The stored `actions` value exists but is unreadable — show a recovery screen. */
     dataUnreadable: corrupt,
     /** Wipe the corrupt value and start clean. */
