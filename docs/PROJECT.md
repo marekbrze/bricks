@@ -37,6 +37,14 @@ Narzędzie osobiste, single-user, dane trzymane lokalnie (planowany Dexie + Loca
 7. W osobnym momencie (przegląd inboxa) procesuje zebrane pomysły zadanie po zadaniu: przypisanie do Drogi/celu lub samodzielne działanie + priorytet parami.
 8. Wieczorem / na koniec tygodnia zagląda do logu i wykresu, żeby zobaczyć przebytą drogę — co napędza kolejny dzień.
 
+## Decisions
+
+- **Nazwa**: Bricks (repo `marekbrze/bricks`).
+- **Stack**: React + Vite + TypeScript + Tailwind v4 + shadcn/ui (base-nova) + Storybook, LocalStorage (Dexie planowany później). Scaffold z `proto-template` (proto-devsetup, 2026-09-04).
+- **Menedżer pakietów**: pnpm.
+- **Dostępność**: WCAG 2.2 **AAA** (eslint jsx-a11y `strict`).
+- **GitHub Pages: yes** — deploy podpięty przez proto-deploy podczas proto-devsetup (workflow `.github/workflows/deploy.yml`, `base: '/bricks/'`, Pages włączone przez API). URL docelowy: https://marekbrze.github.io/bricks/. Publikacja po `git push origin main`.
+
 ## Open Questions
 
 - **Otwartość / API** to jawny wyróżnik wobec Griply, ale prototyp jest lokalny (Dexie + LocalStorage). Ile z "otwartości" ma być widoczne w prototypie (eksport/import, kształt danych, hooki), a ile to cel na później?
