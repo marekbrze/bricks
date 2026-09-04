@@ -24,6 +24,7 @@ import { ActionsDataUnreadable } from '@/modules/capture-triage/components/Actio
 import { ScheduleActionDialog } from '@/modules/today/components/ScheduleActionDialog'
 import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '@/modules/capture-triage/types/action'
+import { todayLocalIso } from '@/shared/lib/date'
 import { compareActionsForList, isSettled } from '../lib/group-actions'
 import { GoalGroup, type ActionRowCallbacks } from './GoalGroup'
 import { ActionRowItem } from './ActionRowItem'
@@ -88,6 +89,17 @@ export function ActionsPage() {
       } else {
         uncompleteAction(action.id)
       }
+    },
+    onScheduleToday: (action) => {
+      // The view's most frequent action: one click puts the row on today,
+      // with an Undo restoring whatever day (or none) it had before.
+      const previous = action.scheduledDate
+      scheduleAction(action.id, todayLocalIso())
+      showToast(`“${action.name}” added to today`, {
+        label: 'Undo',
+        onClick: () =>
+          previous ? scheduleAction(action.id, previous) : unscheduleAction(action.id),
+      })
     },
     onSchedule: (action) => setSchedule({ action }),
     onUnschedule: (action) => {
@@ -178,6 +190,7 @@ export function ActionsPage() {
                 key={a.id}
                 action={a}
                 onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
+                onScheduleToday={() => rowCallbacks.onScheduleToday(a)}
                 onSchedule={() => rowCallbacks.onSchedule(a)}
                 onUnschedule={() => rowCallbacks.onUnschedule(a)}
                 onRename={() => rowCallbacks.onRename(a)}

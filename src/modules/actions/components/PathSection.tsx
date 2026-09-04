@@ -62,6 +62,7 @@ export function PathSection({
               key={a.id}
               action={a}
               onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
+              onScheduleToday={() => rowCallbacks.onScheduleToday(a)}
               onSchedule={() => rowCallbacks.onSchedule(a)}
               onUnschedule={() => rowCallbacks.onUnschedule(a)}
               onRename={() => rowCallbacks.onRename(a)}

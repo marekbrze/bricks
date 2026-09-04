@@ -11,6 +11,8 @@ import { QuickAddActionRow } from './QuickAddActionRow'
 
 export interface ActionRowCallbacks {
   onToggleDone: (action: Action, done: boolean) => void
+  /** One-click "add to today" — the view's most frequent action. */
+  onScheduleToday: (action: Action) => void
   onSchedule: (action: Action) => void
   onUnschedule: (action: Action) => void
   onRename: (action: Action) => void
@@ -125,6 +127,7 @@ export function GoalGroup({
               key={a.id}
               action={a}
               onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
+              onScheduleToday={() => rowCallbacks.onScheduleToday(a)}
               onSchedule={() => rowCallbacks.onSchedule(a)}
               onUnschedule={() => rowCallbacks.onUnschedule(a)}
               onRename={() => rowCallbacks.onRename(a)}

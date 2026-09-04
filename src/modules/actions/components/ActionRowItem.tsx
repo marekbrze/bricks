@@ -1,4 +1,4 @@
-import { Flame, MoreVertical, CalendarClock, CalendarX, Pencil, Star, StarOff, RotateCcw } from 'lucide-react'
+import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, Pencil, Star, StarOff, RotateCcw } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,18 +11,21 @@ import {
 import { cn } from '@/lib/utils'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { scheduledDateChip } from '../lib/group-actions'
+import { todayLocalIso } from '@/shared/lib/date'
 
 /**
  * One Action row in the Actions view: checkbox, name, frog flame, due-date
- * chip, overflow menu. `done` rows render struck-through and offer only
- * Un-complete; `abandoned` rows render dimmed with an "abandoned" tag and
- * offer reschedule (which returns them to `assigned` via `scheduleAction`)
- * and rename. Delete stays owned by Review abandoned — this view never
- * destroys.
+ * chip, one-click "add to today" (the view's most frequent action — hover-
+ * revealed on desktop, always visible on touch), overflow menu. `done` rows
+ * render struck-through and offer only Un-complete; `abandoned` rows render
+ * dimmed with an "abandoned" tag and offer reschedule (which returns them to
+ * `assigned` via `scheduleAction`) and rename. Delete stays owned by Review
+ * abandoned — this view never destroys.
  */
 export function ActionRowItem({
   action,
   onToggleDone,
+  onScheduleToday,
   onSchedule,
   onUnschedule,
   onRename,
@@ -30,6 +33,7 @@ export function ActionRowItem({
 }: {
   action: Action
   onToggleDone: (done: boolean) => void
+  onScheduleToday: () => void
   onSchedule: () => void
   onUnschedule: () => void
   onRename: () => void
@@ -80,6 +84,23 @@ export function ActionRowItem({
         >
           {chip.label}
         </span>
+      )}
+      {/* One-click "add to today" — the most frequent action in this view, so
+          it gets a dedicated button per row. Hidden when the row is already
+          on today (the Today chip is its own confirmation) or done. Touch
+          devices have no hover, so it stays visible there; on desktop it
+          reveals on row hover or keyboard focus. */}
+      {!done && action.scheduledDate !== todayLocalIso() && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Add “${action.name}” to today`}
+          title="Add to today"
+          onClick={onScheduleToday}
+          className="shrink-0 text-muted-foreground opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 aria-[expanded=true]:opacity-100"
+        >
+          <CalendarPlus aria-hidden="true" />
+        </Button>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger

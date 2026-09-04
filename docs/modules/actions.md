@@ -61,7 +61,9 @@ the section it belongs to.
 - **ActionsPage** (`/actions`): single scrolling page. Header (title + Show completed
   toggle) → Inbox group (conditional) → one section per Path. Each row: checkbox, name,
   frog star, date chip ("Today"/"Tomorrow"/date or countdown-style label for overdue),
-  overflow menu. Group headers carry the quick-add row; Path headers carry "New goal".
+  one-click **add-to-today** button (the view's most frequent action — hover-revealed on
+  desktop, always visible on touch; hidden when the row is already on today), overflow menu.
+  Group headers carry the quick-add row; Path headers carry "New goal".
 
 ## Actions
 
