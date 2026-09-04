@@ -18,21 +18,21 @@
   - Inbox locked to triage (no quick-add/schedule/complete) — `src/modules/actions/components/InboxGroup.tsx`
   - Abandoned checkbox disabled (no done-from-abandoned; reschedule is the escape hatch) — `ActionRowItem.tsx:51`
   - Done rows offer only Un-complete (no schedule/abandon on a finished row) — `ActionRowItem.tsx:99-101`
-- **New gaps found**: 8
+- **New gaps found**: 8 — **all 8 implemented** (see ✅ rows; no deferrals)
 - **By severity**: 🔴 0 · 🟡 3 · 🟢 5
 
 ## Inventory
 
-| # | Severity | Category | Edge case | Behavior today | Suggested behavior | Where |
-|---|----------|----------|-----------|----------------|--------------------|-------|
-| 1 | 🟡 | Forms & input | Quick-add date menu lacks "Pick a date…" — the spec's third option (docs/modules/actions.md, Quick-add flow). A due date beyond Tomorrow/In-a-week can't be set while adding; the user must add undated, then Reschedule from the row menu (2 steps). | Only Today / Tomorrow / In a week | Add a "Pick a date…" item opening the shared `ScheduleActionDialog`-style date picker; selection returns into the row's chip | `src/modules/actions/components/QuickAddActionRow.tsx:63-74` |
-| 2 | 🟡 | Cross-module & lifecycle | "Unassigned" fallback group renders orphans as inert text — no checkbox, no menu, nothing to do there. The user sees the row but can't act on it from this view (a dead-end list). | Plain `<li>` text | Render full `ActionRowItem`s (schedule/rename/complete work through existing hooks; `pathId`-less rows still function since every handler is id-based) | `src/modules/actions/components/ActionsPage.tsx:151-161` |
-| 3 | 🟡 | Data states | The Unassigned group ignores "Show completed": a `done`/`abandoned` orphan is always visible even when the toggle is off — the one group where settled rows leak into the clean view. | No `isSettled` filter | Apply the same `showCompleted` filter as every other group | `src/modules/actions/components/ActionsPage.tsx:101-103` |
-| 4 | 🟢 | Data states | Abandoned rows still show their stale due-date chip (possibly red "overdue") — noise on a row that already says "abandoned". | `chip && !done` | Show the chip only for `assigned` (`!done && !abandoned`) | `src/modules/actions/components/ActionRowItem.tsx:71` |
-| 5 | 🟢 | Action outcomes | "Schedule…" success toast has no Undo, while "Unschedule" does — asymmetric safety for the same field flip. | Toast only | Attach an Undo that restores the previous `scheduledDate` (null when unscheduling-forward) | `src/modules/actions/components/ActionsPage.tsx` (schedule dialog `onSchedule`, ~line 230) |
-| 6 | 🟢 | Accessibility | The standalone group's "All clear" line lacks the `aria-live="polite"` its Goal-group counterpart has — screen readers hear one and not the other. | No live region | Mirror the GoalGroup markup | `src/modules/actions/components/PathSection.tsx:78` |
-| 7 | 🟢 | Navigation & flow | Group collapse state resets on every visit (local `useState` only) — the Owner re-expands the same groups each time. Acceptable in a prototype. | Session-local | Persist collapsed ids per group key in LocalStorage (same pattern as scenario keys) | `src/modules/actions/components/GoalGroup.tsx:50` |
-| 8 | 🟢 | Prototype-specific | At ~320 px the quick-add row (icon + input + date chip + Add) gets cramped and the chip can squeeze the input to near-zero width. | Single-line flex row | Let the chip wrap under the input (`flex-wrap`), or drop the chip's fixed padding at small widths | `src/modules/actions/components/QuickAddActionRow.tsx:41` |
+| # | Severity | Category | Edge case | Status | Suggested behavior | Where it lives now |
+|---|----------|----------|-----------|--------|--------------------|--------------------|
+| 1 | 🟡 | Forms & input | Quick-add date menu lacked "Pick a date…" — the spec's third option. A due date beyond Tomorrow/In-a-week couldn't be set while adding. | ✅ | Add a "Pick a date…" item opening a free date picker; selection returns into the row's chip | `src/modules/actions/components/QuickAddActionRow.tsx:87` (menu item), `:122-160` (date dialog) |
+| 2 | 🟡 | Cross-module & lifecycle | "Unassigned" fallback group rendered orphans as inert text — a dead-end list. | ✅ | Render full `ActionRowItem`s (schedule/rename/complete work through existing hooks, all id-based) | `src/modules/actions/components/ActionsPage.tsx:169-182` |
+| 3 | 🟡 | Data states | The Unassigned group ignored "Show completed" — settled orphans leaked into the clean view. | ✅ | Apply the same `showCompleted` filter as every other group | `src/modules/actions/components/ActionsPage.tsx:113-117` (`orphanedVisible`) |
+| 4 | 🟢 | Data states | Abandoned rows showed their stale due-date chip (possibly red "overdue") — noise. | ✅ | Show the chip only for non-done, non-abandoned rows | `src/modules/actions/components/ActionRowItem.tsx:71-72` |
+| 5 | 🟢 | Action outcomes | "Schedule…" success toast had no Undo, while "Unschedule" did — asymmetric safety. | ✅ | Undo restores the previous `scheduledDate` (or unschedules when there was none) | `src/modules/actions/components/ActionsPage.tsx:246-256` |
+| 6 | 🟢 | Accessibility | The standalone group's "All clear" line lacked `aria-live="polite"`. | ✅ | Mirror the GoalGroup markup | `src/modules/actions/components/PathSection.tsx:78` |
+| 7 | 🟢 | Navigation & flow | Group collapse state reset on every visit. | ✅ | Persist per-Goal overrides in LocalStorage under `actions-group-visibility`; undefined = default (expanded, unless inactive) | `src/modules/actions/components/ActionsPage.tsx:50-53`, `src/modules/actions/components/GoalGroup.tsx:56-58` |
+| 8 | 🟢 | Prototype-specific | At ~320 px the quick-add row got cramped; the chip squeezed the input. | ✅ | `flex-wrap` + a `min-w-0 basis-40` input so the chip drops to a second line | `src/modules/actions/components/QuickAddActionRow.tsx:52-56, 84` |
 
 Categories with no gaps: **State transitions** (schedule/complete/abandon ride the hardened
 `useActions` lifecycle; invalid done-from-abandoned is blocked), **Loading & async**

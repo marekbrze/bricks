@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { ListTodo, Signpost } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,6 +26,7 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { compareActionsForList, isSettled } from '../lib/group-actions'
 import { GoalGroup, type ActionRowCallbacks } from './GoalGroup'
+import { ActionRowItem } from './ActionRowItem'
 import { PathSection } from './PathSection'
 import { InboxGroup } from './InboxGroup'
 
@@ -43,6 +45,12 @@ export function ActionsPage() {
   const [schedule, setSchedule] = useState<ScheduleState>(null)
   const [rename, setRename] = useState<RenameState>(null)
   const [newGoal, setNewGoal] = useState<NewGoalState>(null)
+  // Persisted collapse choices per Goal id (edgecases #7) — undefined means
+  // "use the group's default" (expanded, unless the Goal is inactive).
+  const {
+    value: expandedOverrides,
+    setValue: setExpandedOverrides,
+  } = useLocalStorageState<Record<string, boolean>>('actions-group-visibility', {})
 
   const { showToast } = useToast()
   const { activePaths, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
@@ -101,6 +109,14 @@ export function ActionsPage() {
   const orphaned = actions.filter(
     (a) => a.state !== 'inbox' && a.goalId && !goals.some((g) => g.id === a.goalId),
   )
+  // Orphans obey "Show completed" like every other group (edgecases #3), and
+  // render as full actionable rows — an inert list would be a dead-end (edgecases #2).
+  const orphanedVisible = [...orphaned]
+    .filter((a) => (showCompleted ? true : !isSettled(a)))
+    .sort(compareActionsForList)
+
+  const toggleExpanded = (goalId: string, next: boolean) =>
+    setExpandedOverrides((prev) => ({ ...prev, [goalId]: next }))
 
   const renderGoalGroup = (goalId: string, depth: number) => {
     const goal = goals.find((g) => g.id === goalId)
@@ -124,6 +140,8 @@ export function ActionsPage() {
           createAction({ name, pathId: goal.pathId, goalId: goal.id, scheduledDate })
         }}
         renderChild={(child, childDepth) => renderGoalGroup(child.id, childDepth)}
+        expandedOverride={expandedOverrides[goal.id]}
+        onToggleExpanded={toggleExpanded}
       />
     )
   }
@@ -148,17 +166,23 @@ export function ActionsPage() {
 
       <InboxGroup actions={inboxActions} />
 
-      {orphaned.length > 0 && (
+      {orphanedVisible.length > 0 && (
         <section
           aria-label="Unassigned actions"
           className="flex flex-col gap-1.5 rounded-xl border border-dashed border-border p-4 opacity-60"
         >
           <h2 className="text-sm font-medium text-muted-foreground">Unassigned</h2>
           <ul className="flex flex-col gap-1">
-            {[...orphaned].sort(compareActionsForList).map((a) => (
-              <li key={a.id} className="px-2 text-sm text-muted-foreground">
-                {a.name}
-              </li>
+            {orphanedVisible.map((a) => (
+              <ActionRowItem
+                key={a.id}
+                action={a}
+                onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
+                onSchedule={() => rowCallbacks.onSchedule(a)}
+                onUnschedule={() => rowCallbacks.onUnschedule(a)}
+                onRename={() => rowCallbacks.onRename(a)}
+                onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
+              />
             ))}
           </ul>
         </section>
@@ -211,8 +235,15 @@ export function ActionsPage() {
           description="Pick the day it should show up on in Today."
           submitLabel="Schedule"
           onSchedule={(date) => {
+            // Symmetric safety with Unschedule: an Undo restores whatever the
+            // row had before, including "nothing scheduled" (edgecases #5).
+            const previous = schedule.action.scheduledDate
             scheduleAction(schedule.action.id, date)
-            showToast(`“${schedule.action.name}” scheduled`)
+            showToast(`“${schedule.action.name}” scheduled`, {
+              label: 'Undo',
+              onClick: () =>
+                previous ? scheduleAction(schedule.action.id, previous) : unscheduleAction(schedule.action.id),
+            })
           }}
         />
       )}

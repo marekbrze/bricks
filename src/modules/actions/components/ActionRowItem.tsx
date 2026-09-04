@@ -68,7 +68,8 @@ export function ActionRowItem({
           <Flame className="size-4 text-destructive" aria-hidden="true" />
         </span>
       )}
-      {chip && !done && (
+      {/* A stale date chip on an abandoned row is noise — the "abandoned" tag says enough. (edgecases #4) */}
+      {chip && !done && !abandoned && (
         <span
           className={cn(
             'shrink-0 rounded-full px-2 py-0.5 text-xs',

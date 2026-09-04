@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -34,6 +34,8 @@ export function GoalGroup({
   rowCallbacks,
   onCreate,
   renderChild,
+  expandedOverride,
+  onToggleExpanded,
 }: {
   goal: Goal
   /** Actions assigned directly to this Goal (`goalId === goal.id`). */
@@ -45,9 +47,15 @@ export function GoalGroup({
   onCreate: (name: string, scheduledDate: string | null) => void
   /** Renders a nested child group — recursion without importing this file into itself. */
   renderChild: (child: Goal, depth: number) => React.ReactNode
+  /** The Owner's persisted choice for this group, when they've made one (undefined = default). */
+  expandedOverride?: boolean
+  onToggleExpanded: (goalId: string, next: boolean) => void
 }) {
   const inactive = goal.state !== 'active'
-  const [expanded, setExpanded] = useState(!inactive)
+  // Collapse choices persist across visits (edgecases #7): the default is
+  // "expanded unless inactive", overridable per group by the stored toggle.
+  const expanded = expandedOverride ?? !inactive
+  const setExpanded = (next: boolean) => onToggleExpanded(goal.id, next)
 
   const visible = useMemo(
     () =>
@@ -76,7 +84,7 @@ export function GoalGroup({
           size="icon-sm"
           aria-expanded={expanded}
           aria-label={expanded ? `Collapse “${goal.name}”` : `Expand “${goal.name}”`}
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => setExpanded(!expanded)}
           className="text-muted-foreground"
         >
           <ChevronDown className={cn('transition-transform', !expanded && '-rotate-90')} aria-hidden="true" />

@@ -34,9 +34,10 @@ the section it belongs to.
 
 1. At the bottom of every Goal group and of the Standalone group sits an inline quick-add
    row ("Add action…").
-2. User types a name. Optional: clicks the calendar icon → popover with **Today / Tomorrow /
-   pick a date** (reuses the schedule-dialog date logic). Default: no date.
-3. Enter (or blur with text) creates the Action — `assigned` to that Goal, or standalone to
+2. User types a name. Optional: clicks the calendar icon → menu with **Today / Tomorrow /
+   In a week / Pick a date…** — the last opens a small dialog with a free date input.
+   Default: no date.
+3. Enter (or the Add button) creates the Action — `assigned` to that Goal, or standalone to
    the Path — and clears the input for the next one. The row stays focused for rapid entry.
 4. The new Action appears at its sorted position (frog-first / scheduled / insertion).
 
@@ -78,6 +79,8 @@ the section it belongs to.
 
 ## Edge Cases
 
+Hardened against docs/modules/actions-edgecases.md — all 8 gaps closed (ADR 0022).
+
 - **Empty app (no Paths)**: guided empty state — "Create your first Path" (link to `/paths`),
   no sections.
 - **Path with nothing in it**: section renders with just the quick-add rows and "New goal" —
@@ -86,16 +89,23 @@ the section it belongs to.
   "All clear" line instead of disappearing (the group header still anchors the list).
 - **Inactive Goal with open Actions**: collapsed, dimmed, struck-through header at the bottom
   of its section (decided — see ADR 0020).
-- **Orphaned Action** (`goalId` points at a deleted Goal, or `pathId` at a deleted Path):
-  surfaced in a dimmed "Unassigned" fallback group at the top (under Inbox) so nothing silently
-  vanishes; `useActions` self-heal still runs underneath.
+- **Orphaned Action** (`goalId` points at a deleted Goal): surfaced in a dimmed "Unassigned"
+  fallback group under the Inbox, obeying the Show-completed toggle, rendered as full
+  actionable rows — nothing silently vanishes and the list is never a dead end.
+  `useActions` self-heal still runs underneath for Path orphans.
 - **Inbox items**: shown but locked to "needs triage" — no quick-add, no schedule from here;
   assignment belongs to triage.
 - **Quick-add validation**: empty/whitespace name → no-op (input just stays); Enter with only
   spaces doesn't create an Action.
 - **Storage corruption / unreadable data**: reuse the `*DataUnreadable` banner + reset pattern.
-- **Overdue dates**: a `scheduledDate` before today renders as an overdue chip (red-ish) —
-  visible but not alarming; the day logic still belongs to `today`.
+- **Overdue dates**: a `scheduledDate` before today renders as an overdue chip (red-ish) on
+  active rows only — abandoned rows show just the "abandoned" tag.
+- **Schedule safety**: Schedule and Unschedule toasts both carry Undo restoring the previous
+  `scheduledDate`.
+- **Collapse persistence**: per-Goal expand/collapse overrides persist in LocalStorage
+  (`actions-group-visibility`); default is expanded unless the Goal is inactive.
+- **Narrow widths**: the quick-add row wraps — the date chip drops under the input instead of
+  squeezing it.
 - **Mobile**: 5 bottom tabs at ~360 px — tighter spacing, labels stay; quick-add rows remain
   reachable (inline, not behind a FAB) in MVP.
 

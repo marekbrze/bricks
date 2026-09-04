@@ -69,7 +69,9 @@ export function PathSection({
             />
           ))}
           {standaloneVisible.length === 0 && standaloneActions.length > 0 && (
-            <li className="px-2 py-1 text-xs text-muted-foreground">All clear</li>
+            <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
+              All clear
+            </li>
           )}
         </ul>
         <QuickAddActionRow label={`Add a standalone action in ${path.name}`} onCreate={onQuickAddStandalone} />
