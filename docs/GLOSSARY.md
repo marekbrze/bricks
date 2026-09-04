@@ -26,3 +26,17 @@ Terms and concepts specific to this project. Used across all project skills to m
 | Wykres kontrybucji | `ContributionGraph` | Wizualizacja w stylu GitHub contribution graph — skumulowana liczba zwycięstw w stronę celu / Drogi w czasie. Nacisk na kumulację, nie na procent ukończenia. | "wykres postępu %", "statystyki", "burndown" |
 
 **Code Name** to angielska nazwa używana w kodzie (foldery, komponenty, encje, endpointy) — nawet gdy rozmowa toczy się po polsku.
+
+## Moduły projektowe
+
+Nazwy modułów (folder / namespace w kodzie) — patrz `docs/MODULES.md`.
+
+| Moduł | Rola | Zakres |
+|-------|------|--------|
+| `paths` | Core | Drogi + Achievementy + ekran-hub Drogi |
+| `vision` | Core | Tablica wizji (notatki + galeria + Unsplash + eksport) |
+| `goals` | Core | Drzewo celów, priorytety, frog, achieve/abandon |
+| `capture-triage` | Core | Inbox + tryb przeglądu kartami + awans Action→Goal |
+| `today` | Core | Widok „Dziś" per Droga, harmonogram, planowanie, complete |
+| `winlog` | Core | `WinLog` + `ContributionGraph` |
+| `app-shell` | Generic | Nawigacja, strona główna, Dexie/LocalStorage, ustawienia |
