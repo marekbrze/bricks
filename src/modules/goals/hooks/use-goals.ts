@@ -184,9 +184,10 @@ export function useGoals() {
    * old parent across, since the parent lives on the origin Path.
    */
   const moveGoalToPath = useCallback(
-    (id: string, newPathId: string) => {
+    (id: string, newPathId: string): UndoFn => {
       const g = goals.find((x) => x.id === id)
-      if (!g || g.pathId === newPathId) return
+      if (!g || g.pathId === newPathId) return () => {}
+      const goalsSnapshot = goals
       const ids = new Set(subtreeIds(id))
       const topSiblings = topLevelGoals(newPathId)
       const maxOrder = topSiblings.reduce((m, x) => Math.max(m, x.order), -1)
@@ -199,9 +200,14 @@ export function useGoals() {
           return x
         }),
       )
-      reassignActionsToPath([...ids], newPathId)
+      const undoActions = reassignActionsToPath([...ids], newPathId)
+      const undoGoals = restoreSnapshot(goalsSnapshot)
+      return () => {
+        undoGoals()
+        undoActions()
+      }
     },
-    [goals, setGoals, subtreeIds, topLevelGoals, reassignActionsToPath],
+    [goals, setGoals, subtreeIds, topLevelGoals, reassignActionsToPath, restoreSnapshot],
   )
 
   /** One-time propagation on mark: doesn't retract on un-mark, doesn't apply to later Actions. */

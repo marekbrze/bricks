@@ -151,14 +151,20 @@ export function useActions() {
     [actions, setActions],
   )
 
-  /** Move Goal to another Path: carry every Action under the moved subtree along with it. */
+  /**
+   * Move Goal to another Path: carry every Action under the moved subtree
+   * along with it. Returns an Undo so the caller can make the whole move
+   * (Goals + Actions) reversible in one toast.
+   */
   const reassignActionsToPath = useCallback(
-    (goalIds: string[], pathId: string) => {
-      if (goalIds.length === 0) return
+    (goalIds: string[], pathId: string): UndoFn => {
+      if (goalIds.length === 0) return () => {}
+      const snapshot = actions
       const ids = new Set(goalIds)
       setActions(actions.map((a) => (a.goalId && ids.has(a.goalId) ? touch({ ...a, pathId }) : a)))
+      return restoreSnapshot(snapshot)
     },
-    [actions, setActions],
+    [actions, setActions, restoreSnapshot],
   )
 
   const actionCountForPath = useMemo(() => {

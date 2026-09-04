@@ -47,6 +47,7 @@ export function GoalRow({
   index,
   siblingCount,
   dragId,
+  readOnly = false,
   onDragStart,
   onDropOn,
   onDragEnd,
@@ -59,6 +60,8 @@ export function GoalRow({
   index: number
   siblingCount: number
   dragId: string | null
+  /** Read-only while the owning Path is archived — mirrors `AchievementsSection`'s `readOnly`. */
+  readOnly?: boolean
   onDragStart: (id: string) => void
   onDropOn: (goal: Goal, index: number) => void
   onDragEnd: () => void
@@ -66,9 +69,17 @@ export function GoalRow({
   onSetState: (goal: Goal, state: 'achieved' | 'abandoned' | 'active') => void
   onAction: (action: GoalRowAction, goal: Goal) => void
 }) {
-  const { childGoals, actionCountFor, toggleFrog } = useGoals()
+  const { childGoals, actionCountFor, toggleFrog, getGoal } = useGoals()
   const children = childGoals(goal.id)
   const actionCount = actionCountFor(goal.id)
+
+  const draggedGoal = dragId ? getGoal(dragId) : undefined
+  // Dragging never crosses sibling groups — only allow the drop (and its
+  // "you can drop here" cursor) when the hovered row shares the dragged
+  // Goal's Path + parent.
+  const acceptsDrop =
+    !draggedGoal || (draggedGoal.pathId === goal.pathId && draggedGoal.parentGoalId === goal.parentGoalId)
+  const draggable = !readOnly && siblingCount > 1
 
   return (
     <li>
@@ -77,10 +88,13 @@ export function GoalRow({
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- drag handlers on a
           plain div; the keyboard-accessible path is the overflow menu's Move up / Move down */}
       <div
-        draggable={siblingCount > 1}
+        draggable={draggable}
         onDragStart={() => onDragStart(goal.id)}
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={(e) => {
+          if (acceptsDrop) e.preventDefault()
+        }}
         onDrop={(e) => {
+          if (!acceptsDrop) return
           e.preventDefault()
           onDropOn(goal, index)
         }}
@@ -91,7 +105,7 @@ export function GoalRow({
           dragId === goal.id && 'opacity-50',
         )}
       >
-        {siblingCount > 1 && (
+        {draggable && (
           <GripVertical
             className="size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
             aria-hidden="true"
@@ -100,7 +114,7 @@ export function GoalRow({
         <Link
           to={`/paths/${goal.pathId}/goals/${goal.id}`}
           className={cn(
-            'min-w-0 flex-1 truncate rounded-sm text-sm font-medium outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50',
+            'line-clamp-2 min-w-0 flex-1 rounded-sm text-sm font-medium break-words outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50',
             goal.state !== 'active' && 'text-muted-foreground',
           )}
         >
@@ -116,23 +130,25 @@ export function GoalRow({
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
           {actionCount} {actionCount === 1 ? 'Action' : 'Actions'}
         </span>
-        <GoalOverflowMenu
-          goalName={goal.name}
-          state={goal.state}
-          frog={goal.frog}
-          onEdit={() => onAction('edit', goal)}
-          onAddSubGoal={() => onAction('addSub', goal)}
-          onMove={() => onAction('move', goal)}
-          onToggleFrog={() => toggleFrog(goal.id)}
-          onAchieve={() => onSetState(goal, 'achieved')}
-          onAbandon={() => onSetState(goal, 'abandoned')}
-          onReactivate={() => onSetState(goal, 'active')}
-          onDelete={() => onAction('delete', goal)}
-          onMoveUp={() => onReorder(goal, index - 1)}
-          onMoveDown={() => onReorder(goal, index + 1)}
-          canMoveUp={index > 0}
-          canMoveDown={index < siblingCount - 1}
-        />
+        {!readOnly && (
+          <GoalOverflowMenu
+            goalName={goal.name}
+            state={goal.state}
+            frog={goal.frog}
+            onEdit={() => onAction('edit', goal)}
+            onAddSubGoal={() => onAction('addSub', goal)}
+            onMove={() => onAction('move', goal)}
+            onToggleFrog={() => toggleFrog(goal.id)}
+            onAchieve={() => onSetState(goal, 'achieved')}
+            onAbandon={() => onSetState(goal, 'abandoned')}
+            onReactivate={() => onSetState(goal, 'active')}
+            onDelete={() => onAction('delete', goal)}
+            onMoveUp={() => onReorder(goal, index - 1)}
+            onMoveDown={() => onReorder(goal, index + 1)}
+            canMoveUp={index > 0}
+            canMoveDown={index < siblingCount - 1}
+          />
+        )}
       </div>
 
       {children.length > 0 && (
@@ -145,6 +161,7 @@ export function GoalRow({
               index={i}
               siblingCount={children.length}
               dragId={dragId}
+              readOnly={readOnly}
               onDragStart={onDragStart}
               onDropOn={onDropOn}
               onDragEnd={onDragEnd}

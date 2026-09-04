@@ -140,8 +140,13 @@ per-Goal progress rollup.
 - **Delete confirmation** (`AlertDialog`): cascade summary (sub-Goal +
   Action counts), Cancel / Delete Goal — same component as Path delete.
 - **Data-unreadable recovery** (all `goals` routes): shown instead of
-  content when the stored `goals` value is corrupt — matches the `paths`
-  pattern (distinct from the empty-tree state), offers a confirmed reset.
+  content when the stored `goals` **or** `actions` value is corrupt —
+  matches the `paths` pattern (distinct from the empty-tree state), offers
+  a confirmed reset.
+- **Archived-Path read-only** (both `goals` routes): a restore banner plus
+  every mutation control (create/edit/reorder/move/frog/achieve/abandon/
+  delete) hidden while the owning Path is archived — matches
+  `PathOverviewPage`'s Achievements section exactly.
 
 ## Actions
 
@@ -165,8 +170,8 @@ than adding anything new — no new entities or glossary terms.
 
 ## Edge Cases
 
-Captured here from the interview; the systematic audit is
-`proto-edgecases`' job next.
+Systematically audited in `docs/modules/goals-edgecases.md` and hardened
+(proto-harden, 2026-09-04). Decided behaviors:
 
 - **Path has no Goals yet**: tree screen shows an empty state explaining
   Goals live under Paths, with **New Goal** front and center.
@@ -178,17 +183,40 @@ Captured here from the interview; the systematic audit is
 - **Deleting a childless Goal**: confirmation dialog still appears (for
   consistency with every other Goal delete) but the cascade summary has
   nothing to enumerate.
-- **Moving a Goal onto the Path it's already on**: a no-op, not an error.
+- **Moving a Goal onto the Path it's already on**: a no-op, not an error;
+  the dialog's Move button is disabled for it.
+- **Move Goal to another Path**: now Undo-backed like every other
+  structural change in this module — the toast reverts both the Goal
+  subtree's `pathId` and the Actions that moved with it.
 - **Deep sub-Goal nesting**: allowed structurally (a sub-Goal can itself
   have sub-Goals) — indentation is capped visually so deep trees don't run
   off-screen; further nesting still works, just renders at the max indent.
 - **Frog toggled with zero current Actions**: the toggle still sets the
   flag on the Goal itself; there's simply nothing to propagate to yet.
-- **Very long Goal name/description**: wraps in the tree row, the progress
-  header, and the dialog, same as Path/Action text elsewhere.
-- **A Path is deleted while it still has Goals**: cascades from the `paths`
-  side (already specified there) — Goals and their Actions are removed with
-  it, not orphaned.
+- **Very long Goal name/description**: clamps to 2 lines with `break-words`
+  in the tree row, matching `PathCard`'s treatment; wraps freely in the
+  progress header and the dialog.
+- **A Path is deleted while it still has Goals**: cascades from `goals`'
+  own self-heal (mirrors `useActions`' Path self-heal) — Goals and their
+  Actions under a vanished Path are removed on the next mount that reads
+  them, not orphaned.
+- **A Path is archived while it has Goals**: both `goals` routes go
+  read-only — restore banner, every mutation control hidden — until the
+  Path is unarchived, matching `paths`' own Achievements section.
+- **Achieving/abandoning a Goal that still has Actions assigned to it**: the
+  Actions are left untouched — no per-Action flag exists yet since Actions
+  don't render anywhere outside this Goal's own page (the Goal's state
+  badge, already visible wherever the Goal appears, is the signal for now).
+  Revisit once `today` reads `goalId` off Actions.
+- **Corrupt `goals` or `actions` storage on a Goals route**: a dedicated
+  recovery screen distinct from the empty-tree state, matching `paths`.
+
+Deferred (see `goals-edgecases.md` → Hardening status): no virtualization
+on a very large Goal tree, no double-submit guard on Create/Edit (harmless
+while creation is synchronous), and no confirm/nudge on Add-sub-Goal-under-
+a-closed-parent or achieving/abandoning a Goal with open children (left
+frictionless, matching the "manual, not automatic" philosophy behind
+achieve/abandon).
 
 ## Integration Points
 

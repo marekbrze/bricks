@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Flame, Plus } from 'lucide-react'
+import { ArrowLeft, ArchiveRestore, Flame, Plus } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
 import { ContributionGraph } from '@/modules/paths/components/ContributionGraph'
+import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useGoals } from '../hooks/use-goals'
 import type { Goal } from '../types/goal'
 import { daysUntil, deadlineLabel } from '../lib/deadline'
@@ -35,7 +37,8 @@ export function GoalProgressPage() {
   const { pathId = '', goalId = '' } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const { getPath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
+  const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
+  const { dataUnreadable: actionsUnreadable, resetActions } = useActions()
   const {
     getGoal,
     childGoals,
@@ -58,6 +61,7 @@ export function GoalProgressPage() {
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
   if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
+  if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
   const path = getPath(pathId)
   if (!path) return <PathNotFound />
@@ -65,6 +69,7 @@ export function GoalProgressPage() {
   const goal = getGoal(goalId)
   if (!goal || goal.pathId !== pathId) return <GoalNotFound pathId={pathId} />
 
+  const readOnly = path.archived
   const children = childGoals(goal.id)
   const ownActions = actionsFor(goal.id)
   const counts = cascadeCounts(goal.id)
@@ -128,26 +133,39 @@ export function GoalProgressPage() {
               </span>
             )}
           </div>
-          <GoalOverflowMenu
-            goalName={goal.name}
-            state={goal.state}
-            frog={goal.frog}
-            onEdit={() => handleAction('edit', goal)}
-            onAddSubGoal={() => handleAction('addSub', goal)}
-            onMove={() => handleAction('move', goal)}
-            onToggleFrog={() => toggleFrog(goal.id)}
-            onAchieve={() => handleSetState(goal, 'achieved')}
-            onAbandon={() => handleSetState(goal, 'abandoned')}
-            onReactivate={() => handleSetState(goal, 'active')}
-            onDelete={() => handleAction('delete', goal)}
-            onMoveUp={() => handleReorder(goal, ownIndex - 1)}
-            onMoveDown={() => handleReorder(goal, ownIndex + 1)}
-            canMoveUp={ownIndex > 0}
-            canMoveDown={ownIndex < siblings.length - 1}
-          />
+          {!readOnly && (
+            <GoalOverflowMenu
+              goalName={goal.name}
+              state={goal.state}
+              frog={goal.frog}
+              onEdit={() => handleAction('edit', goal)}
+              onAddSubGoal={() => handleAction('addSub', goal)}
+              onMove={() => handleAction('move', goal)}
+              onToggleFrog={() => toggleFrog(goal.id)}
+              onAchieve={() => handleSetState(goal, 'achieved')}
+              onAbandon={() => handleSetState(goal, 'abandoned')}
+              onReactivate={() => handleSetState(goal, 'active')}
+              onDelete={() => handleAction('delete', goal)}
+              onMoveUp={() => handleReorder(goal, ownIndex - 1)}
+              onMoveDown={() => handleReorder(goal, ownIndex + 1)}
+              canMoveUp={ownIndex > 0}
+              canMoveDown={ownIndex < siblings.length - 1}
+            />
+          )}
         </div>
         {goal.description && <p className="text-sm text-muted-foreground">{goal.description}</p>}
       </div>
+
+      {readOnly && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+          <p className="text-sm text-muted-foreground">
+            “{path.name}” is archived. This Goal is kept but read-only until you restore it.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => unarchivePath(path.id)}>
+            <ArchiveRestore aria-hidden="true" /> Unarchive
+          </Button>
+        </div>
+      )}
 
       <section aria-labelledby="progress-heading" className="flex flex-col gap-2">
         <h2 id="progress-heading" className="text-sm font-semibold">
@@ -191,13 +209,17 @@ export function GoalProgressPage() {
           <h2 id="subgoals-heading" className="text-sm font-semibold">
             Sub-Goals ({children.length})
           </h2>
-          <Button variant="outline" size="sm" onClick={() => setDialog({ type: 'create' })}>
-            <Plus aria-hidden="true" /> Add sub-Goal
-          </Button>
+          {!readOnly && (
+            <Button variant="outline" size="sm" onClick={() => setDialog({ type: 'create' })}>
+              <Plus aria-hidden="true" /> Add sub-Goal
+            </Button>
+          )}
         </div>
         {children.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-            No sub-Goals — break this down if it turns out to need more than one thread of work.
+            {readOnly
+              ? 'No sub-Goals.'
+              : 'No sub-Goals — break this down if it turns out to need more than one thread of work.'}
           </p>
         ) : (
           <ul className="flex flex-col gap-1">
@@ -209,6 +231,7 @@ export function GoalProgressPage() {
                 index={i}
                 siblingCount={children.length}
                 dragId={dragId}
+                readOnly={readOnly}
                 onDragStart={setDragId}
                 onDropOn={handleDropOn}
                 onDragEnd={() => setDragId(null)}
@@ -228,7 +251,10 @@ export function GoalProgressPage() {
           title="New sub-Goal"
           description={`Nested under “${goal.name}” — inherits the same Path.`}
           submitLabel="Create sub-Goal"
-          onSubmit={(data) => createGoal({ pathId: goal.pathId, parentGoalId: goal.id, ...data })}
+          onSubmit={(data) => {
+            createGoal({ pathId: goal.pathId, parentGoalId: goal.id, ...data })
+            showToast(`Created “${data.name}”`)
+          }}
         />
       )}
 
@@ -244,7 +270,10 @@ export function GoalProgressPage() {
             description: dialog.goal.description,
             deadline: dialog.goal.deadline,
           }}
-          onSubmit={(data) => editGoal(dialog.goal.id, data)}
+          onSubmit={(data) => {
+            editGoal(dialog.goal.id, data)
+            showToast(`Saved “${data.name}”`)
+          }}
         />
       )}
 
@@ -257,8 +286,8 @@ export function GoalProgressPage() {
           onMove={(newPathId) => {
             const wasSelf = dialog.goal.id === goal.id
             const name = dialog.goal.name
-            moveGoalToPath(dialog.goal.id, newPathId)
-            showToast(`Moved “${name}” to another Path`)
+            const undo = moveGoalToPath(dialog.goal.id, newPathId)
+            showToast(`Moved “${name}” to another Path`, { label: 'Undo', onClick: undo })
             if (wasSelf) navigate(`/paths/${newPathId}/goals/${dialog.goal.id}`)
           }}
         />

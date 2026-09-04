@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Target } from 'lucide-react'
+import { ArrowLeft, ArchiveRestore, Plus, Target } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
+import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useGoals } from '../hooks/use-goals'
 import type { Goal } from '../types/goal'
 import { GoalRow, type GoalRowAction } from './GoalRow'
@@ -24,7 +26,8 @@ type DialogState =
 export function GoalTreePage() {
   const { pathId = '' } = useParams()
   const { showToast } = useToast()
-  const { getPath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
+  const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
+  const { dataUnreadable: actionsUnreadable, resetActions } = useActions()
   const {
     topLevelGoals,
     getGoal,
@@ -44,10 +47,12 @@ export function GoalTreePage() {
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
   if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
+  if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
   const path = getPath(pathId)
   if (!path) return <PathNotFound />
 
+  const readOnly = path.archived
   const goals = topLevelGoals(pathId)
 
   const handleDropOn = (target: Goal, targetIndex: number) => {
@@ -91,11 +96,24 @@ export function GoalTreePage() {
         </Link>
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold">Goals</h1>
-          <Button onClick={() => setDialog({ type: 'create', parentGoalId: null })}>
-            <Plus aria-hidden="true" /> New Goal
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => setDialog({ type: 'create', parentGoalId: null })}>
+              <Plus aria-hidden="true" /> New Goal
+            </Button>
+          )}
         </div>
       </div>
+
+      {readOnly && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+          <p className="text-sm text-muted-foreground">
+            “{path.name}” is archived. Its Goals are kept but read-only until you restore it.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => unarchivePath(path.id)}>
+            <ArchiveRestore aria-hidden="true" /> Unarchive
+          </Button>
+        </div>
+      )}
 
       {goals.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
@@ -103,13 +121,16 @@ export function GoalTreePage() {
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">No Goals yet on “{path.name}”</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              A Goal is the execution layer — the concrete work under this Path, in the order you
-              decide.
+              {readOnly
+                ? 'No Goals were added to this Path.'
+                : 'A Goal is the execution layer — the concrete work under this Path, in the order you decide.'}
             </p>
           </div>
-          <Button onClick={() => setDialog({ type: 'create', parentGoalId: null })}>
-            <Plus aria-hidden="true" /> Create your first Goal
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => setDialog({ type: 'create', parentGoalId: null })}>
+              <Plus aria-hidden="true" /> Create your first Goal
+            </Button>
+          )}
         </section>
       ) : (
         <ul className="flex flex-col gap-1">
@@ -121,6 +142,7 @@ export function GoalTreePage() {
               index={i}
               siblingCount={goals.length}
               dragId={dragId}
+              readOnly={readOnly}
               onDragStart={setDragId}
               onDropOn={handleDropOn}
               onDragEnd={() => setDragId(null)}
@@ -146,6 +168,7 @@ export function GoalTreePage() {
           onSubmit={(data) => {
             const parentGoalId = dialog.parentGoalId
             createGoal({ pathId: path.id, parentGoalId, ...data })
+            showToast(`Created “${data.name}”`)
           }}
         />
       )}
@@ -162,7 +185,10 @@ export function GoalTreePage() {
             description: dialog.goal.description,
             deadline: dialog.goal.deadline,
           }}
-          onSubmit={(data) => editGoal(dialog.goal.id, data)}
+          onSubmit={(data) => {
+            editGoal(dialog.goal.id, data)
+            showToast(`Saved “${data.name}”`)
+          }}
         />
       )}
 
@@ -173,8 +199,8 @@ export function GoalTreePage() {
           goalName={dialog.goal.name}
           currentPathId={dialog.goal.pathId}
           onMove={(newPathId) => {
-            moveGoalToPath(dialog.goal.id, newPathId)
-            showToast(`Moved “${dialog.goal.name}” to another Path`)
+            const undo = moveGoalToPath(dialog.goal.id, newPathId)
+            showToast(`Moved “${dialog.goal.name}” to another Path`, { label: 'Undo', onClick: undo })
           }}
         />
       )}

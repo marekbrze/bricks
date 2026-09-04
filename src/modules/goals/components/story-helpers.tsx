@@ -60,6 +60,44 @@ export function seedCorruptGoals(initialPath = '/paths/path-sport/goals'): Decor
   }
 }
 
+/** Write an unparseable value to the `actions` key — Goals routes should recover, not show `0 Actions` silently. */
+export function seedCorruptActions(initialPath = '/paths/path-sport/goals'): Decorator {
+  return (Story) => {
+    __resetStorageHealth()
+    try {
+      window.localStorage.setItem('paths', JSON.stringify(MOCK_PATHS.filter((p) => !p.archived)))
+      window.localStorage.setItem('actions', '{ this is not valid json ]')
+      window.localStorage.setItem('goals', JSON.stringify(MOCK_GOALS))
+    } catch {
+      /* ignore */
+    }
+    return (
+      <Providers initialPath={initialPath}>
+        <Story />
+      </Providers>
+    )
+  }
+}
+
+/** Seed with `paths` including the archived one, so an archived Path's Goals render read-only. */
+export function withArchivedPathGoals(goals: Goal[], initialPath = '/paths/path-home/goals'): Decorator {
+  return (Story) => {
+    __resetStorageHealth()
+    try {
+      window.localStorage.setItem('paths', JSON.stringify(MOCK_PATHS))
+      window.localStorage.setItem('actions', JSON.stringify(MOCK_ACTIONS))
+      window.localStorage.setItem('goals', JSON.stringify(goals))
+    } catch {
+      /* ignore */
+    }
+    return (
+      <Providers initialPath={initialPath}>
+        <Story />
+      </Providers>
+    )
+  }
+}
+
 export function Frame({ children }: { children: ReactNode }) {
   return <div className="mx-auto max-w-[1200px] p-4">{children}</div>
 }

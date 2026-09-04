@@ -1,6 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { Goal } from '../types/goal'
 import { GoalProgressPage } from './GoalProgressPage'
-import { withGoals, MOCK_GOALS } from './story-helpers'
+import { withGoals, withArchivedPathGoals, seedCorruptActions, MOCK_GOALS } from './story-helpers'
+
+const ARCHIVED_PATH_GOAL: Goal = {
+  id: 'goal-declutter',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  name: 'Declutter every room',
+  description: 'One room a weekend.',
+  pathId: 'path-home',
+  parentGoalId: null,
+  order: 0,
+  deadline: null,
+  state: 'active',
+  achievedOn: null,
+  frog: false,
+  mockWinDays: {},
+}
 
 const meta: Meta<typeof GoalProgressPage> = {
   title: 'Goals/GoalProgressPage',
@@ -32,4 +49,14 @@ export const OverdueDeadline: Story = {
 
 export const NotFound: Story = {
   decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/does-not-exist')],
+}
+
+/** Corrupt `actions` shouldn't silently show `0 Actions` — same recovery screen as `paths`/`capture-triage`. */
+export const ActionsDataUnreadable: Story = {
+  decorators: [seedCorruptActions('/paths/path-sport/goals/goal-pullup-program')],
+}
+
+/** An archived Path's Goal renders read-only — restore banner, no overflow menu, no Add sub-Goal. */
+export const ArchivedPathReadOnly: Story = {
+  decorators: [withArchivedPathGoals([ARCHIVED_PATH_GOAL], '/paths/path-home/goals/goal-declutter')],
 }

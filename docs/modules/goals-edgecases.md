@@ -23,6 +23,7 @@ in `src/modules/goals/`.
   - No way to create a cycle in the tree: the only path-change operation (Move to another Path) always lands top-level on a different Path — reparenting within the same Path isn't exposed at all, so nothing can become its own ancestor.
 - **New gaps found**: 11
 - **By severity**: 🔴 0 · 🟡 6 · 🟢 5
+- **Hardened (proto-harden, 2026-09-04)**: 8 closed, 3 deferred/decided — see "Hardening status" below.
 
 ## Inventory
 
@@ -68,3 +69,19 @@ Implement first:
 - Decide what achieving/abandoning a Goal does to its own Actions (#3) — even a "leave them, but flag it" answer closes the gap, as long as it's a decision rather than silence.
 - Make `moveGoalToPath` return an `UndoFn` and wire the toast (#4).
 - Fix the long-name truncation to match what `goals.md` already promised (#5), and add success feedback to Goal/sub-Goal creation (#6).
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | Where it lives now |
+|---|--------|--------------------|
+| 1 | ✅ | Both routes compute `readOnly = path.archived`, show the same restore-banner pattern as `PathOverviewPage`, and hide every mutation control (`New Goal`/`Add sub-Goal`, drag handle, overflow menu) while it's true — `src/modules/goals/components/GoalTreePage.tsx:55`, `:99`, `:107`; `GoalProgressPage.tsx:72`, `:136`, `:159`; `GoalRow.tsx:62` (`readOnly` prop) |
+| 2 | ✅ | Both routes now also check `useActions().dataUnreadable` and render `ActionsDataUnreadable` — `src/modules/goals/components/GoalTreePage.tsx:28`, `:48`; `GoalProgressPage.tsx:39`, `:61` |
+| 3 | ✅ (decided, no code change) | Left as-is by design: an Action's parent-Goal state isn't surfaced per-Action because Actions don't render anywhere outside this Goal's own page yet (`today` isn't built) — the Goal's own state badge, already visible everywhere the Goal itself renders, is the signal for now. Revisit once `today` reads `goalId` off Actions. See ADR 0010 |
+| 4 | ✅ | `moveGoalToPath` (and the `useActions` `reassignActionsToPath` it calls) now snapshot-and-return an `UndoFn`, wired into the Move toast in both routes | `src/modules/goals/hooks/use-goals.ts:186`, `src/modules/capture-triage/hooks/use-actions.ts:154`; `GoalTreePage.tsx:176`, `GoalProgressPage.tsx:260` |
+| 5 | ✅ | Row name switched from `truncate` to `line-clamp-2 break-words`, matching `PathCard`'s exact treatment | `src/modules/goals/components/GoalRow.tsx:117` |
+| 6 | ✅ | Create dialogs (top-level and sub-Goal, both routes) toast `Created "X"` on submit | `src/modules/goals/components/GoalTreePage.tsx:149`, `GoalProgressPage.tsx:236` |
+| 7 | ✅ | Edit dialogs (both routes) toast `Saved "X"` on submit | `src/modules/goals/components/GoalTreePage.tsx:170`, `GoalProgressPage.tsx:256` |
+| 8 | ✅ | `onDragOver`/`onDrop` only accept the drop (and only then call `preventDefault`) when the hovered row shares the dragged Goal's Path + parent — an invalid target now shows the browser's native "not allowed" cursor | `src/modules/goals/components/GoalRow.tsx:80` (`acceptsDrop`), `:93`, `:96` |
+| 9 | ❌ deferred | No virtualization on the Goal tree — not worth solving at prototype scale, matches `paths`/`capture-triage` precedent |
+| 10 | ❌ deferred | No double-submit guard on Create/Edit — harmless while every mutation is synchronous; note for the eventual Dexie migration (matches `paths` #17 / `capture-triage` #7) |
+| 11 | ❌ deferred (decided, no change) | Left as free/frictionless — matches the "manual, not automatic" philosophy behind achieve/abandon (ADR 0007); a confirm/nudge here is a `proto-polish`-scale call, not a hardening one |
