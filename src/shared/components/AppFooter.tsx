@@ -8,10 +8,10 @@ export function AppFooter() {
     <footer className="border-t border-border">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <span className="font-medium text-foreground">Bricks</span>
-        <nav aria-label="Nawigacja pomocnicza" className="flex flex-wrap gap-x-4 gap-y-1">
-          <span className="opacity-60">Ustawienia</span>
-          <span className="opacity-60">Eksport</span>
-          <span className="opacity-60">O aplikacji</span>
+        <nav aria-label="Secondary navigation" className="flex flex-wrap gap-x-4 gap-y-1">
+          <span className="opacity-60">Settings</span>
+          <span className="opacity-60">Export</span>
+          <span className="opacity-60">About</span>
         </nav>
       </div>
     </footer>

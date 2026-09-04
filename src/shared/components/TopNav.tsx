@@ -5,7 +5,7 @@ import { NAV_ITEMS } from '@/shared/navigation'
 /** Desktop top-bar navigation. Hidden on mobile (BottomTabs takes over). */
 export function TopNav({ className }: { className?: string }) {
   return (
-    <nav aria-label="Główna nawigacja" className={cn('items-center gap-1', className)}>
+    <nav aria-label="Main navigation" className={cn('items-center gap-1', className)}>
       {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
         <NavLink
           key={path}

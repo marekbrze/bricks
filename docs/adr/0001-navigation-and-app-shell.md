@@ -16,8 +16,8 @@ looks like, before `proto-lofi` builds module screens.
 - Desktop: **top bar** in the header (brand + 4 module links).
 - Mobile: **fixed bottom tabs** (4 icons + labels).
 
-Only 4 of the 6 design modules are top-level nav destinations — `Dziś` (`today`),
-`Drogi` (`paths`), `Inbox` (`capture-triage`), `Log` (`winlog`). `vision` and
+Only 4 of the 6 design modules are top-level nav destinations — `Today` (`today`),
+`Paths` (`paths`), `Inbox` (`capture-triage`), `Log` (`winlog`). `vision` and
 `goals` are sub-navigation inside a Path.
 
 - **Home** (`/`) redirects to `/today`. No separate dashboard — stats/streaks live

@@ -10,11 +10,11 @@ Five of the six modules are **Core** — this is a focused personal tool with al
 
 ### paths
 **Type**: Core
-**Description**: The container layer. Create and manage never-ending life directions (droga sportu, droga zarobków), seed and tick off order-independent `Achievement`s, and see the per-Path hub screen that pulls together the Vision summary, the Goal list, Achievements, and the contribution graph. Archiving and cascade-delete (with confirmation) live here.
+**Description**: The container layer. Create and manage never-ending life directions (the sport path, the earnings path), seed and tick off order-independent `Achievement`s, and see the per-Path hub screen that pulls together the Vision summary, the Goal list, Achievements, and the contribution graph. Archiving and cascade-delete (with confirmation) live here.
 **Entities**: `Path`, `Achievement`
 **Key Actions**: Create Path (+ initial Achievements), rename, reorder, archive/unarchive, delete (cascade), view Path overview; add/edit/delete Achievement, mark/un-mark achieved.
 **Connects to**: `vision` (Path overview embeds Vision summary; "open Vision board"); `goals` (Path overview lists Goals; Goals are created under a Path); `winlog` (Path overview embeds ContributionGraph for the Path); `today` (Today view groups Actions by Path); `capture-triage` (an Action can be assigned standalone to a Path).
-**Design priority**: High — it is the hub screen every other module surfaces through, and the mental model ("Droga") has to land here first.
+**Design priority**: High — it is the hub screen every other module surfaces through, and the mental model (the "Path") has to land here first.
 
 ---
 
@@ -44,7 +44,7 @@ Five of the six modules are **Core** — this is a focused personal tool with al
 **Entities**: `Action` (states `inbox` → `assigned`)
 **Key Actions**: Capture to Inbox, open Inbox review, process next item, assign to Path/Goal, mark standalone, promote Action to Goal, discard item, move Action between Goals/Paths.
 **Connects to**: `goals` (assign to / promote into a Goal); `paths` (assign standalone to a Path); `today` (triaged Actions become schedulable).
-**Design priority**: High — the card-by-card processing flow is the most novel interaction in the app and central to the "świadome działanie bez paraliżu" promise. `PairwisePrioritization` is deferred but this is where it will land.
+**Design priority**: High — the card-by-card processing flow is the most novel interaction in the app and central to the "deliberate action without paralysis" promise. `PairwisePrioritization` is deferred but this is where it will land.
 
 ---
 
@@ -60,7 +60,7 @@ Five of the six modules are **Core** — this is a focused personal tool with al
 
 ### winlog
 **Type**: Core
-**Description**: The motivational payoff and the #1 differentiator vs Griply. A chronological history of completed Actions and achieved Goals, plus a GitHub-contribution-graph-style visualization of cumulative wins — global, per Path, and per Goal. Emphasis on accumulation ("ile już zrobiłem"), not percent-complete, as a deliberate counterweight to negative bias.
+**Description**: The motivational payoff and the #1 differentiator vs Griply. A chronological history of completed Actions and achieved Goals, plus a GitHub-contribution-graph-style visualization of cumulative wins — global, per Path, and per Goal. Emphasis on accumulation ("how much I've already done"), not percent-complete, as a deliberate counterweight to negative bias.
 **Entities**: none stored — derived from `Action.completedAt` and `Goal` achievement.
 **Key Actions**: Open WinLog, open ContributionGraph (global / per Path / per Goal).
 **Connects to**: `today` (completed Actions feed it); `goals` (achieved Goals feed it; per-Goal graph shown in Goal progress); `paths` (per-Path graph shown in Path overview).

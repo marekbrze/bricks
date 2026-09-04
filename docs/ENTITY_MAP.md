@@ -29,10 +29,10 @@ Relationship notes:
 ## Entities
 
 ### Path
-**Description**: Top-level, never-ending direction of life (droga sportu, droga zarobków). The container everything else sits under.
+**Description**: Top-level, never-ending direction of life (the sport path, the earnings path). The container everything else sits under.
 **Instances per user**: Many (a handful active at a time).
 **Ownership**: Owner.
-**Lifecycle**: Created with a name + a few initial `Achievement`s (Vision optional at creation). Never "completed". Can be archived, then deleted. **Deleting a Path cascades** — removes its Vision, Achievements, Goals and Actions — behind a confirmation dialog ("na pewno?").
+**Lifecycle**: Created with a name + a few initial `Achievement`s (Vision optional at creation). Never "completed". Can be archived, then deleted. **Deleting a Path cascades** — removes its Vision, Achievements, Goals and Actions — behind a confirmation dialog ("are you sure?").
 **States**: `active` → `archived` (reversible) → *deleted*.
 **Contains**: one `Vision`, many `Achievement`, many `Goal`, many standalone `Action`.
 **Belongs to**: Owner.
@@ -65,7 +65,7 @@ Relationship notes:
 **Belongs to**: `Vision`.
 
 ### Achievement
-**Description**: A thing to reach "along the way" on a Path — order-independent, not a task and not requiring concrete actions (nauczyłem się podciągania, zrobiłem muscle-up, 100 pompek). Renamed from "Milestone" because milestones read as sequential; these are not.
+**Description**: A thing to reach "along the way" on a Path — order-independent, not a task and not requiring concrete actions ("I can do a pull-up", "muscle-up", "100 push-ups"). Renamed from "Milestone" because milestones read as sequential; these are not.
 **Instances per user**: Many per Path.
 **Ownership**: Owner.
 **Lifecycle**: Created on the Path (often several at Path creation), toggled done, deleted.
@@ -99,4 +99,4 @@ Relationship notes:
 Append-feeling history of completed `Action`s and achieved `Goal`s, ordered by completion date. Un-checking an Action removes it from the log; deleting the Action removes it from history (see Open Questions in PROJECT.md — whether history should survive deletion is unresolved).
 
 ### ContributionGraph
-GitHub-contribution-graph-style visualization of cumulative wins toward a Goal / Path over time. Emphasis on accumulation ("ile już zrobiłem"), not percent-complete.
+GitHub-contribution-graph-style visualization of cumulative wins toward a Goal / Path over time. Emphasis on accumulation ("how much I've already done"), not percent-complete.

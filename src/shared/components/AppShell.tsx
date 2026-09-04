@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:ring-3 focus:ring-ring/50"
       >
-        Przejdź do treści
+        Skip to content
       </a>
 
       <AppHeader />

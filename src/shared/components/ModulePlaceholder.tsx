@@ -9,14 +9,14 @@ import { NAV_ITEMS } from '@/shared/navigation'
 export function ModulePlaceholder() {
   const { moduleName } = useParams()
   const nav = NAV_ITEMS.find((item) => item.module === moduleName)
-  const title = nav?.label ?? moduleName ?? 'Moduł'
+  const title = nav?.label ?? moduleName ?? 'Module'
 
   return (
     <section className="mx-auto max-w-md py-16 text-center">
       <h1 className="text-xl font-semibold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Moduł <code className="rounded bg-muted px-1 py-0.5">{moduleName}</code> — ekrany doda{' '}
-        <code className="rounded bg-muted px-1 py-0.5">proto-lofi</code>.
+        Module <code className="rounded bg-muted px-1 py-0.5">{moduleName}</code> — screens will be
+        added by <code className="rounded bg-muted px-1 py-0.5">proto-lofi</code>.
       </p>
     </section>
   )

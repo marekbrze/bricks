@@ -10,7 +10,7 @@ import { NAV_ITEMS } from '@/shared/navigation'
 export function BottomTabs() {
   return (
     <nav
-      aria-label="Główna nawigacja"
+      aria-label="Main navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >

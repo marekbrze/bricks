@@ -18,8 +18,8 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { module: 'today', label: 'Dziś', path: '/today', icon: CalendarDays },
-  { module: 'paths', label: 'Drogi', path: '/paths', icon: Signpost },
+  { module: 'today', label: 'Today', path: '/today', icon: CalendarDays },
+  { module: 'paths', label: 'Paths', path: '/paths', icon: Signpost },
   { module: 'capture-triage', label: 'Inbox', path: '/capture-triage', icon: Inbox },
   { module: 'winlog', label: 'Log', path: '/winlog', icon: Trophy },
 ]

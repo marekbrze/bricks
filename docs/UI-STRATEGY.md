@@ -20,8 +20,8 @@ The application shell — the frame every module screen renders inside. Structur
 
 | Module (code) | Label (display) | Route | Order |
 |---|---|---|---|
-| `today` | Dziś | `/today` | 1 |
-| `paths` | Drogi | `/paths` | 2 |
+| `today` | Today | `/today` | 1 |
+| `paths` | Paths | `/paths` | 2 |
 | `capture-triage` | Inbox | `/capture-triage` | 3 |
 | `winlog` | Log | `/winlog` | 4 |
 
@@ -35,9 +35,9 @@ Route segment == module code name, so `proto-lofi` maps each route to its module
 ## Shared elements
 
 - **Header**: yes — always visible, sticky. Brand ("Bricks", links home) + desktop top-bar nav + an empty right-side slot reserved for future actions (settings, export).
-- **Footer**: yes — **non-fixed**, at the end of the content flow. Mostly for mobile, where the user scrolls past content to reach it (the fixed bottom tabs sit below it; the content wrapper carries `pb-16` so it clears them). Placeholder links: Ustawienia, Eksport, O aplikacji.
+- **Footer**: yes — **non-fixed**, at the end of the content flow. Mostly for mobile, where the user scrolls past content to reach it (the fixed bottom tabs sit below it; the content wrapper carries `pb-16` so it clears them). Placeholder links: Settings, Export, About.
 - **Notifications**: no — single-user local tool.
-- **Skip link**: "Przejdź do treści" jump to `#main-content` (WCAG 2.2 AAA target).
+- **Skip link**: "Skip to content" jump to `#main-content` (WCAG 2.2 AAA target).
 
 ## Files
 
