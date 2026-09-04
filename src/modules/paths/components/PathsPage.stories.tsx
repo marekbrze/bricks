@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PathsPage } from './PathsPage'
-import { withPaths, MOCK_PATHS } from './story-helpers'
+import { withPaths, seedCorruptPaths, MOCK_PATHS } from './story-helpers'
 
 const meta: Meta<typeof PathsPage> = {
   title: 'Paths/PathsPage',
@@ -24,4 +24,9 @@ export const EmptyState: Story = {
 
 export const OnlyArchived: Story = {
   decorators: [withPaths(MOCK_PATHS.filter((p) => p.archived))],
+}
+
+/** Stored value is present but unparseable — recovery screen, not the empty state. */
+export const DataUnreadable: Story = {
+  decorators: [seedCorruptPaths()],
 }

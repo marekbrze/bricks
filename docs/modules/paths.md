@@ -104,26 +104,38 @@ out of the way on their own screen; the main list is only active directions.
    > 3 Goals, 12 Actions. This cannot be undone.
    > [Cancel] [Delete Path]
 3. Confirm → the Path and everything under it (Vision, VisionNotes, VisionImages,
-   Achievements, Goals, sub-Goals, Actions) is removed → user returns to `/paths`.
-4. Counts in the dialog are computed live from the actual contents.
+   Achievements, Goals, sub-Goals, Actions) is removed → user returns to `/paths`
+   with a "“Sport” deleted" confirmation toast, focus on the page heading.
+4. The dialog is an `AlertDialog` (no dismiss on outside click). Cascade counts
+   for Goals / Actions / Vision tiles are **estimates** until those modules are
+   built — the dialog says so; Achievement count is real.
 
 ## Screens (rough)
 
 - **Paths list** (`/paths`): primary **New Path** button; responsive **card grid**
-  of active Paths (name, `N goals · M achievements`, mini contribution graph,
-  Vision snippet, drag handle, overflow menu); **View archived** link at the end.
-  Empty state when there are no Paths.
+  of active Paths (name — clamped to 2 lines, `N goals · M achievements`, mini
+  contribution graph, Vision snippet, drag handle, overflow menu); **View
+  archived** link at the end. Empty state when there are no Paths.
 - **New Path modal**: name input + repeatable Achievement rows (+ add another / ✕),
-  Cancel / Create. Name required.
+  Cancel / Create. Name required (inline error). A dirty form asks to confirm
+  before discarding on Cancel / Escape / backdrop.
 - **Path overview** (`/paths/:pathId`): contextual header (name, back, overflow:
   Rename / Archive / Delete); stacked sections — Vision summary (+ open board),
   Goals list (+ open goals), Achievements checklist (inline add/edit/check/delete,
-  `X/Y achieved` header), per-Path contribution graph.
+  `X/Y achieved` header with a done treatment at `Y/Y`), per-Path contribution
+  graph. **Archived Paths render read-only**: a restore banner at the top, and
+  the Achievements section disables add/edit/check/delete until unarchived.
 - **Archived Paths** (`/paths/archived`): muted list of archived Paths with
   Unarchive / Delete per row; back to `/paths`. Empty state when nothing archived.
-- **Delete confirmation dialog**: destructive summary with live counts, Cancel /
-  Delete Path.
-- **Rename**: inline edit or small dialog.
+- **Delete confirmation** (`AlertDialog`): destructive cascade summary (counts
+  flagged as estimates), Cancel / Delete Path.
+- **Rename**: small dialog with the current name prefilled.
+- **Data-unreadable recovery** (all three routes): shown instead of content when
+  the stored `paths` value is corrupt — explains the data can’t be read (not that
+  it’s empty) and offers a confirmed reset.
+- **Storage-failure banner** (app shell, every screen): shown when a LocalStorage
+  write fails or storage is blocked outright — edits stay in memory but won’t
+  survive a reload.
 
 ## Actions
 
@@ -132,14 +144,14 @@ out of the way on their own screen; the main list is only active directions.
 | Create Path | Single modal: name + initial Achievement rows; Vision untouched | `Path` | Name required; empty Achievement rows dropped |
 | Rename Path | Overflow menu → inline / small dialog | `Path` | |
 | Add Achievements on create | Repeatable rows in the New Path modal | `Achievement` | Seeded in `open` state |
-| Reorder Paths | Drag handle on cards + keyboard move-up/down fallback | `Path` | Drives Today view section order |
-| Archive Path | Overflow menu → light confirm; contents kept | `Path` | Reversible |
-| Unarchive Path | From `/paths/archived`; returns to end of active order | `Path` | |
-| Delete Path | Overflow menu / archived list → confirmation dialog with live cascade counts | `Path` | Cascades to Vision, Achievements, Goals, Actions |
+| Reorder Paths | Drag handle on cards + keyboard move-up/down fallback | `Path` | Drives Today view section order; each move shows an Undo toast |
+| Archive Path | Overflow menu → immediate + Undo toast (restores exact prior state); contents kept | `Path` | Reversible; from the overview it also navigates back to `/paths` |
+| Unarchive Path | From `/paths/archived` or the archived overview’s restore banner; returns to end of active order; confirmation toast | `Path` | |
+| Delete Path | Overflow menu / archived list → `AlertDialog` with a cascade summary (estimated counts) | `Path` | Cascades to Vision, Achievements, Goals, Actions; confirmation toast, no undo |
 | View Path overview | The hub screen: Vision summary + Goals + Achievements + graph | `Path` | Vision / Goals / graph rendered by other modules |
 | Add Achievement | Inline **+ add achievement** row on the overview | `Achievement` | Appends; order not meaningful |
 | Edit Achievement | Click text → inline edit | `Achievement` | |
-| Mark achieved | Tick checkbox → `achieved` + today's date | `Achievement` | Feeds `WinLog` / `ContributionGraph` |
+| Mark achieved | Tick checkbox → `achieved` + local date | `Achievement` | Feeds `WinLog` / `ContributionGraph`; re-ticking keeps the original date |
 | Un-mark achieved | Untick → `open`, date cleared | `Achievement` | Deliberately reversible |
 | Delete Achievement | Row remove control | `Achievement` | Lightweight, no heavy confirm |
 
@@ -148,35 +160,48 @@ everything maps to existing `docs/ACTIONS.md` and `docs/ENTITY_MAP.md`.
 
 ## Edge Cases
 
-Captured here as they came up; the systematic audit is `proto-edgecases`.
+Systematically audited in `docs/modules/paths-edgecases.md` and hardened
+(proto-harden, 2026-09-04). Decided behaviors:
 
-- **No Paths at all**: `/paths` shows an empty state explaining the Path concept in
-  one or two lines + a prominent **Create your first Path**. The rest of the app
-  (Today, Inbox, Log) has nothing to group by until a Path exists.
-- **Path with no Achievements**: the Achievements section shows its own empty state
-  ("Nothing along the way yet") with the inline add row still present. Counter
-  reads `0/0` or is hidden.
-- **Path with no Goals / empty Vision**: each section renders its own empty state
+- **No Paths at all**: `/paths` empty state explains the Path concept + a
+  prominent **Create your first Path**.
+- **Path with no Achievements**: the Achievements section shows its own empty
+  state with the inline add row still present; the counter is hidden at `0`.
+- **Path with no Goals / empty Vision**: each section renders its own placeholder
   and its "add / open" affordance; the overview never looks broken.
-- **All Achievements achieved**: counter reads `8/8`; consider a subtle done
-  treatment (not blocking).
-- **Create Path with empty name**: Create is disabled / shows an inline error;
-  never create an unnamed Path.
-- **Duplicate Path name**: allowed (personal tool) — no uniqueness constraint, but
-  maybe a soft hint.
-- **Very long Path or Achievement text**: cards and rows must truncate gracefully;
-  no breadcrumbs anywhere (per UI-STRATEGY) so headers wrap rather than clip.
-- **Deleting the last active Path**: allowed; drops the user back to the `/paths`
-  empty state.
-- **Archiving the last active Path**: same — active grid goes to empty state, but
-  `/paths/archived` now has content.
-- **Unmark achieved after it fed the graph**: the win is removed from
-  `WinLog` / `ContributionGraph` (consistent with un-completing an Action).
-- **Reorder with only one Path**: drag handle is inert / hidden.
-- **LocalStorage unavailable or corrupt**: the Paths list is the first screen that
-  needs persisted data — needs a readable failure state rather than a blank grid.
-- **Deep-link to a deleted / archived `:pathId`**: `/paths/:pathId` for a missing
-  or archived Path needs a not-found / "this Path was archived" state.
+- **All Achievements achieved**: the `Y/Y achieved` counter gets a check icon and
+  full-strength colour — a quiet done treatment, non-blocking.
+- **Create Path with empty name**: Create shows an inline error; never creates an
+  unnamed Path. Empty Achievement rows are dropped.
+- **Unsaved input in the New Path modal**: a dirty form asks to confirm before
+  discarding on Cancel / Escape / backdrop.
+- **Duplicate Path name**: allowed (personal tool) — no uniqueness constraint.
+- **Very long Path / Achievement text**: card title clamps to 2 lines with
+  `break-words`; the archived list truncates; the overview `<h1>` wraps.
+- **Deleting / archiving the last active Path**: allowed; the grid drops to its
+  empty state (archived Paths still reachable via the link).
+- **Archive**: immediate + Undo toast that restores the exact prior state.
+- **Delete**: `AlertDialog` with an estimated cascade summary; confirmation
+  toast; no undo (permanent).
+- **Reorder**: each move shows an Undo toast; the drag handle and Move up/down
+  are inert with only one Path.
+- **Un-mark then re-mark an Achievement**: the original `achievedOn` is kept, not
+  overwritten with today.
+- **Archived Path overview**: read-only — a restore banner plus a disabled
+  Achievements section — until unarchived.
+- **LocalStorage write fails / blocked**: an app-wide banner (every screen);
+  edits stay in memory for the session but won't survive a reload.
+- **LocalStorage value corrupt**: a dedicated recovery screen on every Paths
+  route — "we couldn't read your saved Paths" (distinct from the empty state) +
+  a confirmed reset.
+- **Deep-link to a deleted `:pathId`**: `PathNotFound` state with a way back.
+- **Timezone**: Achievement dates and contribution-graph day keys use the local
+  calendar date, not UTC.
+
+Deferred (see `paths-edgecases.md` → Hardening status): input length limits (#13),
+a touch-reorder discoverability hint (#14), an async double-submit guard (#17,
+harmless while creation is synchronous), and an app-wide date-format convention
+(#18).
 
 ## Integration Points
 

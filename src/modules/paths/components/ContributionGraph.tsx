@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 
+/** Local calendar date (YYYY-MM-DD), matching how win days are keyed in the hook. */
+function localIso(date: Date): string {
+  const offsetMs = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10)
+}
+
 /**
  * Lightweight GitHub-style contribution grid. The real `ContributionGraph` is
  * owned by the `winlog` module — this is a stand-in so the `paths` prototype can
@@ -29,7 +35,7 @@ export function ContributionGraph({
       for (let d = 0; d < 7; d++) {
         const date = new Date(end)
         date.setDate(end.getDate() - w * 7 - (6 - d))
-        const iso = date.toISOString().slice(0, 10)
+        const iso = localIso(date)
         col.push({ iso, count: winDays[iso] ?? 0, future: date > today })
       }
       cols.push(col)

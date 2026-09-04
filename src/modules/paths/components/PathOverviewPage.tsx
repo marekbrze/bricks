@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { ArrowLeft, ArchiveRestore } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ContributionGraph } from './ContributionGraph'
@@ -10,12 +11,16 @@ import { PathOverflowMenu } from './PathOverflowMenu'
 import { RenamePathDialog } from './RenamePathDialog'
 import { DeletePathDialog } from './DeletePathDialog'
 import { PathNotFound } from './PathNotFound'
+import { PathsDataUnreadable } from './PathsDataUnreadable'
 
 export function PathOverviewPage() {
   const { pathId = '' } = useParams()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const {
     getPath,
+    dataUnreadable,
+    resetPaths,
     renamePath,
     archivePath,
     unarchivePath,
@@ -30,8 +35,12 @@ export function PathOverviewPage() {
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  if (dataUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
+
   const path = getPath(pathId)
   if (!path) return <PathNotFound />
+
+  const readOnly = path.archived
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,28 +49,35 @@ export function PathOverviewPage() {
           <ArrowLeft aria-hidden="true" /> Paths
         </Link>
         <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-semibold">{path.name}</h1>
-            {path.archived && (
-              <span className="text-xs font-medium text-muted-foreground">Archived</span>
-            )}
-          </div>
+          <h1 className="text-xl font-semibold">{path.name}</h1>
           <PathOverflowMenu
             pathName={path.name}
-            onRename={() => setRenaming(true)}
+            onRename={readOnly ? undefined : () => setRenaming(true)}
             onArchive={
-              path.archived
+              readOnly
                 ? undefined
                 : () => {
-                    archivePath(path.id)
+                    const undo = archivePath(path.id)
+                    showToast(`“${path.name}” archived`, { label: 'Undo', onClick: undo })
                     navigate('/paths')
                   }
             }
-            onUnarchive={path.archived ? () => unarchivePath(path.id) : undefined}
+            onUnarchive={readOnly ? () => unarchivePath(path.id) : undefined}
             onDelete={() => setDeleting(true)}
           />
         </div>
       </div>
+
+      {readOnly && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+          <p className="text-sm text-muted-foreground">
+            This Path is archived. Its contents are kept but read-only until you restore it.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => unarchivePath(path.id)}>
+            <ArchiveRestore aria-hidden="true" /> Unarchive
+          </Button>
+        </div>
+      )}
 
       <ModuleStubSection
         id="vision-heading"
@@ -86,6 +102,7 @@ export function PathOverviewPage() {
 
       <AchievementsSection
         achievements={path.achievements}
+        readOnly={readOnly}
         onAdd={(title) => addAchievement(path.id, title)}
         onEdit={(id, title) => editAchievement(path.id, id, title)}
         onToggle={(id, achieved) => setAchievementState(path.id, id, achieved)}
@@ -113,8 +130,9 @@ export function PathOverviewPage() {
         pathName={path.name}
         counts={cascadeCounts(path.id)}
         onConfirm={() => {
+          const name = path.name
           deletePath(path.id)
-          navigate('/paths')
+          navigate('/paths', { state: { deletedName: name } })
         }}
       />
     </div>

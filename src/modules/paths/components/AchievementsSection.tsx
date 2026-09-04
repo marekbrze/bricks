@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Check, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -8,11 +8,13 @@ import type { Achievement } from '../types/path'
 
 function AchievementRow({
   achievement,
+  readOnly,
   onToggle,
   onEdit,
   onDelete,
 }: {
   achievement: Achievement
+  readOnly: boolean
   onToggle: (achieved: boolean) => void
   onEdit: (title: string) => void
   onDelete: () => void
@@ -32,12 +34,13 @@ function AchievementRow({
     <li className="group flex items-center gap-3 py-1.5">
       <Checkbox
         checked={achieved}
+        disabled={readOnly}
         onCheckedChange={(value) => onToggle(value)}
         aria-label={
           achieved ? `Mark “${achievement.title}” not achieved` : `Mark “${achievement.title}” achieved`
         }
       />
-      {editing ? (
+      {editing && !readOnly ? (
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -54,6 +57,10 @@ function AchievementRow({
           aria-label={`Edit achievement “${achievement.title}”`}
           className="h-7"
         />
+      ) : readOnly ? (
+        <span className={cn('flex-1 text-sm', achieved && 'text-muted-foreground line-through')}>
+          {achievement.title}
+        </span>
       ) : (
         <button
           type="button"
@@ -74,7 +81,7 @@ function AchievementRow({
           {achievement.achievedOn}
         </span>
       )}
-      {!editing && (
+      {!editing && !readOnly && (
         <Button
           variant="ghost"
           size="icon-xs"
@@ -91,12 +98,14 @@ function AchievementRow({
 
 export function AchievementsSection({
   achievements,
+  readOnly = false,
   onAdd,
   onEdit,
   onToggle,
   onDelete,
 }: {
   achievements: Achievement[]
+  readOnly?: boolean
   onAdd: (title: string) => void
   onEdit: (id: string, title: string) => void
   onToggle: (id: string, achieved: boolean) => void
@@ -104,6 +113,7 @@ export function AchievementsSection({
 }) {
   const [newTitle, setNewTitle] = useState('')
   const achievedCount = achievements.filter((a) => a.state === 'achieved').length
+  const allAchieved = achievements.length > 0 && achievedCount === achievements.length
 
   const addNow = () => {
     if (!newTitle.trim()) return
@@ -118,7 +128,13 @@ export function AchievementsSection({
           Achievements
         </h2>
         {achievements.length > 0 && (
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 text-xs tabular-nums',
+              allAchieved ? 'font-medium text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            {allAchieved && <Check className="size-3.5" aria-hidden="true" />}
             {achievedCount}/{achievements.length} achieved
           </span>
         )}
@@ -126,7 +142,9 @@ export function AchievementsSection({
 
       {achievements.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nothing along the way yet — add the things you want to be able to do one day.
+          {readOnly
+            ? 'No achievements were added to this Path.'
+            : 'Nothing along the way yet — add the things you want to be able to do one day.'}
         </p>
       ) : (
         <ul className="divide-y divide-border">
@@ -134,6 +152,7 @@ export function AchievementsSection({
             <AchievementRow
               key={a.id}
               achievement={a}
+              readOnly={readOnly}
               onToggle={(achieved) => onToggle(a.id, achieved)}
               onEdit={(title) => onEdit(a.id, title)}
               onDelete={() => onDelete(a.id)}
@@ -142,24 +161,26 @@ export function AchievementsSection({
         </ul>
       )}
 
-      <div className="flex items-center gap-2 pt-1">
-        <Input
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              addNow()
-            }
-          }}
-          placeholder="Add an achievement…"
-          aria-label="New achievement"
-          className="h-7"
-        />
-        <Button variant="ghost" size="sm" onClick={addNow} disabled={!newTitle.trim()}>
-          <Plus aria-hidden="true" /> Add
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex items-center gap-2 pt-1">
+          <Input
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addNow()
+              }
+            }}
+            placeholder="Add an achievement…"
+            aria-label="New achievement"
+            className="h-7"
+          />
+          <Button variant="ghost" size="sm" onClick={addNow} disabled={!newTitle.trim()}>
+            <Plus aria-hidden="true" /> Add
+          </Button>
+        </div>
+      )}
     </section>
   )
 }

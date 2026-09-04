@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogClose,
+} from '@/components/ui/alert-dialog'
 import type { PathCascadeCounts } from '../types/path'
 
 export function DeletePathDialog({
@@ -30,33 +31,32 @@ export function DeletePathDialog({
   lines.push(`${counts.actions} ${counts.actions === 1 ? 'Action' : 'Actions'}`)
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Delete “{pathName}”?</DialogTitle>
-          <DialogDescription>This permanently deletes:</DialogDescription>
-        </DialogHeader>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete “{pathName}”?</AlertDialogTitle>
+          <AlertDialogDescription>This permanently deletes:</AlertDialogDescription>
+        </AlertDialogHeader>
         <ul className="list-disc pl-5 text-sm text-muted-foreground">
           {lines.map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ul>
+        <p className="text-xs text-muted-foreground">
+          Goal, Action and Vision counts are estimates until those modules are built.
+        </p>
         <p className="text-sm font-medium text-destructive">This cannot be undone.</p>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              onConfirm()
-              onOpenChange(false)
-            }}
-          >
-            Delete Path
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <AlertDialogFooter>
+          <AlertDialogClose render={<Button variant="ghost">Cancel</Button>} />
+          <AlertDialogClose
+            render={
+              <Button variant="destructive" onClick={onConfirm}>
+                Delete Path
+              </Button>
+            }
+          />
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

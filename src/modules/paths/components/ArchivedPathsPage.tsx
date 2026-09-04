@@ -2,14 +2,25 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import { DeletePathDialog } from './DeletePathDialog'
+import { PathsDataUnreadable } from './PathsDataUnreadable'
 
 export function ArchivedPathsPage() {
-  const { archivedPaths, unarchivePath, deletePath, cascadeCounts } = usePaths()
+  const { archivedPaths, dataUnreadable, resetPaths, unarchivePath, deletePath, cascadeCounts } =
+    usePaths()
+  const { showToast } = useToast()
   const [deleting, setDeleting] = useState<Path | null>(null)
+
+  if (dataUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
+
+  const handleUnarchive = (path: Path) => {
+    unarchivePath(path.id)
+    showToast(`“${path.name}” restored`)
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,12 +49,12 @@ export function ArchivedPathsPage() {
                     {path.archivedAt ? ` · archived ${path.archivedAt.slice(0, 10)}` : ''}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => unarchivePath(path.id)}>
+                <Button variant="outline" size="sm" onClick={() => handleUnarchive(path)}>
                   Unarchive
                 </Button>
                 <PathOverflowMenu
                   pathName={path.name}
-                  onUnarchive={() => unarchivePath(path.id)}
+                  onUnarchive={() => handleUnarchive(path)}
                   onDelete={() => setDeleting(path)}
                 />
               </li>
@@ -58,7 +69,11 @@ export function ArchivedPathsPage() {
           onOpenChange={(o) => !o && setDeleting(null)}
           pathName={deleting.name}
           counts={cascadeCounts(deleting.id)}
-          onConfirm={() => deletePath(deleting.id)}
+          onConfirm={() => {
+            const name = deleting.name
+            deletePath(deleting.id)
+            showToast(`“${name}” deleted`)
+          }}
         />
       )}
     </div>

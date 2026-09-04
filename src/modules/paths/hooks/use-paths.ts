@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useLocalStorage } from '@/shared/hooks/use-local-storage'
+import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
 import type { Achievement, Path, PathCascadeCounts } from '../types/path'
 
@@ -24,16 +24,27 @@ export function isStorageAvailable(): boolean {
   }
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10)
+/** Local calendar date (YYYY-MM-DD) — not UTC, so "today" matches the user's day. */
+function todayLocalIso(): string {
+  const d = new Date()
+  const offsetMs = d.getTimezoneOffset() * 60_000
+  return new Date(d.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
 function byOrder(a: Path, b: Path): number {
   return a.order - b.order
 }
 
+/** A function that reverts one mutation; wired to an Undo toast by the caller. */
+export type UndoFn = () => void
+
 export function usePaths() {
-  const [paths, setPaths] = useLocalStorage<Path[]>(STORAGE_KEY, INITIAL_PATHS)
+  const {
+    value: paths,
+    setValue: setPaths,
+    removeValue: clearPaths,
+    corrupt,
+  } = useLocalStorageState<Path[]>(STORAGE_KEY, INITIAL_PATHS)
   const storageOk = useMemo(isStorageAvailable, [])
 
   const activePaths = useMemo(
@@ -51,6 +62,14 @@ export function usePaths() {
   const getPath = useCallback((id: string) => paths.find((p) => p.id === id), [paths])
 
   const touch = (p: Path): Path => ({ ...p, updatedAt: new Date().toISOString() })
+
+  /** Restore the entire list to a snapshot — the basis for every Undo. */
+  const restoreSnapshot = useCallback(
+    (snapshot: Path[]): UndoFn =>
+      () =>
+        setPaths(snapshot),
+    [setPaths],
+  )
 
   const createPath = useCallback(
     (name: string, achievementTitles: string[]) => {
@@ -87,22 +106,36 @@ export function usePaths() {
 
   const renamePath = useCallback(
     (id: string, name: string) => {
-      setPaths(paths.map((p) => (p.id === id ? touch({ ...p, name: name.trim() }) : p)))
+      const trimmed = name.trim()
+      if (!trimmed) return
+      setPaths(paths.map((p) => (p.id === id ? touch({ ...p, name: trimmed }) : p)))
     },
     [paths, setPaths],
   )
 
-  const setArchived = useCallback(
-    (id: string, archived: boolean) => {
+  /** Archive a Path. Returns an Undo that restores its exact previous state. */
+  const archivePath = useCallback(
+    (id: string): UndoFn => {
+      const snapshot = paths
       setPaths(
-        paths.map((p) => {
-          if (p.id !== id) return p
-          if (archived) {
-            return touch({ ...p, archived: true, archivedAt: new Date().toISOString() })
-          }
-          const maxOrder = paths.reduce((m, x) => (x.archived ? m : Math.max(m, x.order)), -1)
-          return touch({ ...p, archived: false, archivedAt: null, order: maxOrder + 1 })
-        }),
+        paths.map((p) =>
+          p.id === id
+            ? touch({ ...p, archived: true, archivedAt: new Date().toISOString() })
+            : p,
+        ),
+      )
+      return restoreSnapshot(snapshot)
+    },
+    [paths, setPaths, restoreSnapshot],
+  )
+
+  const unarchivePath = useCallback(
+    (id: string) => {
+      const maxOrder = paths.reduce((m, x) => (x.archived ? m : Math.max(m, x.order)), -1)
+      setPaths(
+        paths.map((p) =>
+          p.id === id ? touch({ ...p, archived: false, archivedAt: null, order: maxOrder + 1 }) : p,
+        ),
       )
     },
     [paths, setPaths],
@@ -115,22 +148,27 @@ export function usePaths() {
     [paths, setPaths],
   )
 
-  /** Move an active Path to a new index within the active, order-sorted list. */
+  /**
+   * Move an active Path to a new index within the active, order-sorted list.
+   * Returns an Undo that restores the previous ordering.
+   */
   const reorderPath = useCallback(
-    (id: string, toIndex: number) => {
+    (id: string, toIndex: number): UndoFn => {
+      const snapshot = paths
       const ordered = paths.filter((p) => !p.archived).sort(byOrder)
       const from = ordered.findIndex((p) => p.id === id)
-      if (from === -1) return
+      if (from === -1) return () => {}
       const clamped = Math.max(0, Math.min(toIndex, ordered.length - 1))
-      if (from === clamped) return
+      if (from === clamped) return () => {}
       const [moved] = ordered.splice(from, 1)
       ordered.splice(clamped, 0, moved)
       const orderById = new Map(ordered.map((p, i) => [p.id, i]))
       setPaths(
         paths.map((p) => (orderById.has(p.id) ? { ...p, order: orderById.get(p.id)! } : p)),
       )
+      return restoreSnapshot(snapshot)
     },
-    [paths, setPaths],
+    [paths, setPaths, restoreSnapshot],
   )
 
   // --- Achievements -------------------------------------------------------
@@ -165,15 +203,13 @@ export function usePaths() {
 
   const setAchievementState = (pathId: string, achievementId: string, achieved: boolean) => {
     mutateAchievements(pathId, (list) =>
-      list.map((a) =>
-        a.id === achievementId
-          ? {
-              ...a,
-              state: achieved ? 'achieved' : 'open',
-              achievedOn: achieved ? todayIso() : null,
-            }
-          : a,
-      ),
+      list.map((a) => {
+        if (a.id !== achievementId) return a
+        if (!achieved) return { ...a, state: 'open', achievedOn: null }
+        // Preserve the original achieved date if it was set before — re-ticking
+        // after a mistaken un-tick shouldn't rewrite history.
+        return { ...a, state: 'achieved', achievedOn: a.achievedOn ?? todayLocalIso() }
+      }),
     )
   }
 
@@ -199,11 +235,15 @@ export function usePaths() {
     activePaths,
     archivedPaths,
     storageOk,
+    /** The stored `paths` value exists but is unreadable — show a recovery screen. */
+    dataUnreadable: corrupt,
+    /** Wipe the corrupt value and start clean. */
+    resetPaths: clearPaths,
     getPath,
     createPath,
     renamePath,
-    archivePath: (id: string) => setArchived(id, true),
-    unarchivePath: (id: string) => setArchived(id, false),
+    archivePath,
+    unarchivePath,
     deletePath,
     reorderPath,
     addAchievement,

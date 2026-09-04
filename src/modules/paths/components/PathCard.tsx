@@ -44,7 +44,7 @@ export function PathCard({
         <h3 className="min-w-0 flex-1 text-sm font-semibold">
           <Link
             to={`/paths/${path.id}`}
-            className="rounded-sm outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="line-clamp-2 rounded-sm break-words outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             {path.name}
           </Link>

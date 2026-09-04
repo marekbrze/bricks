@@ -1,20 +1,22 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Signpost } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathCard } from './PathCard'
 import { NewPathDialog } from './NewPathDialog'
 import { RenamePathDialog } from './RenamePathDialog'
 import { DeletePathDialog } from './DeletePathDialog'
-import { StorageWarning } from './StorageWarning'
+import { PathsDataUnreadable } from './PathsDataUnreadable'
 
 export function PathsPage() {
   const {
     activePaths,
     archivedPaths,
-    storageOk,
+    dataUnreadable,
+    resetPaths,
     createPath,
     renamePath,
     archivePath,
@@ -22,22 +24,47 @@ export function PathsPage() {
     reorderPath,
     cascadeCounts,
   } = usePaths()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { showToast } = useToast()
 
   const [creating, setCreating] = useState(false)
   const [renaming, setRenaming] = useState<Path | null>(null)
   const [deleting, setDeleting] = useState<Path | null>(null)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+
+  // Arrived here after deleting a Path from its overview — confirm it and take focus.
+  const deletedName = (location.state as { deletedName?: string } | null)?.deletedName
+  useEffect(() => {
+    if (!deletedName) return
+    showToast(`“${deletedName}” deleted`)
+    headingRef.current?.focus()
+    navigate('/paths', { replace: true })
+  }, [deletedName, showToast, navigate])
+
+  if (dataUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
+
+  const handleArchive = (path: Path) => {
+    const undo = archivePath(path.id)
+    showToast(`“${path.name}” archived`, { label: 'Undo', onClick: undo })
+  }
+
+  const handleReorder = (id: string, name: string, toIndex: number) => {
+    const undo = reorderPath(id, toIndex)
+    showToast(`Moved “${name}”`, { label: 'Undo', onClick: undo })
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Paths</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
+          Paths
+        </h1>
         <Button onClick={() => setCreating(true)}>
           <Plus aria-hidden="true" /> New Path
         </Button>
       </div>
-
-      {!storageOk && <StorageWarning />}
 
       {activePaths.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
@@ -66,7 +93,10 @@ export function PathsPage() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault()
-                if (dragIndex !== null && dragIndex !== index) reorderPath(activePaths[dragIndex].id, index)
+                if (dragIndex !== null && dragIndex !== index) {
+                  const moved = activePaths[dragIndex]
+                  handleReorder(moved.id, moved.name, index)
+                }
                 setDragIndex(null)
               }}
               onDragEnd={() => setDragIndex(null)}
@@ -77,10 +107,10 @@ export function PathsPage() {
                 index={index}
                 total={activePaths.length}
                 onRename={() => setRenaming(path)}
-                onArchive={() => archivePath(path.id)}
+                onArchive={() => handleArchive(path)}
                 onDelete={() => setDeleting(path)}
-                onMoveUp={() => reorderPath(path.id, index - 1)}
-                onMoveDown={() => reorderPath(path.id, index + 1)}
+                onMoveUp={() => handleReorder(path.id, path.name, index - 1)}
+                onMoveDown={() => handleReorder(path.id, path.name, index + 1)}
               />
             </li>
           ))}
@@ -98,7 +128,14 @@ export function PathsPage() {
         </p>
       )}
 
-      <NewPathDialog open={creating} onOpenChange={setCreating} onCreate={createPath} />
+      <NewPathDialog
+        open={creating}
+        onOpenChange={setCreating}
+        onCreate={(name, achievements) => {
+          const id = createPath(name, achievements)
+          navigate(`/paths/${id}`)
+        }}
+      />
 
       {renaming && (
         <RenamePathDialog
@@ -115,7 +152,11 @@ export function PathsPage() {
           onOpenChange={(o) => !o && setDeleting(null)}
           pathName={deleting.name}
           counts={cascadeCounts(deleting.id)}
-          onConfirm={() => deletePath(deleting.id)}
+          onConfirm={() => {
+            const name = deleting.name
+            deletePath(deleting.id)
+            showToast(`“${name}” deleted`)
+          }}
         />
       )}
     </div>

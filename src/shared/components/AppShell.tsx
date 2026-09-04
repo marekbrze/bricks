@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { AppHeader } from './AppHeader'
 import { AppFooter } from './AppFooter'
 import { BottomTabs } from './BottomTabs'
+import { StorageHealthBanner } from './StorageHealthBanner'
 
 /**
  * The frame every module screen renders inside.
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <AppHeader />
+      <StorageHealthBanner />
 
       <div className="flex flex-1 flex-col pb-16 md:pb-0">
         <main id="main-content" className="flex-1">

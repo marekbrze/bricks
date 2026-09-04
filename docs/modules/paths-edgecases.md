@@ -25,6 +25,7 @@ and the nested `vision` / `goals` placeholders). Audited against
   - Contribution graph with no wins → all-empty grid + "0 wins" — `src/modules/paths/components/ContributionGraph.tsx:63`
 - **New gaps found**: 18
 - **By severity**: 🔴 3 · 🟡 9 · 🟢 6
+- **Hardened (proto-harden, 2026-09-04)**: 12 closed, 1 partially closed (#3), 5 deferred — see "Hardening status" below.
 
 ## Inventory
 
@@ -81,6 +82,29 @@ and the nested `vision` / `goals` placeholders). Audited against
    and a clear decision on whether archived Paths are read-only.
 6. **Polish (#12–#18)** — date preservation, length limits, touch reorder hint,
    done treatment, timezone.
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | Where it lives now |
+|---|--------|--------------------|
+| 1 | ✅ | `src/shared/hooks/use-local-storage.ts:52` reports write failure → `src/shared/lib/storage-health.ts` → `src/shared/components/StorageHealthBanner.tsx` (in `AppShell`); value kept in memory so the session survives |
+| 2 | ✅ | `src/shared/hooks/use-local-storage.ts:19` flags a present-but-unparseable value → `usePaths().dataUnreadable` → `src/modules/paths/components/PathsDataUnreadable.tsx` (dedicated recovery screen on all three Paths routes) |
+| 3 | 🟨 partial | Cascade counts labelled as estimates — `src/modules/paths/components/DeletePathDialog.tsx:45`. Real counts still blocked on the `goals` / `vision` modules. |
+| 4 | ✅ | `StorageHealthBanner` rendered in `src/shared/components/AppShell.tsx` — every screen; also fires on the mount probe (storage blocked outright) |
+| 5 | ✅ | `src/modules/paths/components/NewPathDialog.tsx` — dirty-form discard confirmation intercepts Cancel / Escape / backdrop |
+| 6 | ✅ (revised) | Designer chose **undo toast over a confirm dialog** for Archive — `src/modules/paths/components/PathsPage.tsx` + `PathOverviewPage.tsx`; `usePaths().archivePath` returns an exact-state restore fn |
+| 7 | ✅ | Undo toast for archive & reorder; plain confirmation toast for delete & unarchive — `PathsPage.tsx`, `PathOverviewPage.tsx`, `ArchivedPathsPage.tsx`, `src/shared/components/toast/` |
+| 8 | ✅ | `src/modules/paths/components/PathsPage.tsx` `onCreate` → `navigate('/paths/:newId')` |
+| 9 | ✅ | Heading takes focus after post-delete navigation — `src/modules/paths/components/PathsPage.tsx` (`headingRef`, router `state.deletedName`). Empty-state-CTA focus is moot now that create navigates away. |
+| 10 | ✅ | `src/modules/paths/components/PathCard.tsx:44` — `line-clamp-2 break-words` on the card title |
+| 11 | ✅ | Archived Path overview is read-only + a restore banner — `src/modules/paths/components/PathOverviewPage.tsx` (`readOnly`), `AchievementsSection.tsx` (`readOnly` prop disables add/edit/check/delete) |
+| 12 | ✅ | `src/modules/paths/hooks/use-paths.ts` `setAchievementState` keeps the original `achievedOn` on re-tick |
+| 13 | ❌ deferred | Length limits on name / achievement text — low value now; revisit with the Dexie migration and real form fields |
+| 14 | ❌ deferred | Touch-device reorder hint — low; the overflow-menu Move up/down already works on touch, only discoverability is weak |
+| 15 | ✅ | `src/modules/paths/components/AchievementsSection.tsx` — `allAchieved` gives the counter a check icon + full-strength colour |
+| 16 | ✅ | Local-date keys — `src/modules/paths/hooks/use-paths.ts` `todayLocalIso`, `src/modules/paths/components/ContributionGraph.tsx` `localIso` |
+| 17 | ❌ deferred | Double-submit guard — harmless while creation is synchronous; note for the Dexie migration |
+| 18 | ❌ deferred | Date formatting convention — needs an app-wide decision, out of scope for one module |
 
 ## Hand-off to proto-harden
 

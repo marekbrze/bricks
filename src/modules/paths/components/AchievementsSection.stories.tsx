@@ -13,13 +13,14 @@ export default meta
 
 type Story = StoryObj<typeof AchievementsSection>
 
-function Harness({ initial }: { initial: Achievement[] }) {
+function Harness({ initial, readOnly }: { initial: Achievement[]; readOnly?: boolean }) {
   const [list, setList] = useState<Achievement[]>(initial)
   return (
     <Frame>
       <div className="max-w-md">
         <AchievementsSection
           achievements={list}
+          readOnly={readOnly}
           onAdd={(title) =>
             setList((l) => [...l, { id: generateId(), title, state: 'open', achievedOn: null }])
           }
@@ -66,6 +67,18 @@ export const AllAchieved: Story = {
       initial={[
         { id: '1', title: 'Run 5 km', state: 'achieved', achievedOn: '2026-04-01' },
         { id: '2', title: 'Run 10 km', state: 'achieved', achievedOn: '2026-07-01' },
+      ]}
+    />
+  ),
+}
+
+export const ReadOnly: Story = {
+  render: () => (
+    <Harness
+      readOnly
+      initial={[
+        { id: '1', title: 'I can do a strict pull-up', state: 'achieved', achievedOn: '2026-03-12' },
+        { id: '2', title: 'I can do a muscle-up', state: 'open', achievedOn: null },
       ]}
     />
   ),
