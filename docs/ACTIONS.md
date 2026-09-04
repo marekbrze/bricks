@@ -82,7 +82,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Create standalone Action | Add directly under a Path, no Goal | Owner | |
 | Edit Action | Change name (more fields later) | Owner | |
 | Triage Action | Card-by-card: assign to Path/Goal or mark standalone | Owner | Dedicated mode (DoItDone / AutoWork pattern) |
-| Promote Action to Goal | During triage, convert an Action that needs many actions into a Goal | Owner | |
+| Promote Action to Goal | During triage, convert an Action that needs many actions into a Goal | Owner | Originating Inbox Action is discarded once the Goal is created — its idea now lives as the Goal, not as a leftover Inbox item or a stray child Action |
 | Move Action between Goals/Paths | Re-assign | Owner | Core differentiator vs Griply |
 | Schedule Action | Set `scheduledDate` (today, tomorrow, any day) | Owner | Drives Today / day-navigation views |
 | Unschedule Action | Clear `scheduledDate` | Owner | |
@@ -99,7 +99,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 |--------|------------|------|-------|
 | Open Inbox review | Enter dedicated triage mode | Owner | Separate from any list view |
 | Process next item | Step through Inbox Actions one at a time | Owner | |
-| Discard item | Drop an Inbox Action without assigning | Owner | |
+| Discard item | Drop an Inbox Action without assigning | Owner | Immediate, no blocking confirm — backed by an Undo toast (same pattern as Path archive) |
 
 ### Today / Schedule views (derived, no entity)
 
