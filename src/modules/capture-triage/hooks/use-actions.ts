@@ -195,12 +195,22 @@ export function useActions() {
    * from the Review-abandoned surface, which is why it flips the state back
    * to `assigned` — an abandoned Action re-entering a day view is active
    * again, not still abandoned.
+   *
+   * A `done` Action keeps its `state`/`completedAt` when moved to another
+   * day ("Move to another day" on an already-completed row, per
+   * docs/modules/today.md) — only a non-`done` Action gets bumped to
+   * `assigned`. Flipping `done` back to `assigned` here would silently drop
+   * the Action's Win from `winlog` and un-check it in Today, even though
+   * the Owner only meant to move it, not un-complete it. See
+   * docs/modules/winlog-edgecases.md #1.
    */
   const scheduleAction = useCallback(
     (id: string, dateIso: string) => {
       setActions(
         actions.map((a) =>
-          a.id === id ? touch({ ...a, scheduledDate: dateIso, state: 'assigned' }) : a,
+          a.id === id
+            ? touch({ ...a, scheduledDate: dateIso, state: a.state === 'done' ? 'done' : 'assigned' })
+            : a,
         ),
       )
     },

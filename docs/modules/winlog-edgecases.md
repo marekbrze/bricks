@@ -17,14 +17,15 @@
   - Un-completing / reactivating / deleting → `use-win-log.ts:31-55` (`wins`
     is a `useMemo` over live `actions`/`goals` state — nothing is stored, so
     the next render simply excludes it. No separate handling needed).
-  - Action-Win links to `completedAt`'s date, not current scheduling →
-    `WinRow.tsx:13` uses `win.date`, which `use-win-log.ts:40` derives from
-    `a.completedAt`, never `a.scheduledDate`.
+  - Action-Win's *displayed* date is always `completedAt`'s date (`win.date`,
+    `use-win-log.ts:40`) regardless of current scheduling — only the link
+    *target* needed reconciling with live scheduling, see #2 below.
   - Same-day multiple Wins / Goal+Action same day → the data model already
     supports it (two independent `Win` entries); `daysMap` (`use-win-log.ts:14-18`)
     sums them into one cell count.
 - **New gaps found**: 8
 - **By severity**: 🔴 1 · 🟡 4 · 🟢 3
+- **Hardened (proto-harden, 2026-09-04)**: 8 closed, 0 deferred — see "Hardening status" below.
 
 ## Inventory
 
@@ -73,3 +74,16 @@ The top-priority gaps a harden pass should implement first:
   no-Paths-yet case (#5).
 - Everything else (#4, #6, #7, #8) is real but lower-impact — confirm with
   the designer whether to fold into this harden pass or defer.
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | What changed | Where |
+|---|--------|--------------|-------|
+| 1 | ✅ | `scheduleAction` now keeps `state: 'done'` when the Action being moved was already `done` — only a non-`done` Action still gets bumped to `assigned`. A moved-but-completed Action keeps its Win and its checked style on the new day | `src/modules/capture-triage/hooks/use-actions.ts` (`scheduleAction`) |
+| 2 | ✅ | `Win` gained `currentScheduledDate` (the Action's live `scheduledDate`, null for goal Wins); `WinRow` links there when present, falling back to the completed-on date otherwise | `src/modules/winlog/types/win.ts`, `src/modules/winlog/hooks/use-win-log.ts:41`, `src/modules/winlog/components/WinRow.tsx:13` |
+| 3 | ✅ | The Path filter moved from `useState` to a `?path=` query param via `useSearchParams`; an unknown/stale id falls back to "All Paths" instead of erroring (`isKnownPathId`) | `src/modules/winlog/components/LogPage.tsx` (`searchParams`/`setPathId`), `src/modules/winlog/hooks/use-win-log.ts` (`isKnownPathId`) |
+| 4 | ✅ | `PathFilterChips` is now fed active **and** archived Paths (`[...activePaths, ...archivedPaths]`), with an "(archived)" suffix on the chip label | `src/modules/winlog/components/LogPage.tsx` (`filterablePaths`), `PathFilterChips.tsx` |
+| 5 | ✅ | A dedicated "No Paths yet" state (distinct from "No wins yet") renders when there are zero Paths at all — active or archived — with a "Go to Paths" CTA | `src/modules/winlog/components/LogPage.tsx` |
+| 6 | ✅ | `tone()` gained two more tiers — six total (`0`/`1`/`2`/`3`/`4`/`5+`) — so a 5-win day reads more saturated than a 3-win day | `src/modules/winlog/components/ContributionGraph.tsx` (`tone`) |
+| 7 | ✅ | The History list now shows the first 50 Wins with a "Load more" button appending 50 more; resets on Path-filter change | `src/modules/winlog/components/LogPage.tsx` (`PAGE_SIZE`/`visibleCount`) |
+| 8 | ✅ | Each non-future day cell gets a `title` (date + win count) as a per-cell text alternative, on top of the grid's existing aggregate `aria-label` | `src/modules/winlog/components/ContributionGraph.tsx` |

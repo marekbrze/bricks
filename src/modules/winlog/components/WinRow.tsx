@@ -4,13 +4,18 @@ import { formatDayLabel } from '@/shared/lib/date'
 import type { Win } from '../types/win'
 
 /**
- * One entry in the Log's chronological list. An action Win links back into
- * `today` on the day it was completed (`completedAt`'s date, not wherever
- * the Action is currently scheduled); a goal Win links into that Goal's
- * progress page. See docs/modules/winlog.md → "Read a Win row" and ADR 0013.
+ * One entry in the Log's chronological list. An action Win links to the
+ * Action's *current* `scheduledDate` when it still has one (it may have
+ * been moved to another day since completing — see
+ * docs/modules/winlog-edgecases.md #2), falling back to the day it was
+ * completed on; a goal Win links into that Goal's progress page. See
+ * docs/modules/winlog.md → "Read a Win row" and ADR 0013.
  */
 export function WinRow({ win, pathName, goalName }: { win: Win; pathName: string; goalName: string | null }) {
-  const to = win.kind === 'action' ? `/today/${win.date}` : `/paths/${win.pathId}/goals/${win.goalId}`
+  const to =
+    win.kind === 'action'
+      ? `/today/${win.currentScheduledDate ?? win.date}`
+      : `/paths/${win.pathId}/goals/${win.goalId}`
 
   return (
     <li>

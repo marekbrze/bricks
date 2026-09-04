@@ -21,6 +21,15 @@ export interface Win {
   goalId: string | null
   /** Local calendar date (YYYY-MM-DD) this Win counts on the contribution graph. */
   date: string
-  /** Full ISO timestamp/date used for sort order and as the Action link's day. */
+  /** Full ISO timestamp/date used for sort order. */
   at: string
+  /**
+   * For an action Win: the Action's *current* `scheduledDate`, if it still
+   * has one — a completed Action can be moved to another day afterward
+   * (docs/modules/today.md "Move to another day"), so this can differ from
+   * `date` (which stays the day it was completed on). `WinRow` prefers this
+   * for its link target so it doesn't land on a day the Action no longer
+   * appears on. Always null for a goal Win. See docs/modules/winlog-edgecases.md #2.
+   */
+  currentScheduledDate: string | null
 }

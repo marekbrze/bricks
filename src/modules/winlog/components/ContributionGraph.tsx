@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
+import { formatDayLabel } from '@/shared/lib/date'
 
 /** Local calendar date (YYYY-MM-DD), matching how win days are keyed in `useWinLog`. */
 function localIso(date: Date): string {
@@ -51,11 +52,16 @@ export function ContributionGraph({
 
   const cell = compact ? 'h-2 w-2' : 'h-2.5 w-2.5'
 
+  // Six tiers (0, 1, 2, 3, 4, 5+) so an unusually prolific day still reads as
+  // more saturated than an ordinary one instead of capping out early — see
+  // docs/modules/winlog-edgecases.md #6.
   function tone(count: number, future: boolean): string {
     if (future) return 'bg-transparent'
     if (count === 0) return 'bg-muted'
-    if (count === 1) return 'bg-primary/30'
-    if (count === 2) return 'bg-primary/60'
+    if (count === 1) return 'bg-primary/20'
+    if (count === 2) return 'bg-primary/40'
+    if (count === 3) return 'bg-primary/60'
+    if (count === 4) return 'bg-primary/80'
     return 'bg-primary'
   }
 
@@ -68,12 +74,22 @@ export function ContributionGraph({
       >
         {columns.map((col, ci) => (
           <div key={ci} className="flex flex-col gap-[3px]">
-            {col.map((c) => (
-              <span
-                key={c.iso}
-                className={cn('rounded-[2px]', cell, tone(c.count, c.future))}
-              />
-            ))}
+            {col.map((c) =>
+              c.future ? (
+                <span key={c.iso} className={cn('rounded-[2px]', cell, tone(c.count, c.future))} />
+              ) : (
+                // Per-cell text alternative (docs/modules/winlog-edgecases.md #8) —
+                // the aggregate figcaption/aria-label below covers the whole
+                // grid, but a screen-reader/keyboard user on an embedded
+                // graph (Path overview, Goal progress) has no adjacent list
+                // to fall back on otherwise.
+                <span
+                  key={c.iso}
+                  title={`${formatDayLabel(c.iso)}: ${c.count} ${c.count === 1 ? 'win' : 'wins'}`}
+                  className={cn('rounded-[2px]', cell, tone(c.count, c.future))}
+                />
+              ),
+            )}
           </div>
         ))}
       </div>

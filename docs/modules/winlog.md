@@ -49,9 +49,12 @@ already looking at it.
    checkmark), the Goal's name, its Path, and the achieved date — visually
    distinguishable at a glance since achieving a Goal is a bigger deal than
    finishing one Action toward it.
-3. Clicking an Action-Win row navigates to that day in `today`
-   (`/today/:date`), reusing `today`'s existing date-scoped routing — the
-   Owner lands back in the context the win happened in.
+3. Clicking an Action-Win row navigates to `today`'s day view for the
+   Action's *current* `scheduledDate` when it still has one — a completed
+   Action can be moved to another day afterward, so this can differ from the
+   date shown on the row (which stays the day it was completed on) —
+   falling back to the completed-on date when the Action has since been
+   unscheduled. See ADR 0013 (harden pass, 2026-09-04).
 4. Clicking a Goal-Win row navigates to that Goal's progress page in
    `goals` (`/paths/:pathId/goals/:goalId`).
 
@@ -72,9 +75,11 @@ already looking at it.
 
 ## Screens (rough)
 
-- **Log (global)** (`/log`): `ContributionGraph` (12-month, global), Path
-  filter control, chronological Win list (icon, name, Path/Goal context,
-  date), each row clickable per above.
+- **Log (global)** (`/winlog`, filter in `?path=` — survives a refresh):
+  `ContributionGraph` (52-week, global or Path-scoped), Path filter chips
+  (active **and** archived Paths, archived labeled), chronological Win list
+  (icon, name, Path/Goal context, date) showing the first 50 with a "Load
+  more" button, each row clickable per above.
 - **ContributionGraph (embedded, Path-scoped)**: inside `PathOverviewPage`,
   same component, no filter, no row list — graph only.
 - **ContributionGraph (embedded, Goal-scoped)**: inside the Goal progress
@@ -87,9 +92,9 @@ No new screens beyond the graph component and the one dedicated Log page —
 
 | Action | Description in this module | Entity | Notes |
 |--------|------------|--------|-------|
-| Open WinLog | Land on `/log` — global graph + filterable chronological list | Process | Primary nav entry |
+| Open WinLog | Land on `/winlog` — global graph + filterable chronological list | Process | Primary nav entry |
 | Open ContributionGraph | Render the graph, scoped global / Path / Goal | Process | Same component, three embed contexts |
-| Filter WinLog by Path | Re-scope both the graph and the list on `/log` to one Path | Process | New — surfaced in this interview |
+| Filter WinLog by Path | Re-scope both the graph and the list on `/winlog` to one Path | Process | New — surfaced in this interview |
 
 `docs/ACTIONS.md` already listed "Open WinLog" and "Open ContributionGraph"
 under the derived-views table; this pass adds **Filter WinLog by Path** as a
@@ -98,7 +103,7 @@ defined in `docs/GLOSSARY.md` as "a completed Action or an achieved Goal."
 
 ## Edge Cases
 
-- **No Wins at all yet**: empty state on `/log` — no graph grid of empty
+- **No Wins at all yet**: empty state on `/winlog` — no graph grid of empty
   cells and no filter control (nothing to filter), just a short message
   pointing at `today`/`goals` to close the first Win.
 - **A Path has Wins but the currently-filtered Path has none**: the graph
@@ -113,23 +118,40 @@ defined in `docs/GLOSSARY.md` as "a completed Action or an achieved Goal."
 - **The underlying Action or Goal is deleted**: its Win vanishes from the
   log on the next read, same mechanism as above — deletion isn't special-
   cased, it's just another way the derived data source stops including it.
-- **Same day, many Wins**: the graph cell's color intensity scales rather
-  than capping visually at "1 = done" — a 5-Win day should read as visibly
-  more saturated than a 1-Win day, matching GitHub's own graph.
-- **Clicking an Action-Win whose day has since been renavigated past**
-  (e.g. the Action was later moved to a different day): the row still links
-  to the date it was *completed* on (`completedAt`), not wherever it's
-  currently scheduled — the log records what actually happened, not the
-  Action's current scheduling state.
+- **Same day, many Wins**: the graph cell's color intensity scales across
+  six tiers (`0`/`1`/`2`/`3`/`4`/`5+`) rather than capping visually at
+  "1 = done" — a 5-Win day reads visibly more saturated than a 1-Win day,
+  matching GitHub's own graph (hardened, 2026-09-04 — see
+  `winlog-edgecases.md` #6).
+- **Clicking an Action-Win whose Action has since been moved to another
+  day**: the row links to the Action's *current* `scheduledDate` (falling
+  back to the completed-on date if it has none), so the Owner lands on a
+  day where the Action actually appears, not a stale one where it's
+  invisible (hardened, 2026-09-04 — see `winlog-edgecases.md` #2). Moving a
+  completed Action no longer un-completes it or drops its Win in the first
+  place — see `winlog-edgecases.md` #1.
 - **Very long Win history (months/years of daily use)**: the chronological
-  list is not expected to paginate for v1 (personal-scale data, matching
-  `today`'s own no-pagination stance) but should virtualize or truncate with
-  a "load more" if it becomes long enough to feel heavy — deferred to
-  `proto-edgecases`/`proto-harden` to size against real data.
+  list shows the first 50 Wins with a "Load more" button appending 50 more
+  — the shipped mock data already produces ~150-250 historical Wins, so
+  this wasn't deferrable (hardened, 2026-09-04 — see `winlog-edgecases.md`
+  #7).
 - **Goal achieved and one of its Actions completed the same day**: both
   rows appear separately in the list (they're two distinct Wins) and both
   count toward that day's graph cell — achieving a Goal doesn't absorb or
   hide the Action-level win that may have led to it.
+- **No Paths at all**: a dedicated "No Paths yet" state (distinct from "No
+  wins yet") points at creating a first Path, since neither completing an
+  Action nor achieving a Goal is reachable without one yet (hardened,
+  2026-09-04 — see `winlog-edgecases.md` #5).
+- **An archived Path's Wins**: still count toward "All Paths" (global graph
+  + history) and can also be isolated individually — the Path filter chips
+  include archived Paths, labeled "(archived)" (hardened, 2026-09-04 — see
+  `winlog-edgecases.md` #4).
+- **The Path filter across a refresh or shared link**: lives in the URL
+  (`?path=<id>`) rather than component state, so it survives a refresh and
+  is shareable/bookmarkable — an unknown or stale id (e.g. a deleted Path)
+  falls back to "All Paths" instead of erroring (hardened, 2026-09-04 — see
+  `winlog-edgecases.md` #3).
 
 ## Integration Points
 

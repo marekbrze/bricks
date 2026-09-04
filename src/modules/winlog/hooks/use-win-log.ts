@@ -24,7 +24,7 @@ function daysMap(wins: Win[]): Record<string, number> {
  * disappear on the next render, by design (ADR 0013).
  */
 export function useWinLog() {
-  const { paths, activePaths, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
+  const { paths, activePaths, archivedPaths, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
   const { goals, subtreeIds, dataUnreadable: goalsUnreadable, resetGoals } = useGoals()
   const { actions, dataUnreadable: actionsUnreadable, resetActions } = useActions()
 
@@ -39,6 +39,7 @@ export function useWinLog() {
         goalId: a.goalId,
         date: localIso(a.completedAt as string),
         at: a.completedAt as string,
+        currentScheduledDate: a.scheduledDate,
       }))
     const goalWins: Win[] = goals
       .filter((g) => g.state === 'achieved' && g.achievedOn)
@@ -50,6 +51,7 @@ export function useWinLog() {
         goalId: g.id,
         date: g.achievedOn as string,
         at: g.achievedOn as string,
+        currentScheduledDate: null,
       }))
     return [...actionWins, ...goalWins].sort((a, b) => b.at.localeCompare(a.at))
   }, [actions, goals])
@@ -80,6 +82,9 @@ export function useWinLog() {
     [paths],
   )
 
+  /** True Path ids the filter can validly scope to — active or archived, but not a stale/deleted one. */
+  const isKnownPathId = useCallback((pathId: string) => paths.some((p) => p.id === pathId), [paths])
+
   const getGoalName = useCallback(
     (goalId: string) => goals.find((g) => g.id === goalId)?.name ?? 'Unknown Goal',
     [goals],
@@ -92,8 +97,10 @@ export function useWinLog() {
     winDaysForPath,
     winDaysForGoal,
     activePaths,
+    archivedPaths,
     getPathName,
     getGoalName,
+    isKnownPathId,
     /** True when any of the three sources this module reads from is unreadable. */
     dataUnreadable: pathsUnreadable || goalsUnreadable || actionsUnreadable,
     pathsUnreadable,

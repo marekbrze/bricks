@@ -41,3 +41,21 @@ export const Compact: Story = {
 export const NoWins: Story = {
   args: { winDays: {}, weeks: 26, label: 'New Path wins' },
 }
+
+/** Counts from 1 through 6+ on consecutive days — the six-tier scale (docs/modules/winlog-edgecases.md #6) stays distinguishable instead of capping out at 3. */
+export const HighActivityRange: Story = {
+  args: {
+    winDays: (() => {
+      const days: Record<string, number> = {}
+      const today = new Date()
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today)
+        d.setDate(today.getDate() - i)
+        days[d.toISOString().slice(0, 10)] = i + 1
+      }
+      return days
+    })(),
+    weeks: 4,
+    label: 'High-activity week',
+  },
+}
