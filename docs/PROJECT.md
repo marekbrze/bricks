@@ -104,7 +104,9 @@ accounts, no sharing.
   definition "have no hard actions" — how to reconcile that.
 - **Vision: one or many per Path?** Early on "I have two visions" came up; later we
   settled on one Vision per Path. To confirm.
-- **Achieving a Goal** — automatic once all tasks are done, or a manual mark?
+- ~~**Achieving a Goal** — automatic once all tasks are done, or a manual mark?~~
+  Resolved (proto-detail, goals, 2026-09-04): manual mark, matching
+  `Achievement`. See ADR 0007.
 - **Pairwise prioritization** — full every-with-every comparisons or a lighter
   mechanism? How does it scale with a large Inbox?
 - **"Frog"** — a manual flag or derived from something (e.g. high leverage + low

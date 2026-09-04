@@ -70,7 +70,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Mark achieved | Set to `achieved` with a date — manual, not auto when all tasks done | Owner | Feeds WinLog / ContributionGraph |
 | Abandon Goal | Set to `abandoned` | Owner | Alternative to achieving |
 | Reactivate Goal | Back to `active` from achieved/abandoned | Owner | |
-| Delete Goal | Remove Goal (and decide what happens to its Actions) | Owner | Behavior on child Actions — see Open Questions |
+| Delete Goal | Cascade-deletes sub-Goals and every Action under them | Owner | Confirmation dialog (`AlertDialog` with a cascade summary), same pattern as Path delete; no undo |
 | View Goal progress | Cumulative action count + contribution graph toward this Goal | Owner | |
 
 ### Action
