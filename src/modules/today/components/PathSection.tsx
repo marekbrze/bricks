@@ -31,7 +31,7 @@ export function PathSection({
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{path.name}</h2>
-        <Button variant="ghost" size="sm" onClick={onAdd}>
+        <Button variant="ghost" size="sm" onClick={onAdd} aria-label={`Add to ${path.name}`}>
           <Plus aria-hidden="true" /> Add
         </Button>
       </div>

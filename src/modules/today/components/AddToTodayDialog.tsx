@@ -22,14 +22,20 @@ export function AddToTodayDialog({
   onOpenChange,
   dateIso,
   actions,
+  pathName,
+  totalUnscheduledCount,
   getPathName,
   onPick,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   dateIso: string
-  /** Assigned Actions with no `scheduledDate` yet. */
+  /** Assigned Actions with no `scheduledDate` yet, already scoped to whatever Path this was opened from (or every Path). */
   actions: Action[]
+  /** Set when `actions` is scoped to one Path — sharpens the empty message. */
+  pathName?: string
+  /** Unscoped count, so a Path-scoped empty state can point at "elsewhere" instead of always blaming the Inbox. */
+  totalUnscheduledCount: number
   getPathName: (pathId: string | null) => string
   onPick: (action: Action) => void
 }) {
@@ -44,10 +50,17 @@ export function AddToTodayDialog({
         {actions.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Inbox className="size-6 text-muted-foreground" aria-hidden="true" />
-            <p className="max-w-xs text-sm text-muted-foreground">
-              Nothing waiting to be scheduled. New ideas start in the Inbox and get triaged to a Goal
-              or Path first.
-            </p>
+            {pathName && totalUnscheduledCount > 0 ? (
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Nothing waiting for “{pathName}” — {totalUnscheduledCount}{' '}
+                {totalUnscheduledCount === 1 ? 'Action is' : 'Actions are'} waiting on other Paths.
+              </p>
+            ) : (
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Nothing waiting to be scheduled. New ideas start in the Inbox and get triaged to a Goal
+                or Path first.
+              </p>
+            )}
             <Link to="/capture-triage" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               Open Inbox
             </Link>

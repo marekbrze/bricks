@@ -97,7 +97,8 @@ turning into a full calendar module.
   Actions as checkable rows with a frog indicator), link to **Schedule
   view**, link to **Review abandoned**.
 - **Action row**: checkbox (complete/un-complete), name, frog badge when
-  flagged, overflow menu (Abandon, Unschedule, move to another day).
+  flagged, overflow menu (move to another day; Abandon and Unschedule too,
+  except on an already-completed row — see Edge Cases).
 - **Add to today picker**: surfaces assigned-but-unscheduled Actions
   (optionally filtered by Path/Goal) to pull into the current day.
 - **Schedule (agenda) view**: vertically stacked day-header + Action-rows
@@ -151,12 +152,31 @@ or ADR needed for this pass.
 - **Action deleted or moved to another Path/Goal while scheduled**:
   Today has no direct signal from `goals`/`capture-triage` — self-heals on
   next read the same way `capture-triage` does for a deleted Path (see
-  `docs/modules/capture-triage.md`).
+  `docs/modules/capture-triage.md`). The self-heal also clears
+  `scheduledDate`/`completedAt` so a re-triaged Action can't resurface on a
+  stale day it was never scheduled to this time around.
 - **Large number of Actions scheduled on one day**: no pagination planned
   for v1 — personal-scale data — but rows should stay compact enough that
   a busy day doesn't force excessive scrolling before the frog is visible.
 
-Full systematic edge-case pass deferred to `proto-edgecases`.
+Systematically audited in `docs/modules/today-edgecases.md` and hardened
+(proto-harden, 2026-09-04). Additional decided behaviors from that pass:
+
+- **Day position on refresh**: the viewed day lives in the URL
+  (`/today/:date`), not just component state — refreshing or bookmarking a
+  specific day keeps that day in view. A malformed `:date` falls back to
+  today rather than erroring.
+- **Abandoning by mistake**: **Abandon** gets the same one-click **Undo**
+  toast as **Unschedule** — reversing a mis-click doesn't require a trip
+  through Review abandoned.
+- **Unscheduling a completed Action**: not offered — a `done` row can still
+  be **Move**d to another day, but **Unschedule** (which would pull it out
+  of every day view with nowhere left to show it) is hidden once an Action
+  is done, so a finished Action can't be accidentally erased from the
+  day's visible record.
+- **"Add to today" with nothing left for this Path**: the picker says so by
+  name and reports how many Actions are waiting on *other* Paths, instead
+  of always pointing at the Inbox regardless of why the list is empty.
 
 ## Integration Points
 

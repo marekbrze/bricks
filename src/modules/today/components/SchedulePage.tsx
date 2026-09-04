@@ -89,8 +89,8 @@ export function SchedulePage() {
                       })
                     }}
                     onAbandon={() => {
-                      abandonAction(a.id)
-                      showToast(`“${a.name}” abandoned`)
+                      const undo = abandonAction(a.id)
+                      showToast(`“${a.name}” abandoned`, { label: 'Undo', onClick: undo })
                     }}
                   />
                 ))}

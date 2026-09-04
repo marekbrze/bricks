@@ -33,6 +33,10 @@ export function useActions() {
   // assigned Action can end up pointing at a Path that no longer exists.
   // Whenever that's detected, return the orphaned Action to the Inbox rather
   // than leave a dangling reference for `today` / `goals` to trip over later.
+  // Also clears `scheduledDate`/`completedAt` — an Inbox Action carrying a
+  // stale day (from before its Path vanished) would otherwise silently
+  // reappear on that old date the moment it's re-triaged. See
+  // docs/modules/today-edgecases.md #1.
   useEffect(() => {
     const validPathIds = new Set(paths.map((p) => p.id))
     const orphaned = actions.filter((a) => a.pathId && !validPathIds.has(a.pathId))
@@ -40,7 +44,15 @@ export function useActions() {
     setActions((prev) =>
       prev.map((a) =>
         a.pathId && !validPathIds.has(a.pathId)
-          ? { ...a, updatedAt: new Date().toISOString(), state: 'inbox', pathId: null, goalId: null }
+          ? {
+              ...a,
+              updatedAt: new Date().toISOString(),
+              state: 'inbox',
+              pathId: null,
+              goalId: null,
+              scheduledDate: null,
+              completedAt: null,
+            }
           : a,
       ),
     )
@@ -225,12 +237,18 @@ export function useActions() {
     [actions, setActions],
   )
 
-  /** Scheduled-for-today but decided against entirely (distinct from moving it to another day). */
+  /**
+   * Scheduled-for-today but decided against entirely (distinct from moving
+   * it to another day). Returns an Undo, same as `discardAction` — a mis-click
+   * shouldn't cost a trip through Review abandoned to reverse.
+   */
   const abandonAction = useCallback(
-    (id: string) => {
+    (id: string): UndoFn => {
+      const snapshot = actions
       setActions(actions.map((a) => (a.id === id ? touch({ ...a, state: 'abandoned' }) : a)))
+      return restoreSnapshot(snapshot)
     },
-    [actions, setActions],
+    [actions, setActions, restoreSnapshot],
   )
 
   /** Permanent removal — only reachable from Review-abandoned, never from an active day view. */

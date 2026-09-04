@@ -24,6 +24,19 @@ export const NothingScheduledToday: Story = {
   decorators: [withTodayData(MOCK_ACTIONS.filter((a) => a.scheduledDate === null))],
 }
 
+/**
+ * `/today/:date` — the viewed day survives a refresh instead of always
+ * snapping back to today. See docs/modules/today-edgecases.md #2.
+ */
+export const DeepLinkedDate: Story = {
+  decorators: [withTodayData(MOCK_ACTIONS, undefined, '/today/2026-12-25')],
+}
+
+/** A malformed `:date` in the URL falls back to today instead of erroring. */
+export const InvalidDeepLinkedDate: Story = {
+  decorators: [withTodayData(MOCK_ACTIONS, undefined, '/today/not-a-date')],
+}
+
 /** Stored `actions` value is present but unparseable — recovery screen, not a silently-empty day. */
 export const ActionsDataUnreadable: Story = {
   decorators: [seedCorruptActions()],

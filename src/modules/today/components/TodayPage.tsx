@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, CalendarDays, History, Signpost } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
@@ -8,7 +8,7 @@ import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '@/modules/capture-triage/types/action'
-import { addDaysIso, formatDayLabel, todayLocalIso } from '@/shared/lib/date'
+import { addDaysIso, formatDayLabel, isValidIso, todayLocalIso } from '@/shared/lib/date'
 import { PathSection } from './PathSection'
 import { AddToTodayDialog } from './AddToTodayDialog'
 import { ScheduleActionDialog } from './ScheduleActionDialog'
@@ -16,7 +16,17 @@ import { ScheduleActionDialog } from './ScheduleActionDialog'
 type DialogState = { type: 'add'; pathId: string | null } | { type: 'move'; action: Action } | null
 
 export function TodayPage() {
-  const [date, setDate] = useState(todayLocalIso())
+  // The viewed day lives in the URL (`/today/:date`) so a refresh, or
+  // sharing/bookmarking the link, keeps day-nav position instead of always
+  // snapping back to today. An invalid or malformed `:date` (hand-edited
+  // URL) falls back to today rather than erroring. See
+  // docs/modules/today-edgecases.md #2.
+  const params = useParams<{ date?: string }>()
+  const navigate = useNavigate()
+  const date = isValidIso(params.date) ? params.date : todayLocalIso()
+  const goToDate = (next: string) =>
+    navigate(next === todayLocalIso() ? '/today' : `/today/${next}`, { replace: true })
+
   const [dialog, setDialog] = useState<DialogState>(null)
   const { showToast } = useToast()
 
@@ -54,8 +64,8 @@ export function TodayPage() {
   }
 
   const handleAbandon = (action: Action) => {
-    abandonAction(action.id)
-    showToast(`“${action.name}” abandoned`)
+    const undo = abandonAction(action.id)
+    showToast(`“${action.name}” abandoned`, { label: 'Undo', onClick: undo })
   }
 
   const getPathName = (pathId: string | null) => (pathId ? (getPath(pathId)?.name ?? 'Unknown Path') : 'Standalone')
@@ -69,7 +79,7 @@ export function TodayPage() {
               variant="ghost"
               size="icon-sm"
               aria-label="Previous day"
-              onClick={() => setDate((d) => addDaysIso(d, -1))}
+              onClick={() => goToDate(addDaysIso(date, -1))}
             >
               <ChevronLeft aria-hidden="true" />
             </Button>
@@ -78,12 +88,12 @@ export function TodayPage() {
               variant="ghost"
               size="icon-sm"
               aria-label="Next day"
-              onClick={() => setDate((d) => addDaysIso(d, 1))}
+              onClick={() => goToDate(addDaysIso(date, 1))}
             >
               <ChevronRight aria-hidden="true" />
             </Button>
             {date !== todayLocalIso() && (
-              <Button variant="outline" size="sm" onClick={() => setDate(todayLocalIso())}>
+              <Button variant="outline" size="sm" onClick={() => goToDate(todayLocalIso())}>
                 Today
               </Button>
             )}
@@ -152,10 +162,15 @@ export function TodayPage() {
           onOpenChange={(o) => !o && setDialog(null)}
           dateIso={date}
           actions={dialog.pathId ? unscheduledActions.filter((a) => a.pathId === dialog.pathId) : unscheduledActions}
+          pathName={dialog.pathId ? getPathName(dialog.pathId) : undefined}
+          totalUnscheduledCount={unscheduledActions.length}
           getPathName={getPathName}
           onPick={(action) => {
             scheduleAction(action.id, date)
-            showToast(`“${action.name}” added to ${formatDayLabel(date).toLowerCase()}`)
+            showToast(`“${action.name}” added to ${formatDayLabel(date).toLowerCase()}`, {
+              label: 'Undo',
+              onClick: () => unscheduleAction(action.id),
+            })
             setDialog(null)
           }}
         />

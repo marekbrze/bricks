@@ -15,7 +15,14 @@ export function ActionOverflowMenu({
   onAbandon,
 }: {
   actionName: string
-  /** Completed Actions can still be moved/unscheduled, but abandoning a done Action doesn't make sense — un-complete it first. */
+  /**
+   * A completed Action can still be moved to another day (it stays a
+   * visible win somewhere), but not unscheduled outright — that would pull
+   * a finished Action out of every day view with no day left to show it
+   * on, working against "the day stays visible as a record of what got
+   * done". Abandoning a done Action doesn't make sense either — un-complete
+   * it first. See docs/modules/today-edgecases.md #5.
+   */
   done: boolean
   onMove: () => void
   onUnschedule: () => void
@@ -34,9 +41,11 @@ export function ActionOverflowMenu({
         <DropdownMenuItem onClick={onMove}>
           <CalendarClock aria-hidden="true" /> Move to another day
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onUnschedule}>
-          <CalendarX aria-hidden="true" /> Unschedule
-        </DropdownMenuItem>
+        {!done && (
+          <DropdownMenuItem onClick={onUnschedule}>
+            <CalendarX aria-hidden="true" /> Unschedule
+          </DropdownMenuItem>
+        )}
         {!done && (
           <DropdownMenuItem variant="destructive" onClick={onAbandon}>
             <Ban aria-hidden="true" /> Abandon

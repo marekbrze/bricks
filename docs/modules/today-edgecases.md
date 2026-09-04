@@ -22,6 +22,7 @@ and the built prototype in `src/modules/today/`.
   - A Path deleted while it still has scheduled Actions → the existing `capture-triage` self-heal returns them to the Inbox on the next read, so they don't dangle — `src/modules/capture-triage/hooks/use-actions.ts:36` (see gap #1 below for what it *doesn't* clean up)
 - **New gaps found**: 11
 - **By severity**: 🔴 0 · 🟡 5 · 🟢 6
+- **Hardened (proto-harden, 2026-09-04)**: 8 closed, 3 deferred — see "Hardening status" below.
 
 ## Inventory
 
@@ -66,3 +67,19 @@ The top-priority gaps a harden pass should implement first:
 - Give `abandonAction` an `UndoFn` and wire it into both toasts (#3)
 - Persist/URL-encode the viewed date on `/today` (#2)
 - Decide Unschedule's behavior on `done` rows, and sharpen `AddToTodayDialog`'s scoped-empty message (#4, #5)
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | Where it lives now |
+|---|--------|--------------------|
+| 1 | ✅ | The Path self-heal effect now also clears `scheduledDate`/`completedAt` when returning an orphaned Action to the Inbox, so a later re-triage can't resurrect it on a stale day | `src/modules/capture-triage/hooks/use-actions.ts:43` |
+| 2 | ✅ | `/today` gained an optional `:date` route segment; `TodayPage` derives the viewed day from `useParams()` (validated, falls back to today on anything malformed) instead of local-only state, and day-nav/​**Today** now `navigate()` instead of `setState` | `src/modules/today/index.tsx:16`, `src/modules/today/components/TodayPage.tsx:19` (`isValidIso`/`goToDate`), `src/shared/lib/date.ts` (`isValidIso`) |
+| 3 | ✅ | `abandonAction` snapshots and returns an `UndoFn` (mirrors `discardAction`); both `TodayPage` and `SchedulePage` wire it into the "abandoned" toast's Undo action | `src/modules/capture-triage/hooks/use-actions.ts:229`, `src/modules/today/components/TodayPage.tsx:56`, `SchedulePage.tsx:91` |
+| 4 | ✅ | Decided: when opened scoped to one Path with nothing waiting for it, the dialog now says so by name and reports how many Actions are waiting on *other* Paths, instead of always pointing at the Inbox | `src/modules/today/components/AddToTodayDialog.tsx:44` |
+| 5 | ✅ | Decided: **Unschedule** is hidden on a `done` row (only **Move to another day** remains) — a completed Action can be relocated but not pulled out of every day view outright; **Abandon** was already hidden there | `src/modules/today/components/ActionOverflowMenu.tsx:36` |
+| 6 | ✅ | `formatDayLabel` appends the year whenever the target date isn't in the current calendar year | `src/shared/lib/date.ts` (`formatDayLabel`) |
+| 7 | ✅ | The "added to \[day\]" toast now carries an Undo action (`unscheduleAction`), matching Unschedule/Move | `src/modules/today/components/TodayPage.tsx:156` |
+| 8 | ❌ deferred | Prototype-length-session issue only (viewed date not re-syncing past local midnight); explicitly low priority in the audit itself — revisit if long-lived sessions become a real usage pattern |
+| 9 | ✅ | Each Path section's **Add** button now carries `aria-label="Add to {path.name}"`, giving it a distinct accessible name for screen-reader users navigating button-to-button | `src/modules/today/components/PathSection.tsx:34` |
+| 10 | ❌ deferred | No virtualization/pagination on a large day or agenda list — not worth solving at prototype scale, matches `goals`/`capture-triage` precedent |
+| 11 | ❌ deferred | No double-submit guard on `ScheduleActionDialog`/`AddToTodayDialog` — harmless while every mutation is synchronous; same deferred class as every other module's dialogs, revisit with a real backend |
