@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { MOCK_GOAL_OPTIONS } from '../data/mock-goal-options'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { PathPicker } from './PathPicker'
 
 export interface AssignSelection {
@@ -9,10 +9,30 @@ export interface AssignSelection {
 }
 
 /**
- * Path → Goal cascading picker used on the triage card. Paths are real
- * (`PathPicker` owns loading + inline creation); Goals are
- * `MOCK_GOAL_OPTIONS` — a stand-in until the `goals` module exists (see that
- * file's comment).
+ * Flatten a Path's Goal tree into assign-order (parent, then its children,
+ * depth-first) — only `active` Goals are offered, since assigning a new
+ * Action to an already-achieved or abandoned Goal isn't a real choice.
+ */
+function flattenActiveGoals(
+  pathId: string,
+  topLevelGoals: (pathId: string) => { id: string; name: string; state: string }[],
+  childGoals: (goalId: string) => { id: string; name: string; state: string }[],
+): { id: string; name: string; depth: number }[] {
+  const result: { id: string; name: string; depth: number }[] = []
+  const walk = (list: { id: string; name: string; state: string }[], depth: number) => {
+    for (const g of list) {
+      if (g.state === 'active') result.push({ id: g.id, name: g.name, depth })
+      walk(childGoals(g.id), depth + 1)
+    }
+  }
+  walk(topLevelGoals(pathId), 0)
+  return result
+}
+
+/**
+ * Path → Goal cascading picker used on the triage card. Paths and Goals are
+ * both real (`PathPicker` / `useGoals` own loading + inline Path creation);
+ * sub-Goals render indented, in tree order.
  */
 export function AssignPicker({
   value,
@@ -21,7 +41,8 @@ export function AssignPicker({
   value: AssignSelection | null
   onChange: (selection: AssignSelection | null) => void
 }) {
-  const goalsForPath = value ? MOCK_GOAL_OPTIONS.filter((g) => g.pathId === value.pathId) : []
+  const { topLevelGoals, childGoals } = useGoals()
+  const goalsForPath = value ? flattenActiveGoals(value.pathId, topLevelGoals, childGoals) : []
 
   return (
     <div className="flex flex-col gap-3">
@@ -52,6 +73,7 @@ export function AssignPicker({
                   onClick={() => onChange({ pathId: value.pathId, goalId: g.id })}
                   className="max-w-full whitespace-normal text-left"
                 >
+                  {'— '.repeat(g.depth)}
                   {g.name}
                 </Button>
               )

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
+import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathOverflowMenu } from './PathOverflowMenu'
@@ -12,6 +14,8 @@ import { PathsDataUnreadable } from './PathsDataUnreadable'
 export function ArchivedPathsPage() {
   const { archivedPaths, dataUnreadable, resetPaths, unarchivePath, deletePath, cascadeCounts } =
     usePaths()
+  const { goalCountForPath } = useGoals()
+  const { actionCountForPath } = useActions()
   const { showToast } = useToast()
   const [deleting, setDeleting] = useState<Path | null>(null)
 
@@ -44,7 +48,7 @@ export function ArchivedPathsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-muted-foreground">{path.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {path.mockGoalCount} {path.mockGoalCount === 1 ? 'goal' : 'goals'} ·{' '}
+                    {goalCountForPath(path.id)} {goalCountForPath(path.id) === 1 ? 'goal' : 'goals'} ·{' '}
                     {achieved}/{path.achievements.length} achievements
                     {path.archivedAt ? ` · archived ${path.archivedAt.slice(0, 10)}` : ''}
                   </p>
@@ -68,7 +72,11 @@ export function ArchivedPathsPage() {
           open
           onOpenChange={(o) => !o && setDeleting(null)}
           pathName={deleting.name}
-          counts={cascadeCounts(deleting.id)}
+          counts={{
+            ...cascadeCounts(deleting.id),
+            goals: goalCountForPath(deleting.id),
+            actions: actionCountForPath(deleting.id),
+          }}
           onConfirm={() => {
             const name = deleting.name
             deletePath(deleting.id)

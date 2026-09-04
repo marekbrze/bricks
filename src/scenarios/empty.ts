@@ -5,5 +5,6 @@ export function emptyScenario(): AppData {
   return {
     paths: [],
     actions: [],
+    goals: [],
   };
 }

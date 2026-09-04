@@ -1,6 +1,7 @@
 import type { AppData } from './types';
 import type { Path } from '@/modules/paths/types/path';
 import type { Action } from '@/modules/capture-triage/types/action';
+import type { Goal } from '@/modules/goals/types/goal';
 
 /** One young Path, a couple of open Achievements, no wins yet, two ideas waiting in the Inbox. */
 export function minimalScenario(): AppData {
@@ -51,5 +52,22 @@ export function minimalScenario(): AppData {
       completedAt: null,
     },
   ];
-  return { paths, actions };
+  const goals: Goal[] = [
+    {
+      id: 'goal-first-block',
+      createdAt: now,
+      updatedAt: now,
+      name: 'First training block',
+      description: '',
+      pathId: 'path-sport',
+      parentGoalId: null,
+      order: 0,
+      deadline: null,
+      state: 'active',
+      achievedOn: null,
+      frog: false,
+      mockWinDays: {},
+    },
+  ];
+  return { paths, actions, goals };
 }

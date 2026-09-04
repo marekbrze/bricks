@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { GripVertical, Target, Trophy } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { ContributionGraph } from './ContributionGraph'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import type { Path } from '../types/path'
@@ -27,6 +28,8 @@ export function PathCard({
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>
 }) {
   const achievedCount = path.achievements.filter((a) => a.state === 'achieved').length
+  const { goalCountForPath } = useGoals()
+  const goalCount = goalCountForPath(path.id)
 
   return (
     <Card className="gap-3">
@@ -70,7 +73,7 @@ export function PathCard({
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <Target className="size-3.5" aria-hidden="true" />
-          {path.mockGoalCount} {path.mockGoalCount === 1 ? 'goal' : 'goals'}
+          {goalCount} {goalCount === 1 ? 'goal' : 'goals'}
         </span>
         <span className="inline-flex items-center gap-1">
           <Trophy className="size-3.5" aria-hidden="true" />

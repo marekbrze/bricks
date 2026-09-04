@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Signpost } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
+import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathCard } from './PathCard'
@@ -24,6 +26,8 @@ export function PathsPage() {
     reorderPath,
     cascadeCounts,
   } = usePaths()
+  const { goalCountForPath } = useGoals()
+  const { actionCountForPath } = useActions()
   const navigate = useNavigate()
   const location = useLocation()
   const { showToast } = useToast()
@@ -151,7 +155,11 @@ export function PathsPage() {
           open
           onOpenChange={(o) => !o && setDeleting(null)}
           pathName={deleting.name}
-          counts={cascadeCounts(deleting.id)}
+          counts={{
+            ...cascadeCounts(deleting.id),
+            goals: goalCountForPath(deleting.id),
+            actions: actionCountForPath(deleting.id),
+          }}
           onConfirm={() => {
             const name = deleting.name
             deletePath(deleting.id)

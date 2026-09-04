@@ -43,7 +43,8 @@ export function DeletePathDialog({
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Goal, Action and Vision counts are estimates until those modules are built.
+          Vision tile count is an estimate until that module is built. Goal and Action counts are
+          real.
         </p>
         <p className="text-sm font-medium text-destructive">This cannot be undone.</p>
         <AlertDialogFooter>

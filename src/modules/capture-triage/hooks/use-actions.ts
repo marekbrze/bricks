@@ -129,9 +129,48 @@ export function useActions() {
     [actions, setActions, restoreSnapshot],
   )
 
+  // --- Cross-module surface for `goals` ------------------------------------
+  // `goals` owns the Goal tree; these let it keep Actions in sync without
+  // capture-triage needing to know anything about Goals itself.
+
+  /** Delete Goal cascade: remove every Action assigned to any of these Goal ids. */
+  const deleteActionsForGoals = useCallback(
+    (goalIds: string[]) => {
+      if (goalIds.length === 0) return
+      const ids = new Set(goalIds)
+      setActions(actions.filter((a) => !a.goalId || !ids.has(a.goalId)))
+    },
+    [actions, setActions],
+  )
+
+  /** Frog toggle: one-time propagation from a newly-frogged Goal to its current Actions. */
+  const markFrogForGoalActions = useCallback(
+    (goalId: string) => {
+      setActions(actions.map((a) => (a.goalId === goalId ? touch({ ...a, frog: true }) : a)))
+    },
+    [actions, setActions],
+  )
+
+  /** Move Goal to another Path: carry every Action under the moved subtree along with it. */
+  const reassignActionsToPath = useCallback(
+    (goalIds: string[], pathId: string) => {
+      if (goalIds.length === 0) return
+      const ids = new Set(goalIds)
+      setActions(actions.map((a) => (a.goalId && ids.has(a.goalId) ? touch({ ...a, pathId }) : a)))
+    },
+    [actions, setActions],
+  )
+
+  const actionCountForPath = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const a of actions) if (a.pathId) counts.set(a.pathId, (counts.get(a.pathId) ?? 0) + 1)
+    return (pathId: string) => counts.get(pathId) ?? 0
+  }, [actions])
+
   return {
     actions,
     inboxActions,
+    actionCountForPath,
     /** The stored `actions` value exists but is unreadable — show a recovery screen. */
     dataUnreadable: corrupt,
     /** Wipe the corrupt value and start clean. */
@@ -140,5 +179,8 @@ export function useActions() {
     assignAction,
     promoteAction,
     discardAction,
+    deleteActionsForGoals,
+    markFrogForGoalActions,
+    reassignActionsToPath,
   }
 }

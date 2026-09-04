@@ -11,7 +11,9 @@ import { NestedModulePlaceholder } from './components/NestedModulePlaceholder'
  *   /paths/archived            — archived Paths
  *   /paths/:pathId             — Path overview (the hub)
  *   /paths/:pathId/vision      — placeholder → owned by the `vision` module
- *   /paths/:pathId/goals       — placeholder → owned by the `goals` module
+ *
+ * `/paths/:pathId/goals` (+ `/:goalId`) is owned by the `goals` module —
+ * see `src/modules/goals/index.tsx` — and registered separately in App.tsx.
  */
 export const pathsRoutes = [
   <Route key="paths" path="/paths" element={<PathsPage />} />,
@@ -21,10 +23,5 @@ export const pathsRoutes = [
     key="path-vision"
     path="/paths/:pathId/vision"
     element={<NestedModulePlaceholder module="vision" label="Vision board" />}
-  />,
-  <Route
-    key="path-goals"
-    path="/paths/:pathId/goals"
-    element={<NestedModulePlaceholder module="goals" label="Goals" />}
   />,
 ]

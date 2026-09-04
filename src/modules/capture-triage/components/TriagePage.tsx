@@ -4,8 +4,8 @@ import { ArrowLeft, PartyPopper } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '../hooks/use-actions'
-import { MOCK_GOAL_OPTIONS } from '../data/mock-goal-options'
 import { TriageCard } from './TriageCard'
 import { ActionsDataUnreadable } from './ActionsDataUnreadable'
 
@@ -20,6 +20,7 @@ export function TriagePage() {
   const { inboxActions, assignAction, promoteAction, discardAction, dataUnreadable, resetActions } =
     useActions()
   const { activePaths } = usePaths()
+  const { getGoal, createGoal, deleteGoal } = useGoals()
   const { showToast } = useToast()
 
   const [order, setOrder] = useState<string[]>(() => inboxActions.map((a) => a.id))
@@ -49,20 +50,23 @@ export function TriagePage() {
     if (!currentAction) return
     assignAction(currentAction.id, pathId, goalId)
     const pathName = activePaths.find((p) => p.id === pathId)?.name ?? 'Path'
-    const goalName = goalId ? MOCK_GOAL_OPTIONS.find((g) => g.id === goalId)?.name : null
+    const goalName = goalId ? getGoal(goalId)?.name : null
     showToast(goalName ? `Assigned to “${goalName}”` : `Assigned to ${pathName} (standalone)`)
     resolveOne()
   }
 
   const handlePromote = ({ name, pathId }: { name: string; pathId: string }) => {
     if (!currentAction) return
-    const undo = promoteAction(currentAction.id)
+    const goalId = createGoal({ pathId, parentGoalId: null, name })
+    const undoPromote = promoteAction(currentAction.id)
     const pathName = activePaths.find((p) => p.id === pathId)?.name ?? 'Path'
-    // No Goal is actually created yet — capture-triage only retires the Inbox item
-    // (ADR 0004). Keep the toast honest about that until `goals` exists.
-    showToast(`“${name}” retired — noted as a future Goal under ${pathName}`, {
+    showToast(`“${name}” promoted to a new Goal under ${pathName}`, {
       label: 'Undo',
-      onClick: undo,
+      onClick: () => {
+        undoPromote()
+        // Symmetric undo: the Goal this promotion created shouldn't survive it.
+        if (goalId) deleteGoal(goalId)
+      },
     })
     resolveOne()
   }

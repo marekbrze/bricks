@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArchiveRestore } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
+import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ContributionGraph } from './ContributionGraph'
@@ -31,6 +33,8 @@ export function PathOverviewPage() {
     deleteAchievement,
     cascadeCounts,
   } = usePaths()
+  const { goalCountForPath } = useGoals()
+  const { actionCountForPath } = useActions()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -93,9 +97,9 @@ export function PathOverviewPage() {
       <ModuleStubSection
         id="goals-heading"
         heading="Goals"
-        blurb={`${path.mockGoalCount} ${
-          path.mockGoalCount === 1 ? 'Goal' : 'Goals'
-        } under this Path — the execution layer, in priority order. Managed in the Goals module.`}
+        blurb={`${goalCountForPath(path.id)} ${
+          goalCountForPath(path.id) === 1 ? 'Goal' : 'Goals'
+        } under this Path — the execution layer, in priority order.`}
         linkTo={`/paths/${path.id}/goals`}
         linkLabel="Open Goals"
       />
@@ -128,7 +132,11 @@ export function PathOverviewPage() {
         open={deleting}
         onOpenChange={setDeleting}
         pathName={path.name}
-        counts={cascadeCounts(path.id)}
+        counts={{
+          ...cascadeCounts(path.id),
+          goals: goalCountForPath(path.id),
+          actions: actionCountForPath(path.id),
+        }}
         onConfirm={() => {
           const name = path.name
           deletePath(path.id)

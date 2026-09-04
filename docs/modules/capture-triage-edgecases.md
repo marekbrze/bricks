@@ -96,11 +96,11 @@ Implement first:
 | 1 | ✅ | `useActions` self-heals: an assigned `Action` whose `pathId` isn't among current `paths` is reset to `inbox` (`pathId`/`goalId` cleared) and toasted — `src/modules/capture-triage/hooks/use-actions.ts:31` |
 | 2 | ✅ | `TriagePage` now checks `dataUnreadable` and renders `ActionsDataUnreadable`, same as `InboxPage` — `src/modules/capture-triage/components/TriagePage.tsx:40` |
 | 3 | ✅ | `PathPicker` is self-sufficient (owns `usePaths()`) and shows an inline **New Path** button + `NewPathDialog` when there are no active Paths, so assigning/promoting never requires leaving triage — `src/modules/capture-triage/components/PathPicker.tsx:28` |
-| 4 | ✅ | Promote toast reworded to stop implying a durable Goal exists — `src/modules/capture-triage/components/TriagePage.tsx:63` |
+| 4 | ✅ (superseded, proto-lofi(goals), 2026-09-04) | The soft "no Goal exists yet" copy is gone — a real `Goal` is created via `useGoals().createGoal`, so the toast can say so plainly again — `src/modules/capture-triage/components/TriagePage.tsx:58` |
 | 5 | ✅ (revised) | Dropped `role="radio"`/`radiogroup` in favor of plain toggle buttons with `aria-pressed` — matches the actual (non-roving) keyboard behavior instead of promising ARIA semantics the markup didn't implement — `PathPicker.tsx:63`, `AssignPicker.tsx:36`, `:49` |
 | 6 | ✅ | `PromoteToGoalDialog` gained the same dirty-form discard guard as `NewPathDialog`; `QuickCaptureButton` left as-is (single field, low-friction, precedent supports skipping it) — `src/modules/capture-triage/components/PromoteToGoalDialog.tsx:28`, `:38` |
 | 7 | ❌ deferred | Double-submit guard on Capture/Assign/Promote — harmless while every mutation is synchronous; note for the Dexie migration (matches `paths` #17) |
 | 8 | ✅ | Picker chips wrap instead of forcing `whitespace-nowrap` off a long Path/Goal name — `PathPicker.tsx:67`, `AssignPicker.tsx:53` |
 | 9 | ❌ deferred | Session progress resetting on refresh — acceptable for a lo-fi prototype; the count is a session-only affordance |
 | 10 | ❌ deferred | No virtualization on the Inbox list — not worth solving at prototype scale |
-| 11 | — | `MOCK_GOAL_OPTIONS` retirement is blocked on the `goals` module existing, not on this module's own hardening |
+| 11 | ✅ (proto-lofi(goals), 2026-09-04) | `mock-goal-options.ts` deleted; `AssignPicker` and `TriagePage` now read/write real Goals via `useGoals()` — Promote to Goal creates an actual `Goal`, with a symmetric Undo that deletes it again |

@@ -7,6 +7,7 @@ import { Toaster } from './shared/components/toast/Toaster'
 import { HOME_PATH } from './shared/navigation'
 import { pathsRoutes } from './modules/paths'
 import { captureTriageRoutes } from './modules/capture-triage'
+import { goalsRoutes } from './modules/goals'
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
             {pathsRoutes}
             {/* capture-triage — second module through proto-lofi. */}
             {captureTriageRoutes}
+            {/* goals — third module through proto-lofi. */}
+            {goalsRoutes}
             {/* Other modules — proto-lofi replaces this catch-all as each is built. */}
             <Route path=":moduleName" element={<ModulePlaceholder />} />
             {/* Unknown paths fall back home. */}
