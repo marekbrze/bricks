@@ -102,8 +102,8 @@ accounts, no sharing.
 - **What can an Action belong to?** An execution Goal, directly to a Path (the "buy
   a band" example), or also to a Vision checklist item? Vision checklist items by
   definition "have no hard actions" — how to reconcile that.
-- **Vision: one or many per Path?** Early on "I have two visions" came up; later we
-  settled on one Vision per Path. To confirm.
+- ~~**Vision: one or many per Path?**~~ Resolved (proto-detail, vision,
+  2026-09-04): one Vision per Path, confirmed. See ADR 0016.
 - ~~**Achieving a Goal** — automatic once all tasks are done, or a manual mark?~~
   Resolved (proto-detail, goals, 2026-09-04): manual mark, matching
   `Achievement`. See ADR 0007.
