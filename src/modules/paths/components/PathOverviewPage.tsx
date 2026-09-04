@@ -7,6 +7,8 @@ import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
 import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
+import { useVision } from '@/modules/vision/hooks/use-vision'
+import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ModuleStubSection } from './ModuleStubSection'
@@ -37,6 +39,7 @@ export function PathOverviewPage() {
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
   const { winDaysForPath } = useWinLog()
+  const { visionTileCountForPath } = useVision()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -85,16 +88,7 @@ export function PathOverviewPage() {
         </div>
       )}
 
-      <ModuleStubSection
-        id="vision-heading"
-        heading="Vision"
-        blurb={
-          path.visionSnippet ||
-          'The picture of the future for this Path — a board of short notes and photos. Not built yet.'
-        }
-        linkTo={`/paths/${path.id}/vision`}
-        linkLabel="Open Vision board"
-      />
+      <VisionSummaryCard pathId={path.id} />
 
       <ModuleStubSection
         id="goals-heading"
@@ -138,6 +132,7 @@ export function PathOverviewPage() {
           ...cascadeCounts(path.id),
           goals: goalCountForPath(path.id),
           actions: actionCountForPath(path.id),
+          visionTiles: visionTileCountForPath(path.id),
         }}
         onConfirm={() => {
           const name = path.name
