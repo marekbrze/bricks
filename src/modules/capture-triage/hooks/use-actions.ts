@@ -1,6 +1,8 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
+import { usePaths } from '@/modules/paths/hooks/use-paths'
+import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '../types/action'
 
 const STORAGE_KEY = 'actions'
@@ -23,6 +25,31 @@ export function useActions() {
     removeValue: clearActions,
     corrupt,
   } = useLocalStorageState<Action[]>(STORAGE_KEY, INITIAL_ACTIONS)
+  const { paths } = usePaths()
+  const { showToast } = useToast()
+
+  // Self-heal: capture-triage has no way to hear about a Path being deleted
+  // elsewhere (paths.deletePath only touches the `paths` key), so an
+  // assigned Action can end up pointing at a Path that no longer exists.
+  // Whenever that's detected, return the orphaned Action to the Inbox rather
+  // than leave a dangling reference for `today` / `goals` to trip over later.
+  useEffect(() => {
+    const validPathIds = new Set(paths.map((p) => p.id))
+    const orphaned = actions.filter((a) => a.pathId && !validPathIds.has(a.pathId))
+    if (orphaned.length === 0) return
+    setActions((prev) =>
+      prev.map((a) =>
+        a.pathId && !validPathIds.has(a.pathId)
+          ? { ...a, updatedAt: new Date().toISOString(), state: 'inbox', pathId: null, goalId: null }
+          : a,
+      ),
+    )
+    showToast(
+      orphaned.length === 1
+        ? `“${orphaned[0].name}” moved back to the Inbox — its Path was deleted`
+        : `${orphaned.length} items moved back to the Inbox — their Path was deleted`,
+    )
+  }, [paths, actions, setActions, showToast])
 
   const inboxActions = useMemo(
     () =>

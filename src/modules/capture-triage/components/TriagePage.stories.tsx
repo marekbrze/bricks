@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { TriagePage } from './TriagePage'
-import { withActions, withActionsNoPaths, MOCK_INBOX_ACTIONS } from './story-helpers'
+import {
+  withActions,
+  withActionsNoPaths,
+  seedCorruptActions,
+  MOCK_INBOX_ACTIONS,
+} from './story-helpers'
 
 const meta: Meta<typeof TriagePage> = {
   title: 'CaptureTriage/TriagePage',
@@ -23,7 +28,12 @@ export const InboxZero: Story = {
   decorators: [withActions([], '/capture-triage/triage')],
 }
 
-/** No Paths exist yet — assign and promote both explain a Path is needed first. */
+/** No Paths exist yet — the picker offers an inline "New Path" instead of a dead end. */
 export const NoPathsYet: Story = {
   decorators: [withActionsNoPaths(MOCK_INBOX_ACTIONS, '/capture-triage/triage')],
+}
+
+/** Stored `actions` value is unparseable — recovery screen, not a fake "Inbox zero". */
+export const DataUnreadable: Story = {
+  decorators: [seedCorruptActions('/capture-triage/triage')],
 }

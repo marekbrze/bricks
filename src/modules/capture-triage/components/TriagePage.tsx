@@ -7,6 +7,7 @@ import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { useActions } from '../hooks/use-actions'
 import { MOCK_GOAL_OPTIONS } from '../data/mock-goal-options'
 import { TriageCard } from './TriageCard'
+import { ActionsDataUnreadable } from './ActionsDataUnreadable'
 
 /**
  * Dedicated card-by-card triage mode — one Inbox Action at a time. The
@@ -16,7 +17,8 @@ import { TriageCard } from './TriageCard'
  * docs/modules/capture-triage.md → "Process next item".
  */
 export function TriagePage() {
-  const { inboxActions, assignAction, promoteAction, discardAction } = useActions()
+  const { inboxActions, assignAction, promoteAction, discardAction, dataUnreadable, resetActions } =
+    useActions()
   const { activePaths } = usePaths()
   const { showToast } = useToast()
 
@@ -34,6 +36,8 @@ export function TriagePage() {
       return [...stillInbox, ...newIds]
     })
   }, [inboxActions])
+
+  if (dataUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
   const currentId = order[0]
   const currentAction = inboxActions.find((a) => a.id === currentId)
@@ -54,7 +58,12 @@ export function TriagePage() {
     if (!currentAction) return
     const undo = promoteAction(currentAction.id)
     const pathName = activePaths.find((p) => p.id === pathId)?.name ?? 'Path'
-    showToast(`Promoted to a new Goal “${name}” under ${pathName}`, { label: 'Undo', onClick: undo })
+    // No Goal is actually created yet — capture-triage only retires the Inbox item
+    // (ADR 0004). Keep the toast honest about that until `goals` exists.
+    showToast(`“${name}” retired — noted as a future Goal under ${pathName}`, {
+      label: 'Undo',
+      onClick: undo,
+    })
     resolveOne()
   }
 

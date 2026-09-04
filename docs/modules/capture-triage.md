@@ -96,10 +96,13 @@ mainstream goal-tracking tools.
   large name, four resolution controls (Assign to Goal, Assign standalone to
   Path, Promote to Goal, Discard), a Skip control, session progress (`3 of 9`),
   an exit affordance.
-- **Assign picker**: `Path` → `Goal` cascading selection (or a single
-  searchable combobox), with an explicit "standalone, no Goal" option.
+- **Assign picker**: `Path` → `Goal` cascading selection (toggle-button chips,
+  not a dropdown — no such primitive was installed yet), with an explicit
+  "standalone, no Goal" option. Falls back to an inline **New Path** button +
+  dialog when there are no Paths yet.
 - **Promote to Goal dialog**: minimal Goal-creation form prefilled with the
-  Action's name — Path (required), description and deadline (optional).
+  Action's name — Path (required, same picker/inline-create fallback),
+  description and deadline (optional); warns before discarding unsaved input.
 - **Inbox Zero / completion**: short celebratory state with a processed
   count, link back to the Inbox or wherever triage was entered from.
 
@@ -123,18 +126,31 @@ the Undo pattern for "Discard item" were ambiguous there and are now settled
 
 ## Edge Cases
 
-Captured here as they came up naturally; the systematic audit is
-`proto-edgecases`, run after the lo-fi prototype exists.
+Systematically audited in `docs/modules/capture-triage-edgecases.md` and
+hardened (proto-harden, 2026-09-04). Decided behaviors:
 
 - **Empty Inbox**: quick capture stays available everywhere; **Start Triage**
   is disabled/hidden with an explanatory message rather than opening an empty
   loop.
 - **Single item in the Inbox**: triage still works — a one-card session that
   goes straight to the completion screen after the first decision.
-- **Capture with an empty name**: blocked with inline validation; never
-  creates an unnamed `Action`.
+- **Capture with an empty name**: blocked — **Add** stays disabled until the
+  field has non-whitespace text; never creates an unnamed `Action`.
+- **No Paths at all**: both the Assign picker and the Promote-to-Goal dialog
+  offer an inline **New Path** button (opens the same `NewPathDialog` `paths`
+  uses) instead of a dead end — the Owner never has to leave triage, and
+  never loses session progress, just to unblock assigning.
 - **Promote to Goal without picking a Path**: blocked — a `Goal` always needs
-  exactly one `Path`.
+  exactly one `Path`; the dialog also warns before discarding a typed name or
+  chosen Path on Cancel / Escape / backdrop.
+- **Promote to Goal — what the Owner is told**: the confirmation toast is
+  deliberately honest that no Goal exists yet anywhere else in the app
+  ("retired — noted as a future Goal under …") until `goals` is built.
+- **A Path is deleted while it still has assigned Actions**: `capture-triage`
+  has no way to hear about the deletion directly, so `useActions` self-heals
+  on the next read — any `Action` pointing at a Path that no longer exists is
+  returned to the Inbox (not left as a dangling reference) with a toast
+  explaining why.
 - **Discard, then re-capture the same idea**: allowed, no dedupe — personal
   tool, no uniqueness constraint (consistent with Path naming).
 - **Skipping every item in a session**: the queue cycles back to the first
@@ -143,8 +159,21 @@ Captured here as they came up naturally; the systematic audit is
   discard), not merely been seen.
 - **Exiting triage with items left undecided**: no penalty — they remain in
   the Inbox exactly as they were, resumable later.
-- **Very long Action name**: wraps on the triage card and in the Inbox list,
-  no truncation loss of the idea itself.
+- **Very long Action / Path / Goal name**: wraps everywhere it can appear —
+  the triage card, the Inbox list, and the Path/Goal picker chips.
+- **Corrupt stored `actions` value**: a dedicated recovery screen (distinct
+  from the empty-Inbox state) on both `/capture-triage` and
+  `/capture-triage/triage` — the second route used to silently show a fake
+  "Inbox zero" instead.
+- **Picker keyboard semantics**: Path/Goal chips are plain toggle buttons
+  (`aria-pressed`), not an ARIA `radiogroup` — the markup never implemented
+  roving-tabindex/arrow-key navigation, so promising that role would have
+  been the actual accessibility gap.
+
+Deferred: a double-submit guard on Capture/Assign/Promote (harmless while
+every mutation is synchronous — revisit with a Dexie migration), session
+progress resetting on a mid-triage refresh, and Inbox-list virtualization at
+very large scale.
 
 ## Integration Points
 

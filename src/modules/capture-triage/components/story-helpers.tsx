@@ -40,7 +40,7 @@ export function withActions(actions: Action[], initialPath = '/capture-triage'):
 }
 
 /** Write an unparseable value to the `actions` key, to exercise the recovery screen. */
-export function seedCorruptActions(): Decorator {
+export function seedCorruptActions(initialPath = '/capture-triage'): Decorator {
   return (Story) => {
     __resetStorageHealth()
     try {
@@ -50,11 +50,29 @@ export function seedCorruptActions(): Decorator {
       /* ignore */
     }
     return (
-      <Providers initialPath="/capture-triage">
+      <Providers initialPath={initialPath}>
         <Story />
       </Providers>
     )
   }
+}
+
+/**
+ * An assigned Action pointing at a Path id that isn't in the seeded `paths`
+ * list — exercises the self-heal in `useActions` (moves it back to the
+ * Inbox + toasts) that closes edgecases #1.
+ */
+export const MOCK_ORPHANED_ACTION: Action = {
+  id: 'action-orphaned',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  name: 'Renew the gym membership',
+  state: 'assigned',
+  pathId: 'path-deleted',
+  goalId: null,
+  frog: false,
+  scheduledDate: null,
+  completedAt: null,
 }
 
 /** Same as `withActions`, but with no Paths at all — exercises the "create a Path first" states. */

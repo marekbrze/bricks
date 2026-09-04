@@ -25,6 +25,7 @@ global `QuickCaptureButton` mounted in `AppHeader`). Audited against
   - Storage write fails after mount — already covered app-wide by the shared banner built for `paths` — `src/shared/hooks/use-local-storage.ts:52` → `StorageHealthBanner` in `AppShell`
 - **New gaps found**: 11
 - **By severity**: 🔴 1 · 🟡 7 · 🟢 3
+- **Hardened (proto-harden, 2026-09-04)**: 8 closed, 3 deferred — see "Hardening status" below.
 
 ## Inventory
 
@@ -87,3 +88,19 @@ Implement first:
   away to fix it (#3).
 - Soften the Promote-to-Goal success copy until `goals` exists (#4), and fix
   the picker chips' keyboard semantics (#5).
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | Where it lives now |
+|---|--------|--------------------|
+| 1 | ✅ | `useActions` self-heals: an assigned `Action` whose `pathId` isn't among current `paths` is reset to `inbox` (`pathId`/`goalId` cleared) and toasted — `src/modules/capture-triage/hooks/use-actions.ts:31` |
+| 2 | ✅ | `TriagePage` now checks `dataUnreadable` and renders `ActionsDataUnreadable`, same as `InboxPage` — `src/modules/capture-triage/components/TriagePage.tsx:40` |
+| 3 | ✅ | `PathPicker` is self-sufficient (owns `usePaths()`) and shows an inline **New Path** button + `NewPathDialog` when there are no active Paths, so assigning/promoting never requires leaving triage — `src/modules/capture-triage/components/PathPicker.tsx:28` |
+| 4 | ✅ | Promote toast reworded to stop implying a durable Goal exists — `src/modules/capture-triage/components/TriagePage.tsx:63` |
+| 5 | ✅ (revised) | Dropped `role="radio"`/`radiogroup` in favor of plain toggle buttons with `aria-pressed` — matches the actual (non-roving) keyboard behavior instead of promising ARIA semantics the markup didn't implement — `PathPicker.tsx:63`, `AssignPicker.tsx:36`, `:49` |
+| 6 | ✅ | `PromoteToGoalDialog` gained the same dirty-form discard guard as `NewPathDialog`; `QuickCaptureButton` left as-is (single field, low-friction, precedent supports skipping it) — `src/modules/capture-triage/components/PromoteToGoalDialog.tsx:28`, `:38` |
+| 7 | ❌ deferred | Double-submit guard on Capture/Assign/Promote — harmless while every mutation is synchronous; note for the Dexie migration (matches `paths` #17) |
+| 8 | ✅ | Picker chips wrap instead of forcing `whitespace-nowrap` off a long Path/Goal name — `PathPicker.tsx:67`, `AssignPicker.tsx:53` |
+| 9 | ❌ deferred | Session progress resetting on refresh — acceptable for a lo-fi prototype; the count is a session-only affordance |
+| 10 | ❌ deferred | No virtualization on the Inbox list — not worth solving at prototype scale |
+| 11 | — | `MOCK_GOAL_OPTIONS` retirement is blocked on the `goals` module existing, not on this module's own hardening |
