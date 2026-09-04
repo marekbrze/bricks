@@ -23,6 +23,7 @@ Code Name.
 | Zwrot z czasu i energii | `Leverage` | Estimated value of an Action relative to the time and energy invested; the basis for prioritization. | "importance", "difficulty", "ROI" without context |
 | Żaba | `Frog` | A valuable, unpleasant Action/Goal that must be done to unblock progress ("eat the frog first"). A toggle (star-like) on a `Goal` or `Action`; a frog on a Goal propagates to its Actions. | "hard task", "blocker" |
 | Widok Dziś | `TodayView` | The landing screen: sections per Path, each listing Actions with `scheduledDate = today`. A distinct view, not a list. Day navigation (tomorrow, day after, back). | "dashboard", "task list" |
+| Widok akcji | `ActionsView` | The flat whole-app task list (Todoist/Things style): every Action grouped Path → Goal → Actions, Inbox group on top, standalone Actions after each section's Goal groups. Quick-add rows create Actions (optional due date) and Goals right from the list. Done/abandoned hidden behind a "Show completed" toggle. Sort within a group: frog-first, then scheduled ascending, then creation order. | "task list", "to-do list", "outliner" |
 | Widok harmonogramu | `ScheduleView` | Agenda: day header + tasks, next day header + tasks. Likely its own module later (calendar). | "calendar" (for now) |
 | Plan tygodnia | `WeeklyPlan` | Deferred: a soft week-ahead selection of Actions. Not in the first version — `TodayView` + day navigation + `ScheduleView` cover it for now. | "sprint", "deadline" |
 | Log / historia małych zwycięstw | `WinLog` | An append-only history of completed Actions and achieved Goals. The main motivational fuel — a counterweight to negative bias. | "journal", "report", "stats" |
@@ -45,4 +46,5 @@ Module names (folder / code namespace) — see `docs/MODULES.md`.
 | `capture-triage` | Core | Inbox + card-by-card review + Action→Goal promotion |
 | `today` | Core | Today view per Path, schedule, planning, complete |
 | `winlog` | Core | `WinLog` + `ContributionGraph` |
+| `actions` | Core | `ActionsView` — flat grouped task list + quick-add |
 | `app-shell` | Generic | Navigation, home page, Dexie/LocalStorage, settings |

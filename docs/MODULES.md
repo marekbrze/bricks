@@ -2,9 +2,9 @@
 
 ## Overview
 
-Bricks splits into **6 design modules** plus a generic app shell. Everything hangs off `Path` (the `paths` module), so it is the foundation. The core value loop runs across four modules — capture an idea (`capture-triage`), decide where it belongs (`capture-triage` → `goals`/`paths`), schedule and do it (`today`), and watch the wins accumulate (`winlog`). `vision` is a rich, mostly self-contained surface that sits alongside the loop rather than inside it.
+Bricks splits into **7 design modules** plus a generic app shell. Everything hangs off `Path` (the `paths` module), so it is the foundation. The core value loop runs across four modules — capture an idea (`capture-triage`), decide where it belongs (`capture-triage` → `goals`/`paths`), schedule and do it (`today`), and watch the wins accumulate (`winlog`). `vision` is a rich, mostly self-contained surface that sits alongside the loop rather than inside it. `actions` is the flat whole-app task list — a Todoist-style aggregation and quick-add surface over the entities the loop modules own.
 
-Five of the six modules are **Core** — this is a focused personal tool with almost no infrastructure surface beyond persistence and navigation.
+Six of the seven modules are **Core** — this is a focused personal tool with almost no infrastructure surface beyond persistence and navigation.
 
 ## Modules
 
@@ -68,6 +68,16 @@ Five of the six modules are **Core** — this is a focused personal tool with al
 
 ---
 
+### actions
+**Type**: Core
+**Description**: The flat whole-app task list — a Todoist/Things-style view of every Action, grouped Path → Goal (sub-Goals nested) → Actions, with an Inbox group on top and standalone Actions after each section's Goal groups. Quick-add rows create Actions (assigned to a Goal, or standalone, with an optional due date via a Today/Tomorrow/pick-date popover) and Goals right from the list. Rows complete/un-complete, schedule, rename and frog-toggle in place; done/abandoned hide behind a "Show completed" toggle. No new entities — a derived surface over `Action`, `Goal`, `Path`.
+**Entities**: none stored — reads and writes `Action`, `Goal`, `Path` through the owning modules' hooks.
+**Key Actions**: Open Actions view, quick-add Action (to Goal / standalone, optional `scheduledDate`), quick-create Goal (top-level), complete/un-complete, schedule/unschedule, rename, toggle frog, show completed.
+**Connects to**: `capture-triage` (consumes `useActions`; Inbox group deep-links to triage); `goals` (consumes `useGoals` for the tree and quick-create); `paths` (consumes `usePaths` for sections and order); `today` (shared `scheduledDate` semantics and schedule dialog); `winlog` (completing a row moves its Win).
+**Design priority**: Medium — wide surface but low structural risk: it introduces no entities and every write rides an existing hook. The design work is scannability (grouping, sorting, date chips) and frictionless quick-add.
+
+---
+
 ### app-shell
 **Type**: Generic
 **Description**: Navigation between modules, the composed landing screen, the Dexie / LocalStorage persistence layer, and settings (Unsplash API key, export). Single role — `Owner` — no auth.
@@ -92,6 +102,10 @@ graph LR
     GOALS -->|achieving a Goal creates a Win| WINLOG
     TODAY -->|completing an Action creates a Win| WINLOG
     TODAY -->|sections grouped by Path| PATHS
+    ACTIONS[actions] -->|reads/writes via useActions| CAPTURE
+    ACTIONS -->|reads Goals, quick-create| GOALS
+    ACTIONS -->|reads Paths + order| PATHS
+    ACTIONS -->|completing a row creates a Win| WINLOG
     VISION -->|Unsplash key| SHELL[app-shell]
     SHELL -->|hosts + navigates| PATHS
 ```
@@ -104,6 +118,7 @@ graph LR
 4. **today** — needs Actions that are homed and schedulable. This is the heart of daily use and where the completion flow is born.
 5. **winlog** — needs real completed Actions / achieved Goals to show anything meaningful. Build once the completion flows in `today` and `goals` exist.
 6. **vision** — rich but independent of the value loop. Slot in last so craft effort doesn't delay proving the core.
+7. **actions** — planned via proto-feature after the loop shipped (docs/changes/actions-page.md). Depends on all entity-owning modules existing; adds no entities, so it slots in cleanly once the hooks it consumes are stable.
 
 `app-shell` is set up by `proto-devsetup` + `proto-highlevelui` before step 1.
 

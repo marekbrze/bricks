@@ -18,7 +18,7 @@ erDiagram
     ACTION }o--o| GOAL : "assigned to (max 1)"
 ```
 
-Derived views (not stored entities): **WinLog** and **ContributionGraph** — both computed from `Action.completedAt` / `Goal` achievement over time.
+Derived views (not stored entities): **WinLog** and **ContributionGraph** — both computed from `Action.completedAt` / `Goal` achievement over time. The **ActionsView** (`actions` module) is likewise derived — a grouped read of `Path` → `Goal` → `Action` (plus Inbox items), writing only through the owning modules' hooks; no stored state of its own.
 
 Relationship notes:
 - An `Action` lives in exactly one of three places: the **Inbox** (no Path, no Goal), directly under a **Path** (standalone), or under a **Goal**. It never belongs to more than one `Goal`.

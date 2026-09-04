@@ -8,9 +8,9 @@ The application shell — the frame every module screen renders inside. Structur
 
 ## Navigation
 
-- **Desktop**: **top bar** — brand on the left, 4 module links inline in the header. Hidden below the `md` breakpoint.
-- **Mobile**: **bottom tabs** — 4 fixed icons + labels at the viewport bottom. Hidden at `md` and up.
-- Only **4 of the 6 design modules** are top-level destinations. `vision` and `goals` are sub-navigation reached from inside a Path (Path overview → its Vision board / its Goals), not the main nav.
+- **Desktop**: **top bar** — brand on the left, 5 module links inline in the header. Hidden below the `md` breakpoint.
+- **Mobile**: **bottom tabs** — 5 fixed icons + labels at the viewport bottom (tightened spacing at ~360 px). Hidden at `md` and up.
+- Only **5 of the 7 design modules** are top-level destinations. `vision` and `goals` are sub-navigation reached from inside a Path (Path overview → its Vision board / its Goals), not the main nav.
 
 ## Home page
 
@@ -21,11 +21,12 @@ The application shell — the frame every module screen renders inside. Structur
 | Module (code) | Label (display) | Route | Order |
 |---|---|---|---|
 | `today` | Today | `/today` | 1 |
-| `paths` | Paths | `/paths` | 2 |
-| `capture-triage` | Inbox | `/capture-triage` | 3 |
-| `winlog` | Log | `/winlog` | 4 |
+| `actions` | Actions | `/actions` | 2 |
+| `paths` | Paths | `/paths` | 3 |
+| `capture-triage` | Inbox | `/capture-triage` | 4 |
+| `winlog` | Log | `/winlog` | 5 |
 
-Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` and `goals` get nested routes under `/paths/:pathId/...` when `proto-lofi` reaches them.
+Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` and `goals` get nested routes under `/paths/:pathId/...` when `proto-lofi` reaches them. `actions` (order 2) sits next to Today — the two daily surfaces.
 
 ## Content layout
 

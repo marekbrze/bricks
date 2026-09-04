@@ -92,6 +92,10 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Abandon Action | Set to `abandoned` | Owner | |
 | Review abandoned Actions | Periodically look through abandoned items | Owner | |
 | Delete Action | Remove permanently | Owner | Final step after abandoning; also removes it from history |
+| Quick-add Action (Actions view) | Inline-add an Action from the flat list: under a Goal, or standalone under a Path, with an optional due date (Today / Tomorrow / pick-date popover) | Owner | Planned (proto-feature, actions-page); `scheduledDate` shared with Today |
+| Quick-create Goal (Actions view) | Create a top-level Goal (name + optional deadline) from a Path section header | Owner | Planned (proto-feature, actions-page); last in priority order |
+| Open Actions view | Flat whole-app task list grouped Path → Goal → Actions, Inbox group on top | Owner | Planned (proto-feature, actions-page); 5th nav entry |
+| Show completed | Toggle visibility of done/abandoned Actions in the Actions view | Owner | Planned (proto-feature, actions-page); hidden by default, rendered in place when shown |
 
 ### Inbox (process, not an entity)
 
