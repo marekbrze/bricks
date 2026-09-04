@@ -17,6 +17,12 @@ const INITIAL_VISIONS: Vision[] = []
 /** A function that reverts one mutation; wired to an Undo toast by the caller. */
 export type UndoFn = () => void
 
+/**
+ * Mutations return `null` when nothing changed — the caller must not toast
+ * (or offer an Undo) for a no-op.
+ */
+export type UndoFnOrNull = UndoFn | null
+
 export function useVision() {
   const {
     value: visions,
@@ -143,36 +149,42 @@ export function useVision() {
     [mutateTiles],
   )
 
-  /** Delete a tile — works for either a note or an image. Returns an Undo that restores it. */
+  /**
+   * Delete a tile — works for either a note or an image. Returns an Undo that
+   * restores it, or `null` when the tile doesn't exist (nothing to undo).
+   */
   const deleteTile = useCallback(
-    (pathId: string, tileId: string): UndoFn => {
+    (pathId: string, tileId: string): UndoFnOrNull => {
+      const existing = tilesForPath(pathId)
+      if (!existing.some((t) => t.id === tileId)) return null
       const snapshot = visions
       mutateTiles(pathId, (tiles) => tiles.filter((t) => t.id !== tileId))
       return restoreSnapshot(snapshot)
     },
-    [visions, mutateTiles, restoreSnapshot],
+    [visions, tilesForPath, mutateTiles, restoreSnapshot],
   )
 
   /**
    * Move a tile to a new index within its Path's board — notes and images
-   * share one order. Returns an Undo that restores the previous ordering.
+   * share one order. Returns an Undo that restores the previous ordering, or
+   * `null` when the move is a no-op (tile missing, or already at that index).
    */
   const reorderTile = useCallback(
-    (pathId: string, tileId: string, toIndex: number): UndoFn => {
+    (pathId: string, tileId: string, toIndex: number): UndoFnOrNull => {
+      const tiles = tilesForPath(pathId)
+      const from = tiles.findIndex((t) => t.id === tileId)
+      const clamped = Math.max(0, Math.min(toIndex, tiles.length - 1))
+      if (from === -1 || from === clamped) return null
       const snapshot = visions
-      mutateTiles(pathId, (tiles) => {
-        const from = tiles.findIndex((t) => t.id === tileId)
-        if (from === -1) return tiles
-        const clamped = Math.max(0, Math.min(toIndex, tiles.length - 1))
-        if (from === clamped) return tiles
-        const next = [...tiles]
+      mutateTiles(pathId, (current) => {
+        const next = [...current]
         const [moved] = next.splice(from, 1)
         next.splice(clamped, 0, moved)
         return next
       })
       return restoreSnapshot(snapshot)
     },
-    [visions, mutateTiles, restoreSnapshot],
+    [visions, tilesForPath, mutateTiles, restoreSnapshot],
   )
 
   const storageOk = useMemo(() => {

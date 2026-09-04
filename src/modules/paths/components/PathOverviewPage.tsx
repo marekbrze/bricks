@@ -9,6 +9,7 @@ import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
 import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
 import { useVision } from '@/modules/vision/hooks/use-vision'
 import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
+import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnreadable'
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ModuleStubSection } from './ModuleStubSection'
@@ -39,12 +40,15 @@ export function PathOverviewPage() {
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
   const { winDaysForPath } = useWinLog()
-  const { visionTileCountForPath } = useVision()
+  const { visionTileCountForPath, dataUnreadable: visionUnreadable, resetVisions } = useVision()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   if (dataUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
+  // The summary card reads `visions` too — a corrupt value must surface the
+  // same recovery screen the board shows, not an inviting empty state.
+  if (visionUnreadable) return <VisionDataUnreadable onReset={resetVisions} />
 
   const path = getPath(pathId)
   if (!path) return <PathNotFound />

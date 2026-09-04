@@ -105,19 +105,32 @@ summary so that connection stays visible without opening the full board.
 
 ## Edge Cases
 
-(Rough, mentioned during detailing — the systematic sweep is `proto-edgecases`.)
+(Rough during detailing; the systematic sweep lives in
+`docs/modules/vision-edgecases.md` — all 10 gaps found there are closed as of
+`proto-harden`.)
 
 - **Empty board**: no notes or images yet → empty state prompting the first
-  add, not a blank grid.
+  add (with the Add menu built in), not a blank grid.
 - **Unsplash search, no results**: query matches nothing in the placeholder
   set → "no results" message, search field stays open to retry.
-- **Very large uploaded image**: local file picked is large → still stored
-  as a data URL for the prototype; a real build would need a size guard.
-  Flagged, not solved here.
-- **Export with zero tiles**: Export control should be disabled/hidden when
-  the board is empty rather than downloading an empty file.
+- **Very large uploaded image**: local file above 1.5 MB is refused *before*
+  reading, with a toast explaining the local-storage budget — one phone
+  photo can't blow the quota and stop the app from persisting. (Was
+  "flagged, not solved" until `proto-harden`.)
+- **Non-image upload**: a file that isn't an image (picker switched to "all
+  files") is refused with a toast; a failed file read shows an error toast
+  instead of doing nothing.
+- **Export with zero tiles**: Export is hidden when the board is empty
+  rather than downloading an empty file.
 - **Deleting the last tile**: board returns to its empty state, doesn't
-  error.
+  error. Single-click delete stays — the Undo toast is the safety net, the
+  fragment-sized counterpart of Goal's confirm dialog.
+- **No-op mutations**: dropping a tile in place or deleting an
+  already-gone tile shows no toast and no Undo — feedback is always true.
+- **Very long note**: clamped to six lines on the board; the full text stays
+  in storage and opens on click-to-edit.
+- **Corrupt stored Vision data**: the recovery screen shows on the board
+  *and* on the Path overview, not just where the corruption is discovered.
 
 ## Integration Points
 

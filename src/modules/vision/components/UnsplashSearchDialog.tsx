@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,12 +12,18 @@ export function UnsplashSearchDialog({
   open,
   onOpenChange,
   onPick,
+  initialQuery = '',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onPick: (photo: MockUnsplashPhoto) => void
+  /** Starting query — lets stories (and later, re-opens) render a filled state. */
+  initialQuery?: string
 }) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
+  // Closing happens through React state, so a fast double-activate would fire
+  // onPick twice and add the photo twice — lock after the first pick.
+  const pickLock = useRef(false)
   const results = searchMockUnsplash(query)
 
   return (
@@ -26,6 +32,7 @@ export function UnsplashSearchDialog({
       onOpenChange={(o) => {
         onOpenChange(o)
         if (!o) setQuery('')
+        else pickLock.current = false
       }}
     >
       <DialogContent className="max-w-lg">
@@ -54,6 +61,8 @@ export function UnsplashSearchDialog({
                 key={photo.id}
                 type="button"
                 onClick={() => {
+                  if (pickLock.current) return
+                  pickLock.current = true
                   onPick(photo)
                   setQuery('')
                 }}

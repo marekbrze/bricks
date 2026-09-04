@@ -27,6 +27,10 @@ export function visionExportFileName(pathName: string): string {
     pathName
       .trim()
       .toLowerCase()
+      // Fold diacritics first ("życie" → "zycie") so the slug keeps readable
+      // letters instead of silently dropping them.
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'path'
   return `${slug}-vision.md`

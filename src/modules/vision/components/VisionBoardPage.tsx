@@ -14,6 +14,14 @@ import { UnsplashSearchDialog } from './UnsplashSearchDialog'
 import { VisionTileCard } from './VisionTileCard'
 import { VisionDataUnreadable } from './VisionDataUnreadable'
 
+/**
+ * Upload ceiling — keeps a single pick from exhausting the ~5 MB LocalStorage
+ * budget (a data URL is ~4/3× the file size) and flipping the whole app into
+ * "changes aren't being saved". A prototype-safe limit, not a product rule.
+ */
+const MAX_UPLOAD_MB = 1.5
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+
 export function VisionBoardPage() {
   const { pathId = '' } = useParams()
   const { showToast } = useToast()
@@ -53,12 +61,14 @@ export function VisionBoardPage() {
 
   const handleReorder = (tileId: string, toIndex: number) => {
     const undo = reorderTile(pathId, tileId, toIndex)
-    showToast('Moved', { label: 'Undo', onClick: undo })
+    // A no-op (drop in place, tile gone) stays silent — the toast is also the
+    // screen-reader announcement that the board changed, so it must be true.
+    if (undo) showToast('Moved', { label: 'Undo', onClick: undo })
   }
 
   const handleDelete = (tileId: string) => {
     const undo = deleteTile(pathId, tileId)
-    showToast('Tile deleted', { label: 'Undo', onClick: undo })
+    if (undo) showToast('Tile deleted', { label: 'Undo', onClick: undo })
   }
 
   const commitNewNote = () => {
@@ -70,11 +80,27 @@ export function VisionBoardPage() {
 
   const handleUploadFile = (file: File | undefined) => {
     if (!file) return
+    // `accept="image/*"` only filters the picker's default view — the Owner can
+    // still pick any file, and a non-image would render as a broken tile.
+    if (!file.type.startsWith('image/')) {
+      showToast('That’s not an image file — pick a JPG, PNG, WebP or GIF.')
+      return
+    }
+    // LocalStorage (this prototype's storage) holds roughly 5 MB per origin,
+    // and a data URL is ~4/3× the file size — one phone photo would blow the
+    // quota and stop the whole app from persisting. Guard before reading.
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast(`That image is too large to store locally — pick one under ${MAX_UPLOAD_MB} MB.`)
+      return
+    }
     const reader = new FileReader()
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         addImage(pathId, { src: reader.result, alt: file.name, source: 'upload' })
       }
+    }
+    reader.onerror = () => {
+      showToast('Couldn’t read that file — try again.')
     }
     reader.readAsDataURL(file)
   }

@@ -43,7 +43,7 @@
     (`mutateTiles`), so there is no "must create a Vision first" step to get wrong.
 - **New gaps found**: 10
 - **By severity**: 🔴 1 · 🟡 6 · 🟢 3
-- **Hardened (proto-harden, 2026-09-04)**: 10 closed, 0 deferred — see "Hardening status" below.
+- **Hardened (proto-harden, 2026-09-04)**: 9 closed, 1 documented as-is (#10) — see "Hardening status" below.
 
 ## Inventory
 
@@ -104,3 +104,23 @@ The top-priority gaps a harden pass should implement first:
 - Real but lower-impact: note clamp (#6), Unsplash double-pick (#7), export
   filename fold-casing (#8), toast announcements for reorder (#9). #10 is a
   documented decision, no code change.
+
+## Hardening status (proto-harden, 2026-09-04)
+
+| # | Status | What changed | Where |
+|---|--------|--------------|-------|
+| 1 | ✅ | Uploads above 1.5 MB are refused *before* reading, with a toast explaining the local-storage budget — one phone photo can no longer flip the whole app into "changes aren't being saved" | `src/modules/vision/components/VisionBoardPage.tsx` (`MAX_UPLOAD_MB`, `handleUploadFile`) |
+| 2 | ✅ | `handleUploadFile` checks `file.type.startsWith('image/')` and refuses anything else with a toast naming the accepted kinds | `src/modules/vision/components/VisionBoardPage.tsx` (`handleUploadFile`) |
+| 3 | ✅ | `reader.onerror` shows a "Couldn't read that file" toast instead of failing silently | `src/modules/vision/components/VisionBoardPage.tsx` (`handleUploadFile`) |
+| 4 | ✅ | `deleteTile`/`reorderTile` return `null` when nothing changed (tile missing, drop in place); the caller toasts — and offers Undo — only on a real change, so the toast/announcement is always true | `src/modules/vision/hooks/use-vision.ts` (`UndoFnOrNull`, `deleteTile`, `reorderTile`), `VisionBoardPage.tsx` (`handleReorder`, `handleDelete`) |
+| 5 | ✅ | `PathOverviewPage` checks `useVision().dataUnreadable` next to the existing `paths` check and routes to the same `VisionDataUnreadable` recovery screen — the overview no longer shows an inviting empty state over unreadable storage | `src/modules/paths/components/PathOverviewPage.tsx` |
+| 6 | ✅ | Note tiles clamp to six lines on the board (Tailwind `line-clamp-6`); storage and the click-to-edit editor keep the full text; a `title` on clamped notes points at the full note | `src/modules/vision/components/VisionTileCard.tsx` (note render branch) |
+| 7 | ✅ | A pick lock (`pickLock` ref, reset on open) makes double-activate on a result a no-op — one click adds exactly one tile | `src/modules/vision/components/UnsplashSearchDialog.tsx` |
+| 8 | ✅ | The export slug folds diacritics (`normalize('NFD')` + strip combining marks) — "Życie" downloads as `zycie-vision.md`, not `ycie-vision.md` | `src/modules/vision/lib/export-markdown.ts` (`visionExportFileName`) |
+| 9 | ✅ | Reorder announcements ride the existing toast (`Toaster` region is `aria-live="polite"`); with #4 the toast only fires for real moves, so every announcement is accurate | `src/shared/components/toast/Toaster.tsx`, `VisionBoardPage.tsx` (`handleReorder`) |
+| 10 | ✅ (documented) | Single-click delete with Undo kept as the deliberate fragment-sized counterpart of Goal's confirm dialog; revisit only if user testing shows destructive misfires | `docs/modules/vision.md` (Edge Cases) |
+
+New Storybook stories cover the hardened states: `Vision/VisionBoardPage`
+(`LongNoteClamped`, `ArchivedPathReadOnly`, `PathNotFound`,
+`VisionsDataUnreadable`, `EmptyBoard`) and `Vision/UnsplashSearchDialog`
+(`NoResults`, `FullPool`).
