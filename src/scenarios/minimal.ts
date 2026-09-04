@@ -1,7 +1,8 @@
 import type { AppData } from './types';
 import type { Path } from '@/modules/paths/types/path';
+import type { Action } from '@/modules/capture-triage/types/action';
 
-/** One young Path, a couple of open Achievements, no wins yet. */
+/** One young Path, a couple of open Achievements, no wins yet, two ideas waiting in the Inbox. */
 export function minimalScenario(): AppData {
   const now = new Date().toISOString();
   const paths: Path[] = [
@@ -24,5 +25,31 @@ export function minimalScenario(): AppData {
       winDays: {},
     },
   ];
-  return { paths };
+  const actions: Action[] = [
+    {
+      id: 'action-band',
+      createdAt: now,
+      updatedAt: now,
+      name: 'Buy a resistance band',
+      state: 'inbox',
+      pathId: null,
+      goalId: null,
+      frog: false,
+      scheduledDate: null,
+      completedAt: null,
+    },
+    {
+      id: 'action-mobility',
+      createdAt: now,
+      updatedAt: now,
+      name: 'Try a mobility routine before runs',
+      state: 'inbox',
+      pathId: null,
+      goalId: null,
+      frog: false,
+      scheduledDate: null,
+      completedAt: null,
+    },
+  ];
+  return { paths, actions };
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { HOME_PATH } from '@/shared/navigation'
+import { QuickCaptureButton } from '@/modules/capture-triage'
 import { TopNav } from './TopNav'
 
 /**
@@ -19,8 +20,10 @@ export function AppHeader() {
 
         <TopNav className="hidden md:flex" />
 
-        {/* Right-side slot — settings / export land here later. */}
-        <div className="ml-auto flex items-center gap-2" aria-hidden="true" />
+        {/* Right-side slot — settings / export land here too, later. */}
+        <div className="ml-auto flex items-center gap-2">
+          <QuickCaptureButton />
+        </div>
       </div>
     </header>
   )
