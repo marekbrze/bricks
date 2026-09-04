@@ -23,7 +23,6 @@ const ARCHIVED_PATH_GOALS: Goal[] = [
     state: 'active',
     achievedOn: null,
     frog: false,
-    mockWinDays: {},
   },
 ]
 

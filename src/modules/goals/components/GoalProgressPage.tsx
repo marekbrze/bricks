@@ -6,7 +6,8 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
-import { ContributionGraph } from '@/modules/paths/components/ContributionGraph'
+import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
+import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useGoals } from '../hooks/use-goals'
@@ -39,6 +40,7 @@ export function GoalProgressPage() {
   const { showToast } = useToast()
   const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
   const { dataUnreadable: actionsUnreadable, resetActions } = useActions()
+  const { winDaysForGoal } = useWinLog()
   const {
     getGoal,
     childGoals,
@@ -176,7 +178,7 @@ export function GoalProgressPage() {
             {counts.actions} cumulative {counts.actions === 1 ? 'Action' : 'Actions'}
             {counts.subGoals > 0 && ` across ${counts.subGoals} sub-${counts.subGoals === 1 ? 'Goal' : 'Goals'}`}
           </p>
-          <ContributionGraph winDays={goal.mockWinDays} weeks={20} label={`${goal.name} wins`} />
+          <ContributionGraph winDays={winDaysForGoal(goal.id)} weeks={20} label={`${goal.name} wins`} />
         </div>
       </section>
 

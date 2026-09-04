@@ -23,7 +23,6 @@ export function minimalScenario(): AppData {
       mockGoalCount: 0,
       mockActionCount: 0,
       mockVisionTileCount: 0,
-      winDays: {},
     },
   ];
   const actions: Action[] = [
@@ -66,7 +65,6 @@ export function minimalScenario(): AppData {
       state: 'active',
       achievedOn: null,
       frog: false,
-      mockWinDays: {},
     },
   ];
   return { paths, actions, goals };

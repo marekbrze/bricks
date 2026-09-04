@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { GripVertical, Target, Trophy } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
-import { ContributionGraph } from './ContributionGraph'
+import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
+import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import type { Path } from '../types/path'
 
@@ -30,6 +31,7 @@ export function PathCard({
   const achievedCount = path.achievements.filter((a) => a.state === 'achieved').length
   const { goalCountForPath } = useGoals()
   const goalCount = goalCountForPath(path.id)
+  const { winDaysForPath } = useWinLog()
 
   return (
     <Card className="gap-3">
@@ -81,7 +83,7 @@ export function PathCard({
         </span>
       </div>
 
-      <ContributionGraph winDays={path.winDays} weeks={16} compact label={`${path.name} wins`} />
+      <ContributionGraph winDays={winDaysForPath(path.id)} weeks={16} compact label={`${path.name} wins`} />
     </Card>
   )
 }

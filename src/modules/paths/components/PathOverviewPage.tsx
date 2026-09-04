@@ -5,9 +5,10 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
+import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
-import { ContributionGraph } from './ContributionGraph'
 import { ModuleStubSection } from './ModuleStubSection'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import { RenamePathDialog } from './RenamePathDialog'
@@ -35,6 +36,7 @@ export function PathOverviewPage() {
   } = usePaths()
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
+  const { winDaysForPath } = useWinLog()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -118,7 +120,7 @@ export function PathOverviewPage() {
           Contribution graph
         </h2>
         <div className="rounded-lg border border-border p-3">
-          <ContributionGraph winDays={path.winDays} weeks={26} label={`${path.name} wins`} />
+          <ContributionGraph winDays={winDaysForPath(path.id)} weeks={26} label={`${path.name} wins`} />
         </div>
       </section>
 

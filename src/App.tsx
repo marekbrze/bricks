@@ -9,6 +9,7 @@ import { pathsRoutes } from './modules/paths'
 import { captureTriageRoutes } from './modules/capture-triage'
 import { goalsRoutes } from './modules/goals'
 import { todayRoutes } from './modules/today'
+import { winlogRoutes } from './modules/winlog'
 
 function App() {
   return (
@@ -26,6 +27,8 @@ function App() {
             {goalsRoutes}
             {/* today — fourth module through proto-lofi; also the landing screen. */}
             {todayRoutes}
+            {/* winlog — fifth module through proto-lofi. */}
+            {winlogRoutes}
             {/* Other modules — proto-lofi replaces this catch-all as each is built. */}
             <Route path=":moduleName" element={<ModulePlaceholder />} />
             {/* Unknown paths fall back home. */}

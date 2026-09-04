@@ -1,30 +1,5 @@
 import type { Goal } from '../types/goal'
 
-/**
- * Deterministic {ISO date -> win count} map, same generator shape as
- * `paths/data/mock.ts` — a stand-in for the real per-Goal graph `winlog`
- * will compute from completed Actions.
- */
-function buildWinDays(weeks: number, seed: number): Record<string, number> {
-  const days: Record<string, number> = {}
-  const today = new Date()
-  let s = seed
-  const rand = () => {
-    s = (s * 1664525 + 1013904223) % 4294967296
-    return s / 4294967296
-  }
-  for (let i = weeks * 7; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    const iso = d.toISOString().slice(0, 10)
-    const weekday = d.getDay()
-    const base = weekday === 0 || weekday === 6 ? 0.2 : 0.5
-    const r = rand()
-    if (r < base) days[iso] = 1 + Math.floor(rand() * 2)
-  }
-  return days
-}
-
 const nowIso = new Date().toISOString()
 
 function goal(partial: Partial<Goal> & Pick<Goal, 'id' | 'name' | 'pathId'>): Goal {
@@ -38,7 +13,6 @@ function goal(partial: Partial<Goal> & Pick<Goal, 'id' | 'name' | 'pathId'>): Go
     state: 'active',
     achievedOn: null,
     frog: false,
-    mockWinDays: {},
     ...partial,
   }
 }
@@ -57,7 +31,6 @@ export const MOCK_GOALS: Goal[] = [
     order: 0,
     deadline: '2026-11-01',
     frog: true,
-    mockWinDays: buildWinDays(20, 11),
   }),
   goal({
     id: 'goal-pullup-negatives',
@@ -99,7 +72,6 @@ export const MOCK_GOALS: Goal[] = [
     description: 'Automate savings until three months of expenses sit untouched.',
     order: 0,
     deadline: '2026-12-15',
-    mockWinDays: buildWinDays(20, 42),
   }),
   goal({
     id: 'goal-side-product',

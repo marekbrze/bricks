@@ -1,32 +1,5 @@
 import type { Path } from '../types/path'
 
-/**
- * Build a plausible {ISO date -> win count} map going back `weeks` weeks from
- * today, with a rough weekday bias. Deterministic per seed so the prototype is
- * stable between reloads.
- */
-function buildWinDays(weeks: number, seed: number): Record<string, number> {
-  const days: Record<string, number> = {}
-  const today = new Date()
-  let s = seed
-  const rand = () => {
-    s = (s * 1664525 + 1013904223) % 4294967296
-    return s / 4294967296
-  }
-  for (let i = weeks * 7; i >= 0; i--) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
-    const iso = d.toISOString().slice(0, 10)
-    const weekday = d.getDay()
-    const base = weekday === 0 || weekday === 6 ? 0.25 : 0.6
-    const r = rand()
-    if (r < base) {
-      days[iso] = 1 + Math.floor(rand() * 3)
-    }
-  }
-  return days
-}
-
 const nowIso = new Date().toISOString()
 
 export const MOCK_PATHS: Path[] = [
@@ -50,7 +23,6 @@ export const MOCK_PATHS: Path[] = [
     mockGoalCount: 3,
     mockActionCount: 24,
     mockVisionTileCount: 6,
-    winDays: buildWinDays(20, 7),
   },
   {
     id: 'path-earnings',
@@ -70,7 +42,6 @@ export const MOCK_PATHS: Path[] = [
     mockGoalCount: 2,
     mockActionCount: 15,
     mockVisionTileCount: 4,
-    winDays: buildWinDays(20, 42),
   },
   {
     id: 'path-craft',
@@ -88,7 +59,6 @@ export const MOCK_PATHS: Path[] = [
     mockGoalCount: 1,
     mockActionCount: 6,
     mockVisionTileCount: 2,
-    winDays: buildWinDays(20, 123),
   },
   {
     id: 'path-home',
@@ -105,6 +75,5 @@ export const MOCK_PATHS: Path[] = [
     mockGoalCount: 0,
     mockActionCount: 3,
     mockVisionTileCount: 1,
-    winDays: buildWinDays(20, 256),
   },
 ]

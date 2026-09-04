@@ -16,7 +16,6 @@ const ARCHIVED_PATH_GOAL: Goal = {
   state: 'active',
   achievedOn: null,
   frog: false,
-  mockWinDays: {},
 }
 
 const meta: Meta<typeof GoalProgressPage> = {

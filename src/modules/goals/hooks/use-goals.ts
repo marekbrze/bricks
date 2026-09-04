@@ -131,7 +131,6 @@ export function useGoals() {
         state: 'active',
         achievedOn: null,
         frog: false,
-        mockWinDays: {},
       }
       setGoals([...goals, newGoal])
       return newGoal.id
@@ -287,6 +286,7 @@ export function useGoals() {
     topLevelGoals,
     childGoals,
     siblingGoals,
+    subtreeIds,
     goalCountForPath,
     createGoal,
     editGoal,

@@ -26,8 +26,6 @@ export interface Goal extends BaseEntity {
   achievedOn: string | null
   /** Star-like toggle. Marking a Goal a frog propagates once to its current Actions. */
   frog: boolean
-  /** Mock stand-in until `winlog` computes a real per-Goal contribution graph from completed Actions. */
-  mockWinDays: Record<string, number>
 }
 
 export interface GoalCascadeCounts {

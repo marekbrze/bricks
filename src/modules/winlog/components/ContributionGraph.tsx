@@ -1,17 +1,18 @@
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 
-/** Local calendar date (YYYY-MM-DD), matching how win days are keyed in the hook. */
+/** Local calendar date (YYYY-MM-DD), matching how win days are keyed in `useWinLog`. */
 function localIso(date: Date): string {
   const offsetMs = date.getTimezoneOffset() * 60_000
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
 /**
- * Lightweight GitHub-style contribution grid. The real `ContributionGraph` is
- * owned by the `winlog` module — this is a stand-in so the `paths` prototype can
- * show accumulation on the Path card and overview. Emphasis is on "how much I've
- * already done", not percent-complete.
+ * GitHub-style contribution grid — the visual core of the `winlog` module.
+ * Fed a {date -> win count} map (global, per-Path, or per-Goal, all from
+ * `useWinLog`) and renders one column per week, one cell per day. Emphasis
+ * is on "how much I've already done", not percent-complete — see
+ * docs/modules/winlog.md.
  */
 export function ContributionGraph({
   winDays,

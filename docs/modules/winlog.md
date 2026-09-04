@@ -60,12 +60,12 @@ already looking at it.
 1. On a **Path overview**, the graph is pre-scoped to that Path (Actions
    standalone on it or under any of its Goals, plus that Path's own achieved
    Goals) — no filter control needed, the scope is the page.
-2. On a **Goal progress** page, the graph is scoped further — just that
-   Goal's own Actions plus, if the Goal itself was achieved, that one event.
-   Sub-Goal Actions are **not** rolled into a parent Goal's graph (a
-   sub-Goal is its own Goal with its own progress page — rolling children up
-   would double-count against the Path-level graph, which already includes
-   the whole subtree).
+2. On a **Goal progress** page, the graph is scoped further — that Goal's
+   own Actions **plus every sub-Goal's Actions** (subtree-inclusive), plus
+   an achieved event for the Goal itself and for any achieved sub-Goal.
+   Matches the page's existing cumulative Action count, which is already
+   subtree-inclusive (`cascadeCounts`) — the graph and the count next to it
+   need to agree on what "toward this Goal" means.
 3. Neither embedded graph links out anywhere further — they're a summary
    glance; the full drill-down chronological list only exists on the
    dedicated Log page.

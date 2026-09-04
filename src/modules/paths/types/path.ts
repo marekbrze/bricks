@@ -21,10 +21,11 @@ export interface Achievement {
  * See docs/ENTITY_MAP.md.
  *
  * Achievements are embedded here (they hang directly off the Path and are
- * order-independent). The `mock*` counters and `winDays` stand in for data that
- * the `goals`, `vision` and `winlog` modules will own once they are built — the
- * `paths` prototype needs them for the cascade-delete summary and the
- * contribution graph.
+ * order-independent). The `mock*` counters stand in for data that the
+ * `goals`/`vision` modules will own once fully wired — the `paths` prototype
+ * needs them for the cascade-delete summary. The contribution graph is real:
+ * `winlog` computes it from `Action.completedAt` / `Goal.achievedOn` — see
+ * `useWinLog`.
  */
 export interface Path extends BaseEntity {
   name: string
@@ -44,8 +45,6 @@ export interface Path extends BaseEntity {
   mockActionCount: number
   /** Mock: number of Vision tiles (owned by `vision`). */
   mockVisionTileCount: number
-  /** Mock: ISO date (YYYY-MM-DD) -> win count that day, feeds the ContributionGraph. */
-  winDays: Record<string, number>
 }
 
 export interface PathCascadeCounts {

@@ -96,7 +96,6 @@ export function usePaths() {
         mockGoalCount: 0,
         mockActionCount: 0,
         mockVisionTileCount: 0,
-        winDays: {},
       }
       setPaths([...paths, newPath])
       return newPath.id
