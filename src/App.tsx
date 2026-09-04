@@ -11,6 +11,7 @@ import { goalsRoutes } from './modules/goals'
 import { todayRoutes } from './modules/today'
 import { winlogRoutes } from './modules/winlog'
 import { visionRoutes } from './modules/vision'
+import { actionsRoutes } from './modules/actions'
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
             {winlogRoutes}
             {/* vision — sixth and last module through proto-lofi. */}
             {visionRoutes}
+            {/* actions — planned via proto-feature (docs/changes/actions-page.md). */}
+            {actionsRoutes}
             {/* Other modules — proto-lofi replaces this catch-all as each is built. */}
             <Route path=":moduleName" element={<ModulePlaceholder />} />
             {/* Unknown paths fall back home. */}

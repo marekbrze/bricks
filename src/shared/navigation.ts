@@ -1,7 +1,7 @@
-import { CalendarDays, Signpost, Inbox, Trophy, type LucideIcon } from 'lucide-react'
+import { CalendarDays, ListTodo, Signpost, Inbox, Trophy, type LucideIcon } from 'lucide-react'
 
 /**
- * Top-level navigation. Only 4 of the 6 design modules are nav destinations —
+ * Top-level navigation. Only 5 of the 7 design modules are nav destinations —
  * `vision` and `goals` are reached from inside a Path, not the main nav.
  * See docs/UI-STRATEGY.md.
  *
@@ -19,6 +19,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { module: 'today', label: 'Today', path: '/today', icon: CalendarDays },
+  { module: 'actions', label: 'Actions', path: '/actions', icon: ListTodo },
   { module: 'paths', label: 'Paths', path: '/paths', icon: Signpost },
   { module: 'capture-triage', label: 'Inbox', path: '/capture-triage', icon: Inbox },
   { module: 'winlog', label: 'Log', path: '/winlog', icon: Trophy },

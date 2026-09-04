@@ -30,3 +30,4 @@ bun.lockb
 
 *storybook.log
 storybook-static
+*.tsbuildinfo

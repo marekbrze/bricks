@@ -308,10 +308,71 @@ export function useActions() {
     [actions],
   )
 
+  // --- Cross-module surface for `actions` ----------------------------------
+  // The Actions view (flat grouped list) creates already-assigned Actions
+  // straight from its quick-add rows — skipping the Inbox entirely, unlike
+  // `captureAction`. Everything else it does (schedule, complete, rename)
+  // rides the existing surface above.
+
+  /**
+   * Quick-add from the Actions view: create an Action already assigned to a
+   * Goal (or standalone to a Path when `goalId` is null), with an optional
+   * due date. No-op on an empty/whitespace name, mirroring `captureAction`.
+   */
+  const createAction = useCallback(
+    (data: { name: string; pathId: string; goalId?: string | null; scheduledDate?: string | null }) => {
+      const trimmed = data.name.trim()
+      if (!trimmed) return
+      const now = new Date().toISOString()
+      const newAction: Action = {
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now,
+        name: trimmed,
+        state: 'assigned',
+        pathId: data.pathId,
+        goalId: data.goalId ?? null,
+        frog: false,
+        scheduledDate: data.scheduledDate || null,
+        completedAt: null,
+      }
+      setActions([...actions, newAction])
+    },
+    [actions, setActions],
+  )
+
+  /** Rename from the Actions view's row menu — no-op on an empty/whitespace name. */
+  const renameAction = useCallback(
+    (id: string, name: string) => {
+      const trimmed = name.trim()
+      if (!trimmed) return
+      setActions(
+        actions.map((a) => (a.id === id ? touch({ ...a, name: trimmed }) : a)),
+      )
+    },
+    [actions, setActions],
+  )
+
+  /**
+   * Per-Action frog toggle (Actions view row menu). Unlike the Goal-side
+   * toggle in `useGoals`, no propagation either way: marking one Action a
+   * frog doesn't touch its siblings, un-marking doesn't retract what a Goal
+   * marked earlier (same "one-time propagation" stance as `markFrogForGoalActions`).
+   */
+  const toggleActionFrog = useCallback(
+    (id: string) => {
+      setActions(actions.map((a) => (a.id === id ? touch({ ...a, frog: !a.frog }) : a)))
+    },
+    [actions, setActions],
+  )
+
   return {
     actions,
     inboxActions,
     actionCountForPath,
+    createAction,
+    renameAction,
+    toggleActionFrog,
     scheduleAction,
     unscheduleAction,
     completeAction,
