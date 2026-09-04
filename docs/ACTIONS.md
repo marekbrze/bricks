@@ -115,6 +115,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 |--------|------------|------|-------|
 | Open WinLog | Chronological history of completed Actions and achieved Goals | Owner | Main motivational fuel |
 | Open ContributionGraph | GitHub-style cumulative graph per Goal / Path | Owner | Emphasis on accumulation, not % |
+| Filter WinLog by Path | Re-scope the global Log's graph + list to one Path | Owner | New — proto-detail(winlog) |
 
 ## Deferred
 

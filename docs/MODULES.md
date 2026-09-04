@@ -117,5 +117,11 @@ graph LR
 
 ## Open strategic questions
 
-- **Unresolved from `proto-deepen`**, carried forward: whether `WinLog` history survives deletion of the underlying Action; exact `Action` fields beyond name; `PairwisePrioritization` scope (Goals-in-Path vs Actions); how "openness / API" manifests in a local prototype.
+- ~~Whether `WinLog` history survives deletion of the underlying Action~~
+  Resolved (proto-detail, winlog, 2026-09-04): it does not — `WinLog` is a
+  live derived read with no stored ledger, so deleting (or un-completing) the
+  source Action/Goal removes its Win immediately. See ADR 0013.
+- **Unresolved from `proto-deepen`**, carried forward: exact `Action` fields
+  beyond name; `PairwisePrioritization` scope (Goals-in-Path vs Actions); how
+  "openness / API" manifests in a local prototype.
 - `app-shell` navigation pattern (sidebar of Paths? top-level tabs for Today / Paths / Inbox / Log?) is deferred to `proto-highlevelui`.
