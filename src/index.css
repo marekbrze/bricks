@@ -128,3 +128,15 @@
     @apply font-sans;
     }
 }
+
+/* iOS Safari auto-zooms the page on focus of any text input under 16px,
+   and the zoom often doesn't reset when navigating the SPA afterwards.
+   Force 16px on iOS only (all iOS browsers are WebKit) to stop the zoom
+   without changing the visual text-sm size elsewhere. Left unlayered so
+   it beats Tailwind's utilities layer (e.g. text-sm) regardless of
+   selector specificity. */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px;
+  }
+}
