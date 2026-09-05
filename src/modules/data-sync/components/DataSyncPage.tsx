@@ -316,7 +316,12 @@ export function DataSyncPage() {
             <CardTitle className="text-base">Account</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {user === undefined ? (
+            {user === undefined || user.isLoading ? (
+              // The addon's currentUser is a BehaviorSubject: it emits its
+              // startup default (`isLoading: true`, `isLoggedIn` unset)
+              // synchronously on subscribe, before it has read the persisted
+              // login from IndexedDB. Without this check that default reads
+              // as "logged out" and flashes the sign-in form on every load.
               <p className="text-sm text-muted-foreground">Checking sign-in…</p>
             ) : loggedIn ? (
               <div className="flex flex-col gap-3">
