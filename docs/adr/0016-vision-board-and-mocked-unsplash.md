@@ -2,7 +2,8 @@
 
 **Date**: 2026-09-04
 **Module**: vision
-**Status**: Accepted
+**Status**: Accepted — the mocked-Unsplash part is superseded by ADR 0027
+(live Unsplash API search); every other decision here still stands.
 
 ## Context
 

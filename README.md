@@ -18,6 +18,16 @@ Click **Use this template** above, or:
 gh repo create my-prototype --template marekbrze/proto-template
 ```
 
+## Configuration
+
+Copy `.env.example` to `.env.local` for build-time settings. Everything there
+ships in the client bundle — public identifiers only.
+
+- `VITE_UNSPLASH_ACCESS_KEY` — Unsplash Access Key (the public `Client-ID`)
+  for the Vision board's photo search. Optional: without it, the search dialog
+  asks for a key and keeps it in that browser, and bundled sample photos stay
+  available either way. See `docs/adr/0027-live-unsplash-search.md`.
+
 ## Status
 
 Template — maintained as my default starting point for UX prototypes.

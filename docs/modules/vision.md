@@ -50,12 +50,14 @@ summary so that connection stays visible without opening the full board.
 
 1. From the "+ Add" menu, picks "Search Unsplash" → a search panel opens
    with a text field and a results grid.
-2. Owner types a query → results populate (see Decisions: the prototype
-   mocks this against a bundled placeholder photo set — no live network
-   call or API key needed to use the flow).
+2. Owner types a query → results populate from the live Unsplash API
+   (debounced, 24 per page, "Load more" for the next page). With no Access
+   Key configured, the panel first offers to connect one, or to browse a
+   small bundled sample set instead (ADR 0027).
 3. Owner clicks a result → it's added as an image tile at the end of the
    board, carrying its Unsplash attribution (photographer name, linked back
-   in the export).
+   on the tile and in the export), and the pick is reported to Unsplash's
+   download endpoint as their API guidelines require.
 4. Owner can close the search panel without picking anything — no tile is
    added.
 
@@ -98,7 +100,7 @@ summary so that connection stays visible without opening the full board.
 | Edit note | Change text in place | VisionNote | |
 | Delete note | Remove tile | VisionNote | |
 | Upload image | Add tile from local file | VisionImage | Stored as data URL in this prototype |
-| Search Unsplash | Query + pick a result to add | VisionImage | Mocked against a bundled placeholder set (ADR 0016) |
+| Search Unsplash | Query + pick a result to add | VisionImage | Live Unsplash API; bundled samples when no key (ADR 0027) |
 | Remove image | Delete tile | VisionImage | |
 | Reorder tile | Drag handle or Move up/down | VisionNote / VisionImage | Notes and images share one order |
 | Export Vision | Merge board into one markdown file, download | Vision | No preview step |
@@ -111,8 +113,12 @@ summary so that connection stays visible without opening the full board.
 
 - **Empty board**: no notes or images yet → empty state prompting the first
   add (with the Add menu built in), not a blank grid.
-- **Unsplash search, no results**: query matches nothing in the placeholder
-  set → "no results" message, search field stays open to retry.
+- **Unsplash search, no results**: query matches nothing → "no results"
+  message, search field stays open to retry.
+- **Unsplash unavailable**: no Access Key, a rejected key, a spent hourly
+  quota, offline, or a 5xx — each states what happened and offers the move
+  that fits (connect / change key / retry / browse the bundled samples), so
+  the add-a-photo flow never dead-ends (ADR 0027).
 - **Very large uploaded image**: local file above 1.5 MB is refused *before*
   reading, with a toast explaining the local-storage budget — one phone
   photo can't blow the quota and stop the app from persisting. (Was
@@ -137,6 +143,6 @@ summary so that connection stays visible without opening the full board.
 - **paths**: one Vision per Path (confirmed — ADR 0016); Path overview
   embeds the Vision summary and links to the full board. Deleting a Path
   cascade-deletes its Vision.
-- **app-shell**: none required for the prototype — Unsplash search is
-  mocked locally, so no live settings/API-key screen is needed yet (see ADR
-  0016). Revisit if/when a real Unsplash integration replaces the mock.
+- **app-shell**: none required — the Unsplash Access Key is asked for inside
+  the search dialog itself (or baked in via `VITE_UNSPLASH_ACCESS_KEY`), so
+  no separate settings screen is needed (ADR 0027).

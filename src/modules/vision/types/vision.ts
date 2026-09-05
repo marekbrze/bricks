@@ -15,11 +15,18 @@ export interface VisionNoteTile {
 export interface VisionImageAttribution {
   photographer: string
   profileUrl: string
+  /**
+   * The photo's own page on Unsplash. Optional: tiles added before the live
+   * API landed (ADR 0019), and ones picked from the bundled sample pool, have
+   * only a profile link.
+   */
+  photoUrl?: string | null
 }
 
 /**
  * `VisionImageTile` — a photo tile, from a local upload (`src` is a data URL)
- * or picked from the (mocked, in this prototype) Unsplash search — see ADR 0016.
+ * or picked from the Unsplash search, where `src` hotlinks Unsplash's CDN as
+ * their API guidelines require (ADR 0019).
  */
 export interface VisionImageTile {
   id: string

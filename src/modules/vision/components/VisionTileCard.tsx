@@ -134,7 +134,20 @@ export function VisionTileCard({
                     >
                       {tile.attribution.photographer}
                     </a>{' '}
-                    on Unsplash
+                    on{' '}
+                    {/* Unsplash's API guidelines ask for a link back; the photo's
+                        own page when the tile has one, Unsplash itself otherwise. */}
+                    <a
+                      href={
+                        tile.attribution.photoUrl ??
+                        'https://unsplash.com/?utm_source=bricks&utm_medium=referral'
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:no-underline"
+                    >
+                      Unsplash
+                    </a>
                   </figcaption>
                 )}
               </figure>

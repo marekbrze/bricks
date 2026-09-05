@@ -13,7 +13,14 @@ export function buildVisionMarkdown(pathName: string, tiles: VisionTile[]): stri
     } else {
       parts.push(`![${tile.alt}](${tile.src})`)
       if (tile.attribution) {
-        parts.push(`*Photo by [${tile.attribution.photographer}](${tile.attribution.profileUrl}) on Unsplash*`)
+        // Unsplash's API guidelines want the photographer and Unsplash itself
+        // both linked; the photo's own page is the better Unsplash target when
+        // the tile carries one (older tiles and sample photos don't).
+        const unsplashLink =
+          tile.attribution.photoUrl ?? 'https://unsplash.com/?utm_source=bricks&utm_medium=referral'
+        parts.push(
+          `*Photo by [${tile.attribution.photographer}](${tile.attribution.profileUrl}) on [Unsplash](${unsplashLink})*`,
+        )
       }
       parts.push('')
     }

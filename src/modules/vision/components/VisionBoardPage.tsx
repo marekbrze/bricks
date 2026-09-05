@@ -9,7 +9,7 @@ import { PathNotFound } from '@/modules/paths/components/PathNotFound'
 import { PathTabs } from '@/modules/paths/components/PathTabs'
 import { useVision } from '../hooks/use-vision'
 import { downloadVisionMarkdown } from '../lib/export-markdown'
-import type { MockUnsplashPhoto } from '../data/unsplash-mock'
+import type { UnsplashPhoto } from '../lib/unsplash-api'
 import { AddTileMenu } from './AddTileMenu'
 import { UnsplashSearchDialog } from './UnsplashSearchDialog'
 import { VisionTileCard } from './VisionTileCard'
@@ -106,12 +106,16 @@ export function VisionBoardPage() {
     reader.readAsDataURL(file)
   }
 
-  const handlePickUnsplash = (photo: MockUnsplashPhoto) => {
+  const handlePickUnsplash = (photo: UnsplashPhoto) => {
     addImage(pathId, {
       src: photo.src,
       alt: photo.alt,
       source: 'unsplash',
-      attribution: { photographer: photo.photographer, profileUrl: photo.profileUrl },
+      attribution: {
+        photographer: photo.photographer,
+        profileUrl: photo.profileUrl,
+        photoUrl: photo.photoUrl,
+      },
     })
     setSearchOpen(false)
   }

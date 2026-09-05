@@ -5,8 +5,8 @@ const nowIso = new Date().toISOString()
 /**
  * Boards for the `full` scenario's Paths (`src/modules/paths/data/mock.ts`) —
  * tile counts here match each Path's `mockVisionTileCount` so the overview
- * summary and the real board agree. Images reuse the mocked Unsplash pool
- * (`data/unsplash-mock.ts`) so their attribution renders for real.
+ * summary and the real board agree. Images reuse the bundled sample pool
+ * (`data/unsplash-samples.ts`) so their attribution renders for real.
  */
 export const MOCK_VISIONS: Vision[] = [
   {
