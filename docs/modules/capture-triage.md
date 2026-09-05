@@ -58,23 +58,44 @@ mainstream goal-tracking tools.
    screen ("Inbox zero — 6 items processed") → back to the Inbox / previous
    screen.
 
-### Assign to Goal or standalone to Path
+### Assign to Goal, standalone to Path, or promote to a new Goal
 
-1. On the card, the Owner picks a `Path` first, then optionally narrows to a
-   `Goal` within it — or explicitly leaves it at "standalone on this Path".
-2. Confirming sets `Action.state = assigned` with the chosen `Path`/`Goal`,
-   resolves the card, and advances the loop.
+One unified control, two steps — no separate dialog, no confirm click. See
+ADR 0024.
 
-### Promote Action to Goal
+1. **Step 1 — Path**: the Owner picks a `Path` (single-select chips, one
+   step). Chips 1-9 carry number-key shortcuts.
+2. **Step 2 — Goal search**: a search field for that Path's `Goal`s opens
+   immediately, autofocused. Typing filters the list live; arrow keys move
+   the highlight, Enter (or a click) resolves the card **immediately** —
+   there's no separate "Assign" button to press afterwards.
+   - An empty query surfaces **Standalone (no Goal)** first — so a plain
+     Action with no Goal is Path pick → Enter, nothing typed.
+   - Typing a name with no exact match appends a **Create Goal "…"** row to
+     the same list. Picking it creates the Goal under the chosen Path and
+     promotes the Action into it in one step — this *is* "Promote to Goal",
+     done inline instead of through a separate form.
+3. Whichever row is picked, `Action.state = assigned` (existing/standalone
+   Goal) or the Action is discarded into a brand-new Goal (create-Goal row —
+   its idea now lives as the Goal itself, not as a leftover Inbox item or a
+   stray first child Action, see ADR 0004), the card resolves, and the loop
+   advances.
 
-1. Owner picks **Promote to Goal** on a card whose idea turned out to need
-   many actions, not just one.
-2. A minimal Goal-creation dialog opens, prefilled with the Action's name;
-   the Owner picks the `Path` (required) and optionally a description /
-   deadline, then saves.
-3. The new `Goal` is created; the originating Inbox `Action` is **discarded**
-   — its idea now lives as the Goal itself, not as a leftover Inbox item or a
-   stray first child Action. See Edge Cases / ADR 0004.
+### Keyboard shortcuts
+
+Triage is designed to run mostly without a mouse:
+
+| Key | Action |
+|-----|--------|
+| `1`-`9` | Pick a Path by position (step 1) |
+| `A` | Jump back into the Goal search (once a Path is chosen) |
+| `↑` / `↓` / `Enter` | Move / commit the highlighted row in the Goal search |
+| `D` | Discard the current item |
+| `S` | Skip the current item |
+
+Letter shortcuts are ignored while focus is inside a text field, so typing a
+Goal name (or a Path/Goal name that happens to contain "d" or "s") is never
+hijacked.
 
 ### Discard item
 
@@ -92,17 +113,16 @@ mainstream goal-tracking tools.
 - **Inbox list**: lightweight list of captured `Action`s (name + capture
   order), Inbox count, **Start Triage** primary action. Not the main working
   view — mostly a staging area and an entry point into triage.
-- **Triage (card-by-card)**: full-screen, one `Action` card at a time —
-  large name, four resolution controls (Assign to Goal, Assign standalone to
-  Path, Promote to Goal, Discard), a Skip control, session progress (`3 of 9`),
-  an exit affordance.
-- **Assign picker**: `Path` → `Goal` cascading selection (toggle-button chips,
-  not a dropdown — no such primitive was installed yet), with an explicit
-  "standalone, no Goal" option. Falls back to an inline **New Path** button +
-  dialog when there are no Paths yet.
-- **Promote to Goal dialog**: minimal Goal-creation form prefilled with the
-  Action's name — Path (required, same picker/inline-create fallback),
-  description and deadline (optional); warns before discarding unsaved input.
+- **Triage (card-by-card)**: full-screen, one `Action` card at a time — large
+  name, the Path → Goal assign control (which also covers standalone and
+  promote-to-Goal), a Discard control, a Skip control, session progress
+  (`3 of 9`), an exit affordance. Discard/Skip carry `D`/`S` keyboard hints.
+- **Assign picker**: `Path` chips (step 1, number-key shortcuts) → a live
+  Goal search (step 2, autofocused) with arrow-key highlight and
+  Enter-to-commit; an unmatched query offers an inline **Create Goal "…"**
+  row in the same list. Falls back to an inline **New Path** button + dialog
+  when there are no Paths yet. Picking any row resolves the card immediately
+  — no separate confirm step and no separate Promote dialog.
 - **Inbox Zero / completion**: short celebratory state with a processed
   count, link back to the Inbox or wherever triage was entered from.
 
@@ -113,9 +133,9 @@ mainstream goal-tracking tools.
 | Capture to Inbox | Global, single-field, name-only add | `Action` | Available from every screen via the app shell, not just this module |
 | Open Inbox review | Enter the dedicated triage mode from the Inbox list | Process | Distinct visual mode from list browsing |
 | Process next item | Card-by-card loop; resolving a card auto-advances | Process | Skip defers within the session queue; exiting anytime is allowed |
-| Triage Action → assign to Goal | Path → Goal picker on the card | `Action` | Sets `assigned` + `Goal` |
-| Triage Action → assign standalone to Path | Path-only picker on the card | `Action` | Sets `assigned` + `Path`, no `Goal` |
-| Promote Action to Goal | Minimal Goal-creation dialog prefilled with the Action's name | `Action` → `Goal` | Originating Action is discarded, not kept as a child — see ADR 0004 |
+| Triage Action → assign to Goal | Path chips → Goal search row pick on the card | `Action` | Sets `assigned` + `Goal`; resolves on pick, no confirm step — see ADR 0024 |
+| Triage Action → assign standalone to Path | "Standalone (no Goal)" row in the same Goal search | `Action` | Sets `assigned` + `Path`, no `Goal` |
+| Promote Action to Goal | "Create Goal '…'" row in the same Goal search, named from the typed query | `Action` → `Goal` | Originating Action is discarded, not kept as a child — see ADR 0004; entry point moved inline — see ADR 0024 |
 | Discard item | Immediate removal, card-level | `Action` | Undo toast, no blocking confirm — see ADR 0004 |
 
 No new entities or glossary terms were discovered — everything maps to the
@@ -136,13 +156,15 @@ hardened (proto-harden, 2026-09-04). Decided behaviors:
   goes straight to the completion screen after the first decision.
 - **Capture with an empty name**: blocked — **Add** stays disabled until the
   field has non-whitespace text; never creates an unnamed `Action`.
-- **No Paths at all**: both the Assign picker and the Promote-to-Goal dialog
-  offer an inline **New Path** button (opens the same `NewPathDialog` `paths`
-  uses) instead of a dead end — the Owner never has to leave triage, and
-  never loses session progress, just to unblock assigning.
-- **Promote to Goal without picking a Path**: blocked — a `Goal` always needs
-  exactly one `Path`; the dialog also warns before discarding a typed name or
-  chosen Path on Cancel / Escape / backdrop.
+- **No Paths at all**: the Assign picker's step 1 offers an inline **New
+  Path** button (opens the same `NewPathDialog` `paths` uses) instead of a
+  dead end — the Owner never has to leave triage, and never loses session
+  progress, just to unblock assigning.
+- **Promote to Goal without picking a Path**: structurally impossible now
+  rather than validated against — the Goal search (and its Create-Goal row)
+  only renders after step 1 has a `Path`, so there's no dirty-form-discard
+  guard to build or explain (ADR 0024 retires that guard from ADR 0006 along
+  with the dialog it protected).
 - **Promote to Goal — what the Owner is told**: the confirmation toast is
   deliberately honest that no Goal exists yet anywhere else in the app
   ("retired — noted as a future Goal under …") until `goals` is built.
@@ -165,10 +187,18 @@ hardened (proto-harden, 2026-09-04). Decided behaviors:
   from the empty-Inbox state) on both `/capture-triage` and
   `/capture-triage/triage` — the second route used to silently show a fake
   "Inbox zero" instead.
-- **Picker keyboard semantics**: Path/Goal chips are plain toggle buttons
-  (`aria-pressed`), not an ARIA `radiogroup` — the markup never implemented
-  roving-tabindex/arrow-key navigation, so promising that role would have
-  been the actual accessibility gap.
+- **Picker keyboard semantics**: Path chips (step 1) are plain toggle buttons
+  (`aria-pressed`), not an ARIA `radiogroup` — matching their real
+  (non-roving) keyboard behavior, each chip its own Tab stop, plus `1`-`9`
+  shortcuts. The Goal search (step 2) is a real `combobox`/`listbox` pair
+  with `aria-activedescendant` and arrow-key roving highlight — the two
+  steps intentionally don't share one ARIA pattern, since they're genuinely
+  different controls (single-select chips vs. a filtered, keyboard-driven
+  list).
+- **Single-letter shortcuts vs. typing a name**: `D`/`S` (discard/skip) and
+  `A` (focus the Goal search) are ignored whenever a text field has focus,
+  so a Path or Goal name containing those letters is never intercepted
+  mid-keystroke — see ADR 0024.
 
 Deferred: a double-submit guard on Capture/Assign/Promote (harmless while
 every mutation is synchronous — revisit with a Dexie migration), session
