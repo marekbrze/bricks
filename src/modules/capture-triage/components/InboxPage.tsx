@@ -1,12 +1,26 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Inbox as InboxIcon, ListChecks } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { Inbox as InboxIcon, ListChecks, Trash2 } from 'lucide-react'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogClose,
+} from '@/components/ui/alert-dialog'
+import { useToast } from '@/shared/components/toast/toast-context'
+import type { Action } from '../types/action'
 import { useActions } from '../hooks/use-actions'
 import { QuickCaptureInput } from './QuickCaptureInput'
 import { ActionsDataUnreadable } from './ActionsDataUnreadable'
 
 export function InboxPage() {
-  const { inboxActions, dataUnreadable, resetActions } = useActions()
+  const [deleting, setDeleting] = useState<Action | null>(null)
+  const { showToast } = useToast()
+  const { inboxActions, deleteAction, dataUnreadable, resetActions } = useActions()
 
   if (dataUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
@@ -37,11 +51,49 @@ export function InboxPage() {
       ) : (
         <ul className="flex flex-col divide-y divide-border rounded-xl border border-border">
           {inboxActions.map((action) => (
-            <li key={action.id} className="px-4 py-2.5 text-sm break-words">
-              {action.name}
+            <li key={action.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+              <span className="min-w-0 flex-1 break-words">{action.name}</span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Delete “${action.name}”`}
+                onClick={() => setDeleting(action)}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
             </li>
           ))}
         </ul>
+      )}
+
+      {deleting && (
+        <AlertDialog open onOpenChange={(open) => !open && setDeleting(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete “{deleting.name}”?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently removes the Action. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose render={<Button variant="ghost">Cancel</Button>} />
+              <AlertDialogClose
+                render={
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const name = deleting.name
+                      deleteAction(deleting.id)
+                      showToast(`“${name}” deleted`)
+                    }}
+                  >
+                    Delete
+                  </Button>
+                }
+              />
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   )
