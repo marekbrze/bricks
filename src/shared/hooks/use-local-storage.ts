@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { reportCorruptValue, reportWriteFailure } from '@/shared/lib/storage-health';
 
 export interface UseLocalStorageResult<T> {
@@ -9,7 +9,12 @@ export interface UseLocalStorageResult<T> {
   corrupt: boolean;
 }
 
-function readInitial<T>(key: string, initialValue: T): { value: T; corrupt: boolean } {
+interface Snapshot<T> {
+  value: T;
+  corrupt: boolean;
+}
+
+function readInitial<T>(key: string, initialValue: T): Snapshot<T> {
   try {
     const item = window.localStorage.getItem(key);
     if (item === null) return { value: initialValue, corrupt: false };
@@ -29,6 +34,73 @@ function readInitial<T>(key: string, initialValue: T): { value: T; corrupt: bool
 }
 
 /**
+ * One store per storage key, shared by every hook instance reading that key —
+ * `useSyncExternalStore` subscribers all re-render off the same snapshot.
+ * Without this, two components mounting `useLocalStorageState('actions', …)`
+ * independently (e.g. `QuickCaptureInput` and `InboxPage`) each hold their
+ * own `useState`: a write from one never reaches the other's snapshot, so the
+ * second component's view goes stale until something else remounts it.
+ */
+class LocalStorageStore<T> {
+  private listeners = new Set<() => void>();
+  private snapshot: Snapshot<T>;
+  private key: string;
+  private initialValue: T;
+
+  constructor(key: string, initialValue: T) {
+    this.key = key;
+    this.initialValue = initialValue;
+    this.snapshot = readInitial(key, initialValue);
+  }
+
+  getSnapshot = (): Snapshot<T> => this.snapshot;
+
+  subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  private emit() {
+    for (const listener of this.listeners) listener();
+  }
+
+  setValue = (value: T | ((val: T) => T)): void => {
+    const next = value instanceof Function ? value(this.snapshot.value) : value;
+    try {
+      window.localStorage.setItem(this.key, JSON.stringify(next));
+    } catch (error) {
+      // Quota exceeded, private mode, blocked cookies — surface it, but keep
+      // the new value in memory so the session still works.
+      console.error(`Error setting localStorage key "${this.key}":`, error);
+      reportWriteFailure();
+    }
+    this.snapshot = { value: next, corrupt: false };
+    this.emit();
+  };
+
+  removeValue = (): void => {
+    try {
+      window.localStorage.removeItem(this.key);
+    } catch (error) {
+      console.error(`Error removing localStorage key "${this.key}":`, error);
+    }
+    this.snapshot = { value: this.initialValue, corrupt: false };
+    this.emit();
+  };
+}
+
+const stores = new Map<string, LocalStorageStore<unknown>>();
+
+function getStore<T>(key: string, initialValue: T): LocalStorageStore<T> {
+  let store = stores.get(key);
+  if (!store) {
+    store = new LocalStorageStore(key, initialValue) as LocalStorageStore<unknown>;
+    stores.set(key, store);
+  }
+  return store as LocalStorageStore<T>;
+}
+
+/**
  * Tuple form kept for backwards compatibility: `[value, setValue, removeValue]`.
  * Use `useLocalStorageState` for the object form with the `corrupt` flag.
  */
@@ -38,34 +110,12 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 }
 
 export function useLocalStorageState<T>(key: string, initialValue: T): UseLocalStorageResult<T> {
-  const [{ value: storedValue, corrupt }, setState] = useState(() => readInitial(key, initialValue));
+  const store = getStore(key, initialValue);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
 
-  const setValue = useCallback(
-    (value: T | ((val: T) => T)) => {
-      setState((prev) => {
-        const next = value instanceof Function ? value(prev.value) : value;
-        try {
-          window.localStorage.setItem(key, JSON.stringify(next));
-        } catch (error) {
-          // Quota exceeded, private mode, blocked cookies — surface it, but keep
-          // the new value in memory so the session still works.
-          console.error(`Error setting localStorage key "${key}":`, error);
-          reportWriteFailure();
-        }
-        return { value: next, corrupt: false };
-      });
-    },
-    [key],
-  );
+  // Stable identities across renders (the store itself doesn't change per key).
+  const setValue = useCallback(store.setValue, [store]);
+  const removeValue = useCallback(store.removeValue, [store]);
 
-  const removeValue = useCallback(() => {
-    try {
-      window.localStorage.removeItem(key);
-    } catch (error) {
-      console.error(`Error removing localStorage key "${key}":`, error);
-    }
-    setState({ value: initialValue, corrupt: false });
-  }, [key, initialValue]);
-
-  return { value: storedValue, setValue, removeValue, corrupt };
+  return { value: snapshot.value, setValue, removeValue, corrupt: snapshot.corrupt };
 }
