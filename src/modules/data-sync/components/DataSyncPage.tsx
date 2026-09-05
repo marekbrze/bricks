@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CloudDownload, CloudUpload, DatabaseBackup, RefreshCw } from 'lucide-react'
+import { CheckCircle2, CloudDownload, CloudUpload, DatabaseBackup, RefreshCw } from 'lucide-react'
 import type { DXCAlert, DXCUserInteraction } from 'dexie-cloud-addon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -113,6 +113,8 @@ export function DataSyncPage() {
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [loginInFlight, setLoginInFlight] = useState(false)
+  /** True between submitting the OTP and the addon's verdict (new prompt on a bad code). */
+  const [verifying, setVerifying] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -121,6 +123,12 @@ export function DataSyncPage() {
   }, [])
 
   const otpPrompt = interaction?.type === 'otp' ? interaction : null
+
+  // A fresh prompt means the addon asked again — either the first arrival or
+  // a rejected code. Either way we are back at the input, not verifying.
+  useEffect(() => {
+    if (otpPrompt) setVerifying(false)
+  }, [otpPrompt])
 
   const handleSendCode = () => {
     if (!email.trim() || loginInFlight) return
@@ -132,21 +140,27 @@ export function DataSyncPage() {
       .then(() => {
         // Resolves only after the OTP step succeeds — the user is in.
         setLoginInFlight(false)
+        setVerifying(false)
         setEmail('')
         setOtp('')
         showToast('Signed in')
       })
       .catch((err) => {
         setLoginInFlight(false)
+        setVerifying(false)
         if (err?.name === 'AbortError') return // cancelled by the user
         setLoginError(err instanceof Error ? err.message : String(err))
       })
   }
 
   const handleVerifyOtp = () => {
-    if (!otpPrompt || !otp.trim() || loginInFlight) return
+    // NOTE: `loginInFlight` is deliberately not part of this guard — it stays
+    // true for the whole flow (set at send, cleared on the final verdict), and
+    // gating on it here would disable Verify forever.
+    if (!otpPrompt || !otp.trim() || verifying) return
+    setVerifying(true)
     // A wrong code comes back as a fresh 'otp' interaction carrying an
-    // INVALID_OTP alert — rendered below; no state change needed here.
+    // INVALID_OTP alert — rendered below; the effect above clears `verifying`.
     otpPrompt.onSubmit({ otp: otp.trim() })
   }
 
@@ -305,15 +319,37 @@ export function DataSyncPage() {
             {user === undefined ? (
               <p className="text-sm text-muted-foreground">Checking sign-in…</p>
             ) : loggedIn ? (
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm">
-                  Signed in as{' '}
-                  <span className="font-medium">{user.email ?? user.userId ?? 'unknown user'}</span>
-                </p>
-                <Button variant="outline" onClick={handleSignOut}>
-                  Sign out
-                </Button>
+              <div className="flex flex-col gap-3">
+                <div
+                  role="status"
+                  className="flex flex-col gap-1 rounded-md border border-green-600/40 bg-green-500/10 p-3"
+                >
+                  <p className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
+                    <CheckCircle2 className="size-4" aria-hidden="true" /> Signed in as{' '}
+                    {user.email ?? user.userId ?? 'unknown user'}
+                  </p>
+                  <p
+                    className={`text-sm ${
+                      syncState?.phase === 'in-sync'
+                        ? 'font-medium text-green-700 dark:text-green-400'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {syncState?.phase === 'in-sync'
+                      ? '✓ Cloud sync is ready'
+                      : 'Connecting to the server…'}
+                  </p>
+                </div>
+                <div>
+                  <Button variant="outline" onClick={handleSignOut}>
+                    Sign out
+                  </Button>
+                </div>
               </div>
+            ) : verifying ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                Verifying code…
+              </p>
             ) : otpPrompt ? (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="sync-otp">
@@ -400,7 +436,7 @@ export function DataSyncPage() {
               </div>
             )}
 
-            {syncState && (
+            {syncState && !loggedIn && (
               <p role="status" className="text-sm text-muted-foreground">
                 Sync status: {syncPhaseLabel(syncState.phase)}
               </p>
