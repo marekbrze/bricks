@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, CloudDownload, CloudUpload, DatabaseBackup, RefreshCw } from 'lucide-react'
+import {
+  CheckCircle2,
+  CloudDownload,
+  CloudUpload,
+  DatabaseBackup,
+  RefreshCw,
+} from 'lucide-react'
 import type { DXCAlert, DXCUserInteraction } from 'dexie-cloud-addon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,23 +22,11 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { db } from '../lib/db'
-import {
-  clearCloudUrl,
-  getCloudUrl,
-  saveCloudUrl,
-  validateCloudUrl,
-} from '../lib/cloud-config'
-import {
-  countEntities,
-  describeCounts,
-  readLocalData,
-  totalEntities,
-  type EntityCounts,
-} from '../lib/local-data'
-import { pullServerToLocal, pushLocalToServer, readServerCounts } from '../lib/sync-ops'
+import { clearCloudUrl, getCloudUrl, saveCloudUrl, validateCloudUrl } from '../lib/cloud-config'
+import { countEntities, describeCounts, readLocalData, totalEntities } from '../lib/local-data'
+import { abandonSignIn, beginSignIn, completeSignIn, signOut } from '../lib/sync-ops'
+import { clearPendingSignIn, isPullPending, type SyncDirection } from '../lib/sign-in-intent'
 import { useCloudStatus } from '../hooks/use-cloud-status'
-
-type ConfirmDirection = 'push' | 'pull' | null
 
 function syncPhaseLabel(phase: string | undefined): string {
   switch (phase) {
@@ -69,14 +63,15 @@ function errorAlerts(interaction: DXCUserInteraction | undefined): DXCAlert[] {
 }
 
 /**
- * Data sync (docs/modules/data-sync.md). The app's data lives in this
- * browser; a Dexie Cloud database is optional. Sync is manual and
- * directional — the user picks one: overwrite the server (push) or
- * overwrite this device (pull). Nothing merges.
+ * Data sync (docs/modules/data-sync.md). The app's data lives in this browser;
+ * a Dexie Cloud database is optional. Once connected, syncing is continuous
+ * and automatic in both directions — the one directional decision, whether
+ * this device's data or the server's wins, is made here at sign-in and never
+ * asked again.
  */
 export function DataSyncPage() {
   const { showToast } = useToast()
-  const { user, syncState } = useCloudStatus()
+  const { user, syncState, resolved, loggedIn } = useCloudStatus()
 
   // --- Database URL -------------------------------------------------------
   const [urlDraft, setUrlDraft] = useState(() => getCloudUrl() ?? '')
@@ -98,9 +93,23 @@ export function DataSyncPage() {
     // block disconnecting. Any leftover token state is harmless once the
     // URL is gone and the addon stays unconfigured after reload.
     clearCloudUrl()
+    clearPendingSignIn()
     void db.cloud.logout({ force: true }).catch(() => {})
     window.location.reload()
   }
+
+  // --- Direction: chosen once, when connecting -----------------------------
+  // A pending `pull` means the choice was already made and the page has since
+  // reloaded (the local database had to be deleted before signing in) — pick
+  // the flow back up at the sign-in step.
+  const [direction, setDirection] = useState<SyncDirection | null>(() =>
+    isPullPending() ? 'pull' : null,
+  )
+  const [confirmPull, setConfirmPull] = useState(false)
+  const [preparing, setPreparing] = useState(false)
+
+  const localCounts = useMemo(() => countEntities(readLocalData()), [])
+  const localTotal = totalEntities(localCounts)
 
   // --- Sign-in: driven by the addon's interaction observable ---------------
   // With the default GUI disabled, `login({ email, grant_type: 'otp' })` runs
@@ -115,12 +124,39 @@ export function DataSyncPage() {
   const [loginInFlight, setLoginInFlight] = useState(false)
   /** True between submitting the OTP and the addon's verdict (new prompt on a bad code). */
   const [verifying, setVerifying] = useState(false)
+  /** True while the first sync round after a successful sign-in is running. */
+  const [finishing, setFinishing] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
 
   useEffect(() => {
     const sub = db.cloud.userInteraction.subscribe(setInteraction)
     return () => sub.unsubscribe()
   }, [])
+
+  const handleChoosePull = async () => {
+    setConfirmPull(false)
+    setPreparing(true)
+    try {
+      // Reloads the page — the local database is deleted so the sign-in cannot
+      // push this device's data up to the server the user just chose over it.
+      await beginSignIn('pull')
+    } catch (err) {
+      setPreparing(false)
+      setLoginError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  const handleStartOver = () => {
+    const chosen = direction
+    setDirection(null)
+    setLoginError(null)
+    setEmail('')
+    setOtp('')
+    if (!chosen) return
+    void abandonSignIn(chosen).catch((err) => {
+      console.error('[data-sync] could not restore local-only state', err)
+    })
+  }
 
   const otpPrompt = interaction?.type === 'otp' ? interaction : null
 
@@ -131,23 +167,35 @@ export function DataSyncPage() {
   }, [otpPrompt])
 
   const handleSendCode = () => {
-    if (!email.trim() || loginInFlight) return
+    if (!email.trim() || !direction || loginInFlight) return
     setLoginInFlight(true)
     setLoginError(null)
     setOtp('')
-    void db.cloud
-      .login({ email: email.trim(), grant_type: 'otp' })
-      .then(() => {
-        // Resolves only after the OTP step succeeds — the user is in.
-        setLoginInFlight(false)
-        setVerifying(false)
-        setEmail('')
-        setOtp('')
-        showToast('Signed in')
+    const chosen = direction
+    void beginSignIn(chosen)
+      .then((reloading) => {
+        if (reloading) return
+        return db.cloud
+          .login({ email: email.trim(), grant_type: 'otp' })
+          .then(async () => {
+            // Resolves only after the OTP step succeeds — the user is in.
+            setVerifying(false)
+            setFinishing(true)
+            await completeSignIn(chosen)
+            setLoginInFlight(false)
+            setFinishing(false)
+            setEmail('')
+            setOtp('')
+            showToast(
+              chosen === 'pull' ? 'Signed in — cloud data loaded' : 'Signed in — data uploaded',
+            )
+          })
       })
-      .catch((err) => {
+      .catch(async (err) => {
         setLoginInFlight(false)
         setVerifying(false)
+        setFinishing(false)
+        await abandonSignIn(chosen).catch(() => {})
         if (err?.name === 'AbortError') return // cancelled by the user
         setLoginError(err instanceof Error ? err.message : String(err))
       })
@@ -172,74 +220,19 @@ export function DataSyncPage() {
   const handleSignOut = () => {
     // Best-effort: if the addon raises a logout-confirmation (unsynced
     // changes), it is rendered as a generic interaction below.
-    void db.cloud
-      .logout()
-      .then(() => showToast('Signed out'))
+    void signOut()
+      .then(() => {
+        setDirection(null)
+        showToast('Signed out — this device keeps its data')
+      })
       .catch((err) => {
         if (err?.name !== 'AbortError') showToast(err instanceof Error ? err.message : String(err))
       })
   }
 
-  // --- Sync direction -----------------------------------------------------
-  const localCounts = useMemo(() => countEntities(readLocalData()), [])
-  const [serverCounts, setServerCounts] = useState<EntityCounts | null>(null)
-  const [busy, setBusy] = useState<'push' | 'pull' | null>(null)
-  const [confirm, setConfirm] = useState<ConfirmDirection>(null)
-  const [opError, setOpError] = useState<string | null>(null)
-
-  const loggedIn = user?.isLoggedIn === true
-
-  // Server counts only mean something once a sync round has completed.
-  useEffect(() => {
-    if (!loggedIn || syncState?.phase !== 'in-sync') return
-    let cancelled = false
-    readServerCounts()
-      .then((counts) => {
-        if (!cancelled) setServerCounts(counts)
-      })
-      .catch(() => {
-        if (!cancelled) setServerCounts(null)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [loggedIn, syncState?.phase])
-
-  const handlePush = async () => {
-    setConfirm(null)
-    setBusy('push')
-    setOpError(null)
-    try {
-      const counts = await pushLocalToServer()
-      setServerCounts(counts)
-      showToast('Server updated from this device')
-    } catch (err) {
-      setOpError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const handlePull = async () => {
-    setConfirm(null)
-    setBusy('pull')
-    setOpError(null)
-    try {
-      // Reloads the page on success — localStorage now mirrors the server.
-      await pullServerToLocal()
-    } catch (err) {
-      setOpError(err instanceof Error ? err.message : String(err))
-      setBusy(null)
-    }
-  }
-
-  const localTotal = totalEntities(localCounts)
-  const serverTotal = serverCounts === null ? null : totalEntities(serverCounts)
-
   // Generic addon prompt (message-alert, logout-confirmation) — render its
   // alerts and its own submit/cancel. OTP has its dedicated form above.
-  const genericInteraction =
-    interaction && interaction.type !== 'otp' ? interaction : null
+  const genericInteraction = interaction && interaction.type !== 'otp' ? interaction : null
 
   return (
     <div className="flex flex-col gap-6">
@@ -248,9 +241,9 @@ export function DataSyncPage() {
           <RefreshCw className="size-5 text-muted-foreground" aria-hidden="true" /> Data sync
         </h1>
         <p className="mt-1 max-w-[70ch] text-sm text-muted-foreground">
-          Your data lives in this browser. Connect a Dexie Cloud database to move it between
-          devices — sync is manual and directional: pushing overwrites the server, pulling
-          overwrites this device. Nothing merges.
+          Your data lives in this browser. Connect a Dexie Cloud database and it syncs across your
+          devices automatically, as you work. You only choose a direction once — when you sign in
+          on a device, you say whether its data or the cloud&apos;s wins.
         </p>
       </div>
 
@@ -309,20 +302,21 @@ export function DataSyncPage() {
         </CardContent>
       </Card>
 
-      {/* --- Step 2: sign in ------------------------------------------- */}
+      {/* --- Step 2: sign in, choosing a direction --------------------- */}
       {cloudUrl && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Account</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {user === undefined || user.isLoading ? (
-              // The addon's currentUser is a BehaviorSubject: it emits its
-              // startup default (`isLoading: true`, `isLoggedIn` unset)
-              // synchronously on subscribe, before it has read the persisted
-              // login from IndexedDB. Without this check that default reads
-              // as "logged out" and flashes the sign-in form on every load.
-              <p className="text-sm text-muted-foreground">Checking sign-in…</p>
+            {!resolved ? (
+              // The addon's currentUser is a BehaviorSubject holding
+              // `{ isLoading: true }` until db.open() lets it read the
+              // persisted login — boot opens the database, so this is a
+              // moment, not a state the page can get stuck in.
+              <p role="status" className="text-sm text-muted-foreground">
+                Checking sign-in…
+              </p>
             ) : loggedIn ? (
               <div className="flex flex-col gap-3">
                 <div
@@ -331,7 +325,7 @@ export function DataSyncPage() {
                 >
                   <p className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400">
                     <CheckCircle2 className="size-4" aria-hidden="true" /> Signed in as{' '}
-                    {user.email ?? user.userId ?? 'unknown user'}
+                    {user?.email ?? user?.userId ?? 'unknown user'}
                   </p>
                   <p
                     className={`text-sm ${
@@ -341,8 +335,8 @@ export function DataSyncPage() {
                     }`}
                   >
                     {syncState?.phase === 'in-sync'
-                      ? '✓ Cloud sync is ready'
-                      : 'Connecting to the server…'}
+                      ? '✓ Changes sync automatically, on every device'
+                      : syncPhaseLabel(syncState?.phase)}
                   </p>
                 </div>
                 <div>
@@ -351,15 +345,26 @@ export function DataSyncPage() {
                   </Button>
                 </div>
               </div>
+            ) : finishing ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                {direction === 'pull'
+                  ? 'Signed in — loading the cloud’s data…'
+                  : 'Signed in — uploading this device’s data…'}
+              </p>
+            ) : direction === null ? (
+              <DirectionChoice
+                localSummary={describeCounts(localCounts)}
+                busy={preparing}
+                onPush={() => setDirection('push')}
+                onPull={() => setConfirmPull(true)}
+              />
             ) : verifying ? (
               <p role="status" className="text-sm text-muted-foreground">
                 Verifying code…
               </p>
             ) : otpPrompt ? (
               <div className="flex flex-col gap-2">
-                <Label htmlFor="sync-otp">
-                  Code sent to {email.trim()} — check your inbox
-                </Label>
+                <Label htmlFor="sync-otp">Code sent to {email.trim()} — check your inbox</Label>
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex min-w-[180px] flex-1 flex-col gap-1">
                     <Input
@@ -389,22 +394,28 @@ export function DataSyncPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-wrap items-end gap-2">
-                <div className="flex min-w-[220px] flex-1 flex-col gap-1">
-                  <Label htmlFor="sync-email">Email</Label>
-                  <Input
-                    id="sync-email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendCode()}
-                  />
+              <div className="flex flex-col gap-3">
+                <ChosenDirectionNote direction={direction} localSummary={describeCounts(localCounts)} />
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+                    <Label htmlFor="sync-email">Email</Label>
+                    <Input
+                      id="sync-email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendCode()}
+                    />
+                  </div>
+                  <Button onClick={handleSendCode} disabled={loginInFlight || !email.trim()}>
+                    {loginInFlight ? 'Sending code…' : 'Send sign-in code'}
+                  </Button>
+                  <Button variant="ghost" onClick={handleStartOver}>
+                    Change direction
+                  </Button>
                 </div>
-                <Button onClick={handleSendCode} disabled={loginInFlight || !email.trim()}>
-                  {loginInFlight ? 'Sending code…' : 'Send sign-in code'}
-                </Button>
               </div>
             )}
 
@@ -426,10 +437,7 @@ export function DataSyncPage() {
                   </div>
                 ))}
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => genericInteraction.onSubmit({})}
-                  >
+                  <Button variant="outline" onClick={() => genericInteraction.onSubmit({})}>
                     {genericInteraction.submitLabel || 'OK'}
                   </Button>
                   {genericInteraction.cancelLabel && (
@@ -440,114 +448,106 @@ export function DataSyncPage() {
                 </div>
               </div>
             )}
-
-            {syncState && !loggedIn && (
-              <p role="status" className="text-sm text-muted-foreground">
-                Sync status: {syncPhaseLabel(syncState.phase)}
-              </p>
-            )}
           </CardContent>
         </Card>
       )}
 
-      {/* --- Step 3: pick a direction ---------------------------------- */}
-      {cloudUrl && loggedIn && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Sync now — pick which side wins</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <section
-                aria-labelledby="push-heading"
-                className="flex flex-col gap-2 rounded-md border p-4"
-              >
-                <h2 id="push-heading" className="flex items-center gap-2 text-sm font-semibold">
-                  <CloudUpload className="size-4" aria-hidden="true" /> Overwrite the server
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Push this device&apos;s data ({describeCounts(localCounts)}) to the server.
-                  Anything on the server not on this device is lost.
-                </p>
-                <div>
-                  <Button onClick={() => setConfirm('push')} disabled={busy !== null}>
-                    {busy === 'push' ? 'Pushing…' : 'Push to server'}
-                  </Button>
-                </div>
-              </section>
-
-              <section
-                aria-labelledby="pull-heading"
-                className="flex flex-col gap-2 rounded-md border p-4"
-              >
-                <h2 id="pull-heading" className="flex items-center gap-2 text-sm font-semibold">
-                  <CloudDownload className="size-4" aria-hidden="true" /> Overwrite this device
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Pull the server&apos;s data (
-                  {serverCounts === null ? 'not read yet' : describeCounts(serverCounts)}) onto
-                  this device. Anything here not on the server is lost.
-                </p>
-                <div>
-                  <Button onClick={() => setConfirm('pull')} disabled={busy !== null}>
-                    {busy === 'pull' ? 'Pulling…' : 'Pull from server'}
-                  </Button>
-                </div>
-              </section>
-            </div>
-
-            {opError && (
-              <p role="alert" className="text-sm text-destructive">
-                {opError}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* --- Confirmations ---------------------------------------------- */}
-      <AlertDialog open={confirm === 'push'} onOpenChange={(open) => !open && setConfirm(null)}>
+      {/* --- Confirmation: pulling discards this device's data ---------- */}
+      <AlertDialog open={confirmPull} onOpenChange={(open) => !open && setConfirmPull(false)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Overwrite the server with this device&apos;s data?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Replace this device&apos;s data with the cloud&apos;s?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               This device holds {describeCounts(localCounts)} ({localTotal}{' '}
-              {localTotal === 1 ? 'item' : 'items'} in total). Everything currently on the server
-              will be replaced.
+              {localTotal === 1 ? 'item' : 'items'} in total). Signing in this way replaces all of
+              it with whatever the cloud database holds.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <p className="text-sm font-medium text-destructive">This cannot be undone.</p>
           <AlertDialogFooter>
             <AlertDialogClose render={<Button variant="ghost">Cancel</Button>} />
-            <AlertDialogClose render={<Button onClick={handlePush}>Push to server</Button>} />
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={confirm === 'pull'} onOpenChange={(open) => !open && setConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Replace this device&apos;s data with the server&apos;s?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The server holds{' '}
-              {serverCounts === null ? 'an unknown set of items' : describeCounts(serverCounts)} (
-              {serverTotal === null ? '?' : serverTotal} {serverTotal === 1 ? 'item' : 'items'} in
-              total). Everything on this device will be replaced.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {serverTotal === 0 && (
-            <p className="text-sm font-medium text-destructive">
-              The server is empty — pulling will wipe this device&apos;s data.
-            </p>
-          )}
-          <p className="text-sm font-medium text-destructive">This cannot be undone.</p>
-          <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="ghost">Cancel</Button>} />
-            <AlertDialogClose render={<Button onClick={handlePull}>Pull from server</Button>} />
+            <AlertDialogClose
+              render={<Button onClick={() => void handleChoosePull()}>Use the cloud&apos;s data</Button>}
+            />
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+/** The one directional decision: which side wins the first time this device syncs. */
+function DirectionChoice({
+  localSummary,
+  busy,
+  onPush,
+  onPull,
+}: {
+  localSummary: string
+  busy: boolean
+  onPush: () => void
+  onPull: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted-foreground">
+        Before signing in, say which side wins this once. Afterwards everything syncs both ways,
+        automatically.
+      </p>
+      <div className="grid gap-3 md:grid-cols-2">
+        <button
+          type="button"
+          onClick={onPush}
+          disabled={busy}
+          className="flex flex-col gap-1 rounded-md border p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <CloudUpload className="size-4" aria-hidden="true" /> Upload this device&apos;s data
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {localSummary} goes to the cloud. Anything already in the cloud database is replaced.
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={onPull}
+          disabled={busy}
+          className="flex flex-col gap-1 rounded-md border p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <CloudDownload className="size-4" aria-hidden="true" /> Use the cloud&apos;s data
+          </span>
+          <span className="text-sm text-muted-foreground">
+            This device takes what the cloud database holds. Everything on this device is replaced.
+          </span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ChosenDirectionNote({
+  direction,
+  localSummary,
+}: {
+  direction: SyncDirection
+  localSummary: string
+}) {
+  return (
+    <p className="flex items-start gap-2 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+      {direction === 'push' ? (
+        <CloudUpload className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      ) : (
+        <CloudDownload className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      )}
+      <span>
+        {direction === 'push'
+          ? `On sign-in, this device's data (${localSummary}) becomes the cloud's.`
+          : "On sign-in, the cloud's data replaces this device's."}
+      </span>
+    </p>
   )
 }
 

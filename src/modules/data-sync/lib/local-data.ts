@@ -1,3 +1,4 @@
+import { readStorageValue } from '@/shared/hooks/use-local-storage'
 import type { Path } from '@/modules/paths/types/path'
 import type { Goal } from '@/modules/goals/types/goal'
 import type { Action } from '@/modules/capture-triage/types/action'
@@ -6,7 +7,7 @@ import type { Vision } from '@/modules/vision/types/vision'
 /**
  * The app's source of truth: one JSON array per module in localStorage
  * (`paths`, `goals`, `actions`, `visions` — the same keys every module's
- * hook reads). Sync operations move this data in and out of Dexie wholesale.
+ * hook reads). `lib/mirror.ts` keeps the synced Dexie tables in step with it.
  */
 export interface LocalData {
   paths: Path[]
@@ -46,15 +47,14 @@ export function describeCounts(counts: EntityCounts): string {
   return parts.join(', ')
 }
 
+/**
+ * Read through the shared stores rather than LocalStorage directly, so a
+ * count taken right after a write reflects it — the store's snapshot is what
+ * the screens are rendering.
+ */
 function readArray<T>(key: string): T[] {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw === null) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as T[]) : []
-  } catch {
-    return []
-  }
+  const value = readStorageValue<T[]>(key, [])
+  return Array.isArray(value) ? value : []
 }
 
 export function readLocalData(): LocalData {
@@ -64,11 +64,4 @@ export function readLocalData(): LocalData {
     actions: readArray<Action>('actions'),
     visions: readArray<Vision>('visions'),
   }
-}
-
-export function writeLocalData(data: LocalData): void {
-  localStorage.setItem('paths', JSON.stringify(data.paths))
-  localStorage.setItem('goals', JSON.stringify(data.goals))
-  localStorage.setItem('actions', JSON.stringify(data.actions))
-  localStorage.setItem('visions', JSON.stringify(data.visions))
 }

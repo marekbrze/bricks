@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type EntityTable, type Table } from 'dexie'
 import dexieCloud from 'dexie-cloud-addon'
 import { getCloudUrl } from './cloud-config'
 import type { Path } from '@/modules/paths/types/path'
@@ -8,8 +8,9 @@ import type { Vision } from '@/modules/vision/types/vision'
 
 /**
  * The sync database — a Dexie mirror of the app's four entity collections.
- * The app's source of truth stays in localStorage; this DB is the transport
- * the Dexie Cloud addon syncs against (see docs/modules/data-sync.md).
+ * The app's source of truth stays in LocalStorage; this DB is the replica the
+ * Dexie Cloud addon syncs against, kept in step both ways by `lib/mirror.ts`
+ * (see docs/modules/data-sync.md).
  *
  * Primary keys are the app's own `crypto.randomUUID()` ids. Dexie Cloud
  * supports custom string ids for synced tables as long as they are random
@@ -52,3 +53,39 @@ export class BricksDB extends Dexie {
 }
 
 export const db = new BricksDB()
+
+/** True when a cloud database URL is saved — the addon is configured and syncing. */
+export function isCloudConfigured(): boolean {
+  return getCloudUrl() !== null
+}
+
+/** The four synced tables, in the order a mirror pass walks them. */
+export const SYNCED_TABLES = {
+  paths: () => db.paths as unknown as Table<{ id: string }, string>,
+  goals: () => db.goals as unknown as Table<{ id: string }, string>,
+  actions: () => db.actions as unknown as Table<{ id: string }, string>,
+  visions: () => db.visions as unknown as Table<{ id: string }, string>,
+} as const
+
+/**
+ * Open the database once, and hand every caller the same promise.
+ *
+ * This is what makes the addon come alive: `db.cloud.currentUser` starts as a
+ * BehaviorSubject holding `{ isLoading: true }` and is only replaced with the
+ * login persisted in IndexedDB inside the addon's `ready` handler — which runs
+ * on `db.open()` and nowhere else. Subscribing without ever opening leaves the
+ * UI reading that startup default forever ("Checking sign-in…" with no
+ * verdict), and no sync ever starts. Boot calls this; so does every sync op.
+ */
+let openPromise: Promise<Dexie> | null = null
+
+export function openDb(): Promise<Dexie> {
+  if (!openPromise) {
+    openPromise = db.open().catch((err) => {
+      // Let the next caller retry rather than caching a permanent failure.
+      openPromise = null
+      throw err
+    })
+  }
+  return openPromise
+}

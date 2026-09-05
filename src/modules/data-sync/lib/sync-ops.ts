@@ -1,121 +1,184 @@
-import { db } from './db'
+import { readStorageValue } from '@/shared/hooks/use-local-storage'
+import { db, openDb, SYNCED_TABLES } from './db'
 import {
-  countEntities,
-  readLocalData,
-  writeLocalData,
-  type EntityCounts,
-  type LocalData,
-} from './local-data'
+  activateMirror,
+  adoptDexieIntoLocal,
+  pushAllToDexie,
+  resetMirrorBase,
+  resumeMirror,
+  suspendMirror,
+  SYNCED_KEYS,
+} from './mirror'
+import {
+  clearPendingSignIn,
+  isPullPending,
+  setPendingPull,
+  type SyncDirection,
+} from './sign-in-intent'
 
 /**
- * The two directions a sync can go — the user picks one explicitly:
- *  - push: overwrite the server with this device's data
- *  - pull: overwrite this device's data with the server's
- * There is no merge; whichever side the user picks wins wholesale.
+ * The operations that move data as a whole — everything that is not the
+ * continuous, row-by-row mirroring in `mirror.ts`.
+ *
+ * There are only three, and they all hang off the account's lifecycle:
+ * choosing a direction when connecting, finishing that choice once signed in,
+ * and putting the database back to local-only on sign-out. Ordinary edits
+ * never come through here; they sync as they happen.
  */
 
 const SYNC_TIMEOUT_MS = 20_000
-
-/** Resolve once the addon completes a sync round (or already is in sync). */
-export function waitForSync(timeoutMs = SYNC_TIMEOUT_MS): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (db.cloud.syncState.getValue().phase === 'in-sync') return resolve()
-    const timer = setTimeout(() => {
-      subscription.unsubscribe()
-      reject(new Error('Sync did not finish in time. Check your connection and try again.'))
-    }, timeoutMs)
-    const subscription = db.cloud.events.syncComplete.subscribe({
-      next: () => {
-        clearTimeout(timer)
-        subscription.unsubscribe()
-        resolve()
-      },
-      error: (err) => {
-        clearTimeout(timer)
-        subscription.unsubscribe()
-        reject(err instanceof Error ? err : new Error(String(err)))
-      },
-    })
-  })
-}
 
 function toError(err: unknown): Error {
   return err instanceof Error ? err : new Error(String(err))
 }
 
-/** Trigger a sync round and wait for it to land. */
-async function syncAndWait(): Promise<void> {
-  await db.cloud.sync()
-  await waitForSync()
-}
-
-/** The addon stamps synced rows with realm/ownership props — keep them out of app storage. */
-function stripSyncProps<T extends object>(rows: T[]): T[] {
-  const syncOnly = new Set(['owner', 'realmId'])
-  return rows.map((row) => {
-    const clean: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(row)) {
-      if (!syncOnly.has(key)) clean[key] = value
-    }
-    return clean as T
+function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), SYNC_TIMEOUT_MS)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        clearTimeout(timer)
+        reject(toError(err))
+      },
+    )
   })
 }
 
-/**
- * Push: replace everything on the server with this device's data.
- * Clearing the tables first syncs as deletions, so the server ends up an
- * exact copy of local — additions, edits and removals alike.
- */
-export async function pushLocalToServer(): Promise<EntityCounts> {
-  const local = readLocalData()
-  try {
-    await db.transaction('rw', [db.paths, db.goals, db.actions, db.visions], async () => {
-      await db.paths.clear()
-      await db.goals.clear()
-      await db.actions.clear()
-      await db.visions.clear()
-      // Ids are the app's own UUIDs, so rows keep their identity across the
-      // wire and no foreign keys need remapping.
-      await db.paths.bulkPut(local.paths)
-      await db.goals.bulkPut(local.goals)
-      await db.actions.bulkPut(local.actions)
-      await db.visions.bulkPut(local.visions)
-    })
-    await syncAndWait()
-    return countEntities(local)
-  } catch (err) {
-    throw toError(err)
-  }
+/** Run a full sync round and wait for it to land. */
+export async function syncNow(purpose: 'push' | 'pull' = 'pull'): Promise<void> {
+  await withTimeout(
+    db.cloud.sync({ purpose, wait: true }),
+    'Sync did not finish in time. Check your connection and try again.',
+  )
 }
 
-/** Read what the server currently holds (through the synced local DB). */
-export async function readServerCounts(): Promise<EntityCounts> {
-  const data: LocalData = {
-    paths: await db.paths.toArray(),
-    goals: await db.goals.toArray(),
-    actions: await db.actions.toArray(),
-    visions: await db.visions.toArray(),
-  }
-  return countEntities(data)
+function readLocalRows(key: (typeof SYNCED_KEYS)[number]): { id: string }[] {
+  const value = readStorageValue<{ id: string }[]>(key, [])
+  return Array.isArray(value) ? value : []
 }
 
+// --- Connecting -----------------------------------------------------------
+
 /**
- * Pull: replace this device's data with the server's, then reload so every
- * module re-reads localStorage. Ids on the server are the same UUIDs that
- * were pushed, so the app's references stay valid after the swap.
+ * Prepare for a sign-in that will move data in `direction`.
+ *
+ * `push` only has to make sure the database matches the app before the addon
+ * takes over: on the first login every local row is claimed by the new user
+ * and uploaded, which is exactly what pushing means.
+ *
+ * `pull` is the destructive one, and it is why this can reload the page. The
+ * same claim-and-upload would send this device's data to a server the user
+ * just said should win — so the local database has to be gone before the
+ * login, mutation log included, or its pending deletes would land on the
+ * server's rows on the way up. Deleting a Dexie database means reopening it,
+ * hence the reload; the app's storage is untouched and stays the fallback
+ * until the server's data has actually arrived.
+ *
+ * @returns true when the page is reloading and the caller should stop.
  */
-export async function pullServerToLocal(): Promise<void> {
-  try {
-    await syncAndWait()
-    const data: LocalData = {
-      paths: stripSyncProps(await db.paths.toArray()),
-      goals: stripSyncProps(await db.goals.toArray()),
-      actions: stripSyncProps(await db.actions.toArray()),
-      visions: stripSyncProps(await db.visions.toArray()),
+export async function beginSignIn(direction: SyncDirection): Promise<boolean> {
+  if (direction === 'pull') {
+    if (isPullPending()) {
+      // Already prepared — this is the reloaded page picking the flow back up.
+      // Boot left the mirror suspended for exactly this; do not suspend twice,
+      // and above all do not delete and reload again.
+      await openDb()
+      return false
     }
-    writeLocalData(data)
+    // Suspend before deleting: a live query watching a database that is
+    // vanishing under it must not report the emptiness as the app's new data.
+    suspendMirror()
+    setPendingPull()
+    await db.delete()
     window.location.reload()
+    return true
+  }
+
+  await openDb()
+  suspendMirror()
+  try {
+    await pushAllToDexie()
   } catch (err) {
+    resumeMirror()
     throw toError(err)
+  }
+  return false
+}
+
+/**
+ * Finish the connect once the sign-in has succeeded, and leave the mirror
+ * running. From this point on the direction never matters again.
+ */
+export async function completeSignIn(direction: SyncDirection): Promise<void> {
+  await syncNow('pull')
+  if (direction === 'pull') {
+    // Boot suspended the mirror and skipped its first pass; the server's rows
+    // are the app's data now, so adopt them before letting the two sides track.
+    await adoptDexieIntoLocal()
+    clearPendingSignIn()
+    resumeMirror()
+    await activateMirror()
+    return
+  }
+  try {
+    await makeServerMatchLocal()
+  } finally {
+    resumeMirror()
+  }
+}
+
+/** Give up on a sign-in that failed or was cancelled, restoring local-only state. */
+export async function abandonSignIn(direction: SyncDirection): Promise<void> {
+  clearPendingSignIn()
+  if (direction === 'pull') {
+    // The database was deleted and nothing replaced it — rebuild it from the
+    // app's storage, which still holds everything.
+    resetMirrorBase()
+    await pushAllToDexie()
+    resumeMirror()
+    await activateMirror()
+    return
+  }
+  resumeMirror()
+}
+
+/**
+ * Make the server an exact copy of this device. The sign-in has already
+ * uploaded the local rows and pulled down whatever the server held; anything
+ * that arrived and is not local is data the user chose to discard, so it is
+ * deleted and the deletion synced.
+ */
+async function makeServerMatchLocal(): Promise<void> {
+  for (const key of SYNCED_KEYS) {
+    const local = readLocalRows(key)
+    const localIds = new Set(local.map((row) => row.id))
+    const table = SYNCED_TABLES[key]()
+    const stale = (await table.toArray()).map((row) => row.id).filter((id) => !localIds.has(id))
+    if (stale.length === 0) continue
+    await table.bulkDelete(stale)
+  }
+  await syncNow('push')
+}
+
+// --- Signing out ----------------------------------------------------------
+
+/**
+ * Sign out and go back to local-only. The addon empties every table on logout
+ * (that is how it drops another user's data), so the mirror is held while that
+ * happens and the database is rebuilt from the app's storage afterwards —
+ * signing out must cost the user nothing.
+ */
+export async function signOut(): Promise<void> {
+  suspendMirror()
+  try {
+    await db.cloud.logout()
+    resetMirrorBase()
+    await pushAllToDexie()
+  } finally {
+    resumeMirror()
   }
 }

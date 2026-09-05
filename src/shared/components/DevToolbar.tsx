@@ -12,7 +12,7 @@ export function DevToolbar() {
 
   const handleSwitch = (name: string) => {
     if (window.confirm(`Switch to "${name}" scenario? This will reset all data.`)) {
-      loadScenario(name);
+      void loadScenario(name);
     }
   };
 
