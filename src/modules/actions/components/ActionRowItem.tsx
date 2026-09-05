@@ -1,4 +1,4 @@
-import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, Pencil, Star, StarOff, RotateCcw, Trash2 } from 'lucide-react'
+import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, FolderInput, GripVertical, Pencil, Star, StarOff, RotateCcw, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { scheduledDateChip } from '../lib/group-actions'
 import { todayLocalIso } from '@/shared/lib/date'
+import { useActionDragSource } from './action-dnd'
 
 /**
  * One Action row in the Actions view: checkbox, name, frog flame, due-date
@@ -21,6 +22,11 @@ import { todayLocalIso } from '@/shared/lib/date'
  * rows render dimmed with an "abandoned" tag and offer reschedule (which
  * returns them to `assigned` via `scheduleAction`), rename, and delete. Delete
  * always opens a confirm dialog (owned by the page) — it's permanent.
+ *
+ * Inside an `ActionDndProvider` the row also becomes a drag source: grab it
+ * (a grip appears) and drop it on another Goal group or a Path's Standalone
+ * block to re-file it. The keyboard-accessible twin is the menu's "Move to…",
+ * which is why `onMoveTo` and the drag affordance appear together.
  */
 export function ActionRowItem({
   action,
@@ -30,6 +36,7 @@ export function ActionRowItem({
   onUnschedule,
   onRename,
   onToggleFrog,
+  onMoveTo,
   onDelete,
 }: {
   action: Action
@@ -39,19 +46,33 @@ export function ActionRowItem({
   onUnschedule: () => void
   onRename: () => void
   onToggleFrog: () => void
+  /** Opens the move picker. Omitted where re-filing isn't offered (e.g. the Path overview's standalone list). */
+  onMoveTo?: () => void
   onDelete: () => void
 }) {
   const done = action.state === 'done'
   const abandoned = action.state === 'abandoned'
   const chip = action.scheduledDate ? scheduledDateChip(action.scheduledDate) : null
+  const { draggable, isDragging, dragProps } = useActionDragSource(action)
 
   return (
+    // Pointer drag to re-file the row; the keyboard-accessible path is the
+    // overflow menu's "Move to…".
     <li
+      draggable={draggable}
+      {...dragProps}
       className={cn(
         'group flex items-center gap-3 rounded-lg border border-border bg-background p-2',
         abandoned && 'opacity-60',
+        isDragging && 'opacity-50',
       )}
     >
+      {draggable && (
+        <GripVertical
+          className="-ml-1 size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+          aria-hidden="true"
+        />
+      )}
       <Checkbox
         checked={done}
         disabled={abandoned}
@@ -118,6 +139,11 @@ export function ActionRowItem({
               <DropdownMenuItem onClick={() => onToggleDone(false)}>
                 <RotateCcw aria-hidden="true" /> Un-complete
               </DropdownMenuItem>
+              {onMoveTo && (
+                <DropdownMenuItem onClick={onMoveTo}>
+                  <FolderInput aria-hidden="true" /> Move to…
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={onDelete}>
                 <Trash2 aria-hidden="true" /> Delete
@@ -136,6 +162,11 @@ export function ActionRowItem({
               <DropdownMenuItem onClick={onRename}>
                 <Pencil aria-hidden="true" /> Rename
               </DropdownMenuItem>
+              {onMoveTo && (
+                <DropdownMenuItem onClick={onMoveTo}>
+                  <FolderInput aria-hidden="true" /> Move to…
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onToggleFrog}>
                 {action.frog ? (

@@ -1,6 +1,5 @@
-import { useState } from 'react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
+import { useCallback, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,43 +20,48 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { useGoals } from '@/modules/goals/hooks/use-goals'
+import { usePaths } from '@/modules/paths/hooks/use-paths'
+import { ScheduleActionDialog } from '@/modules/today/components/ScheduleActionDialog'
 import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { todayLocalIso } from '@/shared/lib/date'
-import { compareActionsForList, isSettled } from '@/modules/actions/lib/group-actions'
-import { ActionRowItem } from '@/modules/actions/components/ActionRowItem'
-import { QuickAddActionRow } from '@/modules/actions/components/QuickAddActionRow'
-import { ScheduleActionDialog } from '@/modules/today/components/ScheduleActionDialog'
+import type { ActionRowCallbacks } from '../components/GoalGroup'
+import type { ActionDropTarget } from '../components/action-dnd'
+import { MoveActionDialog } from '../components/MoveActionDialog'
 
 type ScheduleState = { action: Action } | null
 type RenameState = { action: Action; name: string } | null
+type MoveState = { action: Action } | null
 type DeleteState = { action: Action } | null
 
 /**
- * The Path overview's missing piece: Actions assigned straight to this Path
- * with no Goal in between (`goalId === null`). The Actions view shows these
- * under a "Standalone" sub-header per Path, but until now the Path's own page
- * had no place to see or manage them — this section fills that gap with the
- * same row (schedule, complete, rename, delete, frog) and quick-add
- * affordances as the Actions view.
+ * Everything an Action row can do, in one place: the callbacks a row needs
+ * and the dialogs those callbacks open (schedule, rename, move, delete),
+ * ready to render. The Actions view and a Path's Actions tab both mount it,
+ * so the two screens behave identically without copying ~150 lines of dialog
+ * wiring between them.
+ *
+ * `moveAction` is the same write the row menu's "Move to…" performs, exposed
+ * separately so a page can hand it straight to `ActionDndProvider` — one
+ * destination, one toast, whether the Owner dragged or used the keyboard.
  */
-export function StandaloneActionsSection({
-  pathId,
-  readOnly,
-}: {
-  pathId: string
-  readOnly: boolean
-}) {
-  const [showCompleted, setShowCompleted] = useState(false)
+export function useActionRowActions(): {
+  rowCallbacks: ActionRowCallbacks
+  moveAction: (action: Action, target: ActionDropTarget) => void
+  dialogs: ReactNode
+} {
   const [schedule, setSchedule] = useState<ScheduleState>(null)
   const [rename, setRename] = useState<RenameState>(null)
+  const [moving, setMoving] = useState<MoveState>(null)
   const [deleting, setDeleting] = useState<DeleteState>(null)
 
   const { showToast } = useToast()
+  const { getPath } = usePaths()
+  const { getGoal } = useGoals()
   const {
-    actions,
-    createAction,
     renameAction,
+    moveActionToGoal,
     toggleActionFrog,
     scheduleAction,
     unscheduleAction,
@@ -66,88 +70,57 @@ export function StandaloneActionsSection({
     deleteAction,
   } = useActions()
 
-  const standalone = actions.filter((a) => a.pathId === pathId && !a.goalId && a.state !== 'inbox')
-  const visible = [...standalone]
-    .filter((a) => (showCompleted ? true : !isSettled(a)))
-    .sort(compareActionsForList)
+  const moveAction = useCallback(
+    (action: Action, target: ActionDropTarget) => {
+      const undo = moveActionToGoal(action.id, target.pathId, target.goalId)
+      // A no-op (dropped back where it started) stays silent — the toast is
+      // also the screen-reader announcement, so it must describe a real change.
+      if (!undo) return
+      const destination = target.goalId
+        ? `“${getGoal(target.goalId)?.name ?? 'Goal'}”`
+        : `${getPath(target.pathId)?.name ?? 'Path'} (standalone)`
+      showToast(`“${action.name}” moved to ${destination}`, { label: 'Undo', onClick: undo })
+    },
+    [moveActionToGoal, getGoal, getPath, showToast],
+  )
 
-  return (
-    <section aria-labelledby="standalone-actions-heading" className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="standalone-actions-heading" className="text-sm font-semibold">
-          Actions without a goal
-        </h2>
-        {standalone.some(isSettled) && (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="standalone-show-completed"
-              checked={showCompleted}
-              onCheckedChange={(v) => setShowCompleted(Boolean(v))}
-            />
-            <Label htmlFor="standalone-show-completed" className="text-xs text-muted-foreground">
-              Show completed
-            </Label>
-          </div>
-        )}
-      </div>
+  const rowCallbacks: ActionRowCallbacks = {
+    onToggleDone: (action, done) => {
+      if (done) {
+        completeAction(action.id)
+        showToast(`“${action.name}” done`)
+      } else {
+        uncompleteAction(action.id)
+      }
+    },
+    onScheduleToday: (action) => {
+      // The view's most frequent action: one click puts the row on today,
+      // with an Undo restoring whatever day (or none) it had before.
+      const previous = action.scheduledDate
+      scheduleAction(action.id, todayLocalIso())
+      showToast(`“${action.name}” added to today`, {
+        label: 'Undo',
+        onClick: () =>
+          previous ? scheduleAction(action.id, previous) : unscheduleAction(action.id),
+      })
+    },
+    onSchedule: (action) => setSchedule({ action }),
+    onUnschedule: (action) => {
+      const previous = action.scheduledDate
+      unscheduleAction(action.id)
+      showToast(`“${action.name}” unscheduled`, {
+        label: 'Undo',
+        onClick: () => previous && scheduleAction(action.id, previous),
+      })
+    },
+    onRename: (action) => setRename({ action, name: action.name }),
+    onToggleFrog: (action) => toggleActionFrog(action.id),
+    onMoveTo: (action) => setMoving({ action }),
+    onDelete: (action) => setDeleting({ action }),
+  }
 
-      {standalone.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {readOnly
-            ? 'No Actions were assigned directly to this Path.'
-            : 'Actions assigned straight to this Path — not under any Goal — show up here.'}
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {visible.map((a) => (
-            <ActionRowItem
-              key={a.id}
-              action={a}
-              onToggleDone={(done) => {
-                if (done) {
-                  completeAction(a.id)
-                  showToast(`“${a.name}” done`)
-                } else {
-                  uncompleteAction(a.id)
-                }
-              }}
-              onScheduleToday={() => {
-                const previous = a.scheduledDate
-                scheduleAction(a.id, todayLocalIso())
-                showToast(`“${a.name}” added to today`, {
-                  label: 'Undo',
-                  onClick: () => (previous ? scheduleAction(a.id, previous) : unscheduleAction(a.id)),
-                })
-              }}
-              onSchedule={() => setSchedule({ action: a })}
-              onUnschedule={() => {
-                const previous = a.scheduledDate
-                unscheduleAction(a.id)
-                showToast(`“${a.name}” unscheduled`, {
-                  label: 'Undo',
-                  onClick: () => previous && scheduleAction(a.id, previous),
-                })
-              }}
-              onRename={() => setRename({ action: a, name: a.name })}
-              onToggleFrog={() => toggleActionFrog(a.id)}
-              onDelete={() => setDeleting({ action: a })}
-            />
-          ))}
-          {visible.length === 0 && standalone.length > 0 && (
-            <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
-              All clear
-            </li>
-          )}
-        </ul>
-      )}
-
-      {!readOnly && (
-        <QuickAddActionRow
-          label="Add an action without a goal"
-          onCreate={(name, scheduledDate) => createAction({ name, pathId, scheduledDate })}
-        />
-      )}
-
+  const dialogs = (
+    <>
       {schedule && (
         <ScheduleActionDialog
           open
@@ -158,12 +131,16 @@ export function StandaloneActionsSection({
           description="Pick the day it should show up on in Today."
           submitLabel="Schedule"
           onSchedule={(date) => {
+            // Symmetric safety with Unschedule: an Undo restores whatever the
+            // row had before, including "nothing scheduled" (edgecases #5).
             const previous = schedule.action.scheduledDate
             scheduleAction(schedule.action.id, date)
             showToast(`“${schedule.action.name}” scheduled`, {
               label: 'Undo',
               onClick: () =>
-                previous ? scheduleAction(schedule.action.id, previous) : unscheduleAction(schedule.action.id),
+                previous
+                  ? scheduleAction(schedule.action.id, previous)
+                  : unscheduleAction(schedule.action.id),
             })
           }}
         />
@@ -204,6 +181,14 @@ export function StandaloneActionsSection({
         </Dialog>
       )}
 
+      {moving && (
+        <MoveActionDialog
+          action={moving.action}
+          onOpenChange={(open) => !open && setMoving(null)}
+          onMove={(pathId, goalId) => moveAction(moving.action, { pathId, goalId })}
+        />
+      )}
+
       {deleting && (
         <AlertDialog open onOpenChange={(open) => !open && setDeleting(null)}>
           <AlertDialogContent>
@@ -233,6 +218,8 @@ export function StandaloneActionsSection({
           </AlertDialogContent>
         </AlertDialog>
       )}
-    </section>
+    </>
   )
+
+  return { rowCallbacks, moveAction, dialogs }
 }

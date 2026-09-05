@@ -6,6 +6,7 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
+import { PathTabs } from '@/modules/paths/components/PathTabs'
 import { useVision } from '../hooks/use-vision'
 import { downloadVisionMarkdown } from '../lib/export-markdown'
 import type { MockUnsplashPhoto } from '../data/unsplash-mock'
@@ -146,6 +147,8 @@ export function VisionBoardPage() {
           </div>
         </div>
       </div>
+
+      <PathTabs pathId={path.id} />
 
       {readOnly && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">

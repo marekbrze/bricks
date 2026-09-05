@@ -8,6 +8,7 @@ import { daysUntil, deadlineLabel } from '@/modules/goals/lib/deadline'
 import { compareActionsForList, isSettled } from '../lib/group-actions'
 import { ActionRowItem } from './ActionRowItem'
 import { QuickAddActionRow } from './QuickAddActionRow'
+import { useActionDropZone } from './action-dnd'
 
 export interface ActionRowCallbacks {
   onToggleDone: (action: Action, done: boolean) => void
@@ -17,7 +18,24 @@ export interface ActionRowCallbacks {
   onUnschedule: (action: Action) => void
   onRename: (action: Action) => void
   onToggleFrog: (action: Action) => void
+  /** Opens the move picker — the keyboard twin of dragging the row elsewhere. */
+  onMoveTo?: (action: Action) => void
   onDelete: (action: Action) => void
+}
+
+/** Spreadable row props built from the shared callbacks — one row, one place. */
+export function actionRowProps(action: Action, callbacks: ActionRowCallbacks) {
+  return {
+    action,
+    onToggleDone: (done: boolean) => callbacks.onToggleDone(action, done),
+    onScheduleToday: () => callbacks.onScheduleToday(action),
+    onSchedule: () => callbacks.onSchedule(action),
+    onUnschedule: () => callbacks.onUnschedule(action),
+    onRename: () => callbacks.onRename(action),
+    onToggleFrog: () => callbacks.onToggleFrog(action),
+    onMoveTo: callbacks.onMoveTo ? () => callbacks.onMoveTo!(action) : undefined,
+    onDelete: () => callbacks.onDelete(action),
+  }
 }
 
 /**
@@ -27,6 +45,10 @@ export interface ActionRowCallbacks {
  * Actions render collapsed and dimmed by default — their open work stays
  * reachable without shouting (docs/modules/actions.md). Inactive Goals with
  * no open Actions aren't rendered at all (the caller filters them out).
+ *
+ * Inside an `ActionDndProvider` the group is also a drop target: dragging an
+ * Action onto it (collapsed groups included — the header is the target) files
+ * the Action under this Goal.
  */
 export function GoalGroup({
   goal,
@@ -59,6 +81,10 @@ export function GoalGroup({
   // "expanded unless inactive", overridable per group by the stored toggle.
   const expanded = expandedOverride ?? !inactive
   const setExpanded = (next: boolean) => onToggleExpanded(goal.id, next)
+  const { active: dropActive, isOver, dropProps } = useActionDropZone({
+    pathId: goal.pathId,
+    goalId: goal.id,
+  })
 
   const visible = useMemo(
     () =>
@@ -77,9 +103,18 @@ export function GoalGroup({
   const deadlineDays = goal.deadline ? daysUntil(goal.deadline) : null
 
   return (
+    // Drop handlers only; the keyboard-accessible way to file an Action here
+    // is the row menu's "Move to…".
     <section
       aria-label={`Goal: ${goal.name}`}
-      className={cn('flex flex-col gap-1.5', depth > 0 && 'border-l border-border pl-4', inactive && 'opacity-60')}
+      {...dropProps}
+      className={cn(
+        'flex flex-col gap-1.5 rounded-lg',
+        depth > 0 && 'border-l border-border pl-4',
+        inactive && 'opacity-60',
+        dropActive && 'outline-1 outline-dashed outline-border',
+        isOver && 'bg-primary/5 outline-2 outline-solid outline-primary',
+      )}
     >
       <div className="flex items-center gap-2">
         <Button
@@ -124,17 +159,7 @@ export function GoalGroup({
       {expanded && (
         <ul className="flex flex-col gap-1">
           {visible.map((a) => (
-            <ActionRowItem
-              key={a.id}
-              action={a}
-              onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
-              onScheduleToday={() => rowCallbacks.onScheduleToday(a)}
-              onSchedule={() => rowCallbacks.onSchedule(a)}
-              onUnschedule={() => rowCallbacks.onUnschedule(a)}
-              onRename={() => rowCallbacks.onRename(a)}
-              onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
-              onDelete={() => rowCallbacks.onDelete(a)}
-            />
+            <ActionRowItem key={a.id} {...actionRowProps(a, rowCallbacks)} />
           ))}
           {visible.length === 0 && openActionCount === 0 && actions.length > 0 && (
             <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">

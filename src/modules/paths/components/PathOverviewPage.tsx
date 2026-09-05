@@ -13,7 +13,7 @@ import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnre
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ModuleStubSection } from './ModuleStubSection'
-import { StandaloneActionsSection } from './StandaloneActionsSection'
+import { PathTabs } from './PathTabs'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import { RenamePathDialog } from './RenamePathDialog'
 import { DeletePathDialog } from './DeletePathDialog'
@@ -82,6 +82,8 @@ export function PathOverviewPage() {
         </div>
       </div>
 
+      <PathTabs pathId={path.id} />
+
       {readOnly && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
           <p className="text-sm text-muted-foreground">
@@ -95,17 +97,19 @@ export function PathOverviewPage() {
 
       <VisionSummaryCard pathId={path.id} />
 
+      {/* The overview stays a summary: the work itself lives one tab over, where
+          Goals and Actions are one draggable list (docs/adr/0026-path-actions-tab-and-drag-and-drop.md). */}
       <ModuleStubSection
-        id="goals-heading"
-        heading="Goals"
+        id="work-heading"
+        heading="Goals and Actions"
         blurb={`${goalCountForPath(path.id)} ${
           goalCountForPath(path.id) === 1 ? 'Goal' : 'Goals'
+        } and ${actionCountForPath(path.id)} ${
+          actionCountForPath(path.id) === 1 ? 'Action' : 'Actions'
         } under this Path — the execution layer, in priority order.`}
-        linkTo={`/paths/${path.id}/goals`}
-        linkLabel="Open Goals"
+        linkTo={`/paths/${path.id}/actions`}
+        linkLabel="Open Actions"
       />
-
-      <StandaloneActionsSection pathId={path.id} readOnly={readOnly} />
 
       <AchievementsSection
         achievements={path.achievements}

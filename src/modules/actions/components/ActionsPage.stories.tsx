@@ -12,7 +12,9 @@ const meta: Meta<typeof ActionsPage> = {
         component:
           'The flat whole-app task list: Inbox group on top, one section per active Path ' +
           '(Goal groups with nested sub-Goals, standalone Actions after), “Show completed” toggle. ' +
-          'Use the toggle inside a story to reveal settled rows.',
+          'Use the toggle inside a story to reveal settled rows. Rows drag between Goal groups, ' +
+          'across Paths, and onto a Path’s Standalone block; the row menu’s “Move to…” does the ' +
+          'same from the keyboard.',
       },
     },
   },

@@ -56,21 +56,32 @@ the section it belongs to.
 3. Overflow menu per row: Schedule… (reuses the schedule dialog), Unschedule, Rename, Toggle
    frog, Delete. Completed rows offer only Un-complete and Delete.
 
-### Delete an Action
+### Re-file an Action (drag, or "Move to…")
 
-1. Row overflow menu → **Delete** → an `AlertDialog` confirms ("Delete “X”? This permanently
-   removes the Action. This cannot be undone.").
-2. Confirm → the Action is gone everywhere (this view, Today, WinLog) → confirmation toast.
-   No undo — same stance as deleting from Review abandoned.
+1. **Pointer**: grab a row (a grip appears on the left) and drop it on another Goal group —
+   nested sub-Goals included — or on a Path's **Standalone** block to strip its Goal. The
+   hovered group outlines; every other droppable group hints with a dashed outline.
+2. Dropping across Paths works the same way: the Action's `pathId` follows its new Goal.
+3. **Keyboard**: row menu → **Move to…** → a searchable list of every active Path and its
+   Goals; the Action's current home is listed, disabled, as "Current".
+4. Either route runs the same write and the same toast, carrying **Undo**. Dropping a row
+   back where it started changes nothing and stays silent.
+5. A move preserves `state`, `scheduledDate` and `completedAt` — a completed Action keeps its
+   Win when it's filed elsewhere (ADR 0026).
 
 ## Screens (rough)
 
 - **ActionsPage** (`/actions`): single scrolling page. Header (title + Show completed
-  toggle) → Inbox group (conditional) → one section per Path. Each row: checkbox, name,
-  frog star, date chip ("Today"/"Tomorrow"/date or countdown-style label for overdue),
+  toggle) → Inbox group (conditional) → one section per Path. Each row: drag grip, checkbox,
+  name, frog star, date chip ("Today"/"Tomorrow"/date or countdown-style label for overdue),
   one-click **add-to-today** button (the view's most frequent action — hover-revealed on
   desktop, always visible on touch; hidden when the row is already on today), overflow menu.
   Group headers carry the quick-add row; Path headers carry "New goal".
+- **PathActionsPage** (`/paths/:pathId/actions`, owned by `paths`): the same groups scoped
+  to one Path, on that Path's tab bar. Built from the same `PathActionsBody`,
+  `useGoalGroups` and `useActionRowActions` as the view above, so the two can't drift —
+  including the shared collapse memory. An archived Path renders it read-only: no quick-add,
+  no "New goal", no dragging.
 
 ## Actions
 
@@ -85,6 +96,7 @@ the section it belongs to.
 | Rename Action | Edit name from row menu | Action | Existing "Edit Action" |
 | Delete Action | Row menu → `AlertDialog` confirm → permanent removal | Action | No undo; reachable from every row, not just Review abandoned |
 | Toggle frog | Star toggle per row | Action | No propagation upward (that stays Goal-side) |
+| Move Action | Drag onto a Goal group / Standalone block, or row menu → "Move to…" | Action | `moveActionToGoal`; keeps `state`/`scheduledDate`; undoable; crosses Paths |
 | Show completed | Toggle done/abandoned visibility | — | View-local, not persisted (prototype) |
 
 ## Edge Cases
@@ -117,7 +129,13 @@ Hardened against docs/modules/actions-edgecases.md — all 8 gaps closed (ADR 00
 - **Narrow widths**: the quick-add row wraps — the date chip drops under the input instead of
   squeezing it.
 - **Mobile**: 5 bottom tabs at ~360 px — tighter spacing, labels stay; quick-add rows remain
-  reachable (inline, not behind a FAB) in MVP.
+  reachable (inline, not behind a FAB) in MVP. HTML5 drag doesn't fire on touch, so
+  "Move to…" is the practical way to re-file there — it's in every row's menu, not an
+  extra affordance.
+- **Drop that changes nothing** (row dropped back on its own group): no write, no toast —
+  the toast is also the screen-reader announcement, so it has to describe a real change.
+- **Nested Goal groups**: a drop on a sub-Goal lands only there, never also on its parent.
+- **Archived Path**: its Actions tab mounts no drag provider — no grips, no drop targets.
 
 ## Integration Points
 

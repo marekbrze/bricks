@@ -3,18 +3,14 @@ import { Button } from '@/components/ui/button'
 import type { Action } from '@/modules/capture-triage/types/action'
 import type { Path } from '@/modules/paths/types/path'
 import type { Goal } from '@/modules/goals/types/goal'
-import { compareActionsForList, isSettled } from '../lib/group-actions'
-import { ActionRowItem } from './ActionRowItem'
 import type { ActionRowCallbacks } from './GoalGroup'
-import { QuickAddActionRow } from './QuickAddActionRow'
+import { PathActionsBody } from './PathActionsBody'
 
 /**
- * One Path's section in the Actions view: Path header (name + New goal),
- * active Goal groups in priority order with nested sub-Goals, the Path's
- * standalone Actions, then inactive Goals that still hold open work —
- * collapsed and dimmed, at the bottom (docs/modules/actions.md). An empty
- * Path still renders, carrying only its quick-add rows, so there's never a
- * dead end.
+ * One Path's section in the Actions view: Path header (name + New goal) over
+ * the shared `PathActionsBody` — Goal groups, standalone Actions, closed
+ * Goals still holding open work. An empty Path still renders, carrying only
+ * its quick-add rows, so there's never a dead end.
  */
 export function PathSection({
   path,
@@ -36,12 +32,6 @@ export function PathSection({
   onNewGoal: () => void
   renderGoalGroup: (goal: Goal, depth: number) => React.ReactNode
 }) {
-  const activeGoals = topLevelGoals.filter((g) => g.state === 'active')
-  const inactiveGoals = topLevelGoals.filter((g) => g.state !== 'active')
-  const standaloneVisible = [...standaloneActions]
-    .filter((a) => (showCompleted ? true : !isSettled(a)))
-    .sort(compareActionsForList)
-
   return (
     <section aria-label={`Path: ${path.name}`} className="flex flex-col gap-3 rounded-xl border border-border p-4">
       <div className="flex items-center gap-2">
@@ -52,41 +42,15 @@ export function PathSection({
         </Button>
       </div>
 
-      {activeGoals.map((g) => renderGoalGroup(g, 0))}
-
-      <div className="flex flex-col gap-1.5" aria-label={`Standalone actions in ${path.name}`}>
-        <h3 className="text-sm font-medium text-muted-foreground">Standalone</h3>
-        <ul className="flex flex-col gap-1">
-          {standaloneVisible.map((a) => (
-            <ActionRowItem
-              key={a.id}
-              action={a}
-              onToggleDone={(done) => rowCallbacks.onToggleDone(a, done)}
-              onScheduleToday={() => rowCallbacks.onScheduleToday(a)}
-              onSchedule={() => rowCallbacks.onSchedule(a)}
-              onUnschedule={() => rowCallbacks.onUnschedule(a)}
-              onRename={() => rowCallbacks.onRename(a)}
-              onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
-              onDelete={() => rowCallbacks.onDelete(a)}
-            />
-          ))}
-          {standaloneVisible.length === 0 && standaloneActions.length > 0 && (
-            <li className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
-              All clear
-            </li>
-          )}
-        </ul>
-        <QuickAddActionRow label={`Add a standalone action in ${path.name}`} onCreate={onQuickAddStandalone} />
-      </div>
-
-      {inactiveGoals.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-dashed border-border pt-3">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Closed goals with open actions
-          </h3>
-          {inactiveGoals.map((g) => renderGoalGroup(g, 0))}
-        </div>
-      )}
+      <PathActionsBody
+        path={path}
+        topLevelGoals={topLevelGoals}
+        standaloneActions={standaloneActions}
+        showCompleted={showCompleted}
+        rowCallbacks={rowCallbacks}
+        onQuickAddStandalone={onQuickAddStandalone}
+        renderGoalGroup={renderGoalGroup}
+      />
     </section>
   )
 }

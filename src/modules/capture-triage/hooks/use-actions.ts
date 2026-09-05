@@ -362,6 +362,32 @@ export function useActions() {
   )
 
   /**
+   * Re-home an already-triaged Action: under another Goal, or standalone on a
+   * Path when `goalId` is null. Drives drag-and-drop (and the row menu's
+   * "Move to…") in the Actions view and a Path's Actions tab.
+   *
+   * Unlike `assignAction` — triage's one-way trip out of the Inbox — this
+   * preserves `state`, so a `done` or `abandoned` row keeps its history when
+   * it's filed elsewhere. `scheduledDate` is preserved too: which day an
+   * Action sits on is independent of which Goal owns it.
+   *
+   * Returns null when the move is a no-op (unknown Action, or it already sits
+   * on that target) so the caller can stay silent instead of showing an Undo
+   * toast for nothing — same contract as `vision`'s `reorderTile`.
+   */
+  const moveActionToGoal = useCallback(
+    (id: string, pathId: string, goalId: string | null): UndoFn | null => {
+      const current = actions.find((a) => a.id === id)
+      if (!current) return null
+      if (current.pathId === pathId && current.goalId === goalId) return null
+      const snapshot = actions
+      setActions(actions.map((a) => (a.id === id ? touch({ ...a, pathId, goalId }) : a)))
+      return restoreSnapshot(snapshot)
+    },
+    [actions, setActions, restoreSnapshot],
+  )
+
+  /**
    * Per-Action frog toggle (Actions view row menu). Unlike the Goal-side
    * toggle in `useGoals`, no propagation either way: marking one Action a
    * frog doesn't touch its siblings, un-marking doesn't retract what a Goal
@@ -380,6 +406,7 @@ export function useActions() {
     actionCountForPath,
     createAction,
     renameAction,
+    moveActionToGoal,
     toggleActionFrog,
     scheduleAction,
     unscheduleAction,

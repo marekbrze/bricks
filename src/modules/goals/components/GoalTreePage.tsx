@@ -6,6 +6,7 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
+import { PathTabs } from '@/modules/paths/components/PathTabs'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useGoals } from '../hooks/use-goals'
@@ -103,6 +104,8 @@ export function GoalTreePage() {
           )}
         </div>
       </div>
+
+      <PathTabs pathId={path.id} />
 
       {readOnly && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">

@@ -45,23 +45,36 @@ out of the way on their own screen; the main list is only active directions.
 
 1. User opens `/paths/:pathId` → contextual header with the Path name and a
    **back to Paths** affordance, plus an overflow menu (Rename, Archive, Delete).
-2. Sections, top to bottom:
+2. Under the header sits the Path's **tab bar** — Overview · Actions · Goals ·
+   Vision — carried by every one of those four screens (ADR 0026). They are
+   separate routes, so back/forward and "open in a new tab" keep working.
+3. Overview sections, top to bottom:
    - **Vision summary** — a condensed read-only view of the Vision board (a few
      notes / thumbnails) + **Open Vision board** → `/paths/:pathId/vision`
      (owned by the `vision` module).
-   - **Goals** — the Path's Goal list in priority order, each with its
-     days-remaining countdown if it has a deadline + **Open Goals** /
-     add-Goal entry → `/paths/:pathId/goals` (owned by the `goals` module).
-   - **Actions without a goal** — the Path's standalone Actions (`goalId: null`):
-     full rows (schedule, complete, rename, delete, frog) + quick-add. The
-     Actions view already grouped these under a Path's "Standalone" sub-header;
-     this section is the only place to see and manage them from the Path
-     itself, without detouring through `/actions`.
+   - **Goals and Actions** — counts plus **Open Actions** →
+     `/paths/:pathId/actions`. The overview stays a summary; the work itself
+     lives on that tab.
    - **Achievements** — checklist with an `X/Y achieved` counter (see flow below).
    - **Contribution graph** — the full per-Path `ContributionGraph` (owned by the
      `winlog` module, embedded here).
-3. From here the user branches into `vision`, `goals`, or `winlog`; `paths` itself
-   only fully owns the Achievements section and the Path-level actions.
+4. From here the user branches into `actions`, `vision`, `goals`, or `winlog`;
+   `paths` itself only fully owns the Achievements section and the Path-level
+   actions.
+
+### Path Actions tab
+
+1. `/paths/:pathId/actions` — the Actions view, scoped to this one Path: its Goal
+   groups in priority order (sub-Goals nested), the Path's standalone Actions,
+   then closed Goals still holding open work.
+2. Same components as `/actions` (`PathActionsBody`, `useGoalGroups`,
+   `useActionRowActions`), so grouping, row menus, dialogs and the persisted
+   collapse state are shared, not copied.
+3. Actions drag between Goal groups and onto the Standalone block; the row menu's
+   **Move to…** does the same from the keyboard and reaches every other Path.
+   See docs/modules/actions.md for the full flow.
+4. Header carries **Show completed** and **New goal**. An archived Path renders
+   the tab read-only: no quick-add, no New goal, no dragging.
 
 ### Manage Achievements
 
@@ -125,13 +138,19 @@ out of the way on their own screen; the main list is only active directions.
   Cancel / Create. Name required (inline error). A dirty form asks to confirm
   before discarding on Cancel / Escape / backdrop.
 - **Path overview** (`/paths/:pathId`): contextual header (name, back, overflow:
-  Rename / Archive / Delete); stacked sections — Vision summary (+ open board),
-  Goals list (+ open goals), **Actions without a goal** (full rows + quick-add,
-  reusing the Actions view's row and dialogs), Achievements checklist (inline
-  add/edit/check/delete, `X/Y achieved` header with a done treatment at `Y/Y`),
-  per-Path contribution graph. **Archived Paths render read-only**: a restore
-  banner at the top, and both the standalone-Actions quick-add and the
-  Achievements section disable editing until unarchived.
+  Rename / Archive / Delete); the Path tab bar; stacked sections — Vision summary
+  (+ open board), **Goals and Actions** summary (+ open Actions), Achievements
+  checklist (inline add/edit/check/delete, `X/Y achieved` header with a done
+  treatment at `Y/Y`), per-Path contribution graph. **Archived Paths render
+  read-only**: a restore banner at the top, and the Achievements section disables
+  editing until unarchived.
+- **Path Actions tab** (`/paths/:pathId/actions`): header (name, back, tab bar) →
+  Show completed + New goal → this Path's Goal groups, standalone Actions, and
+  closed Goals with open work, all draggable. An "Unassigned" fallback catches
+  this Path's orphaned Actions. Read-only while archived.
+- **Path tab bar** (`PathTabs`, on all four Path screens): Overview · Actions ·
+  Goals · Vision as plain links with `aria-current`; scrolls horizontally on
+  narrow widths.
 - **Archived Paths** (`/paths/archived`): muted list of archived Paths with
   Unarchive / Delete per row; back to `/paths`. Empty state when nothing archived.
 - **Delete confirmation** (`AlertDialog`): destructive cascade summary (counts
@@ -155,8 +174,10 @@ out of the way on their own screen; the main list is only active directions.
 | Archive Path | Overflow menu → immediate + Undo toast (restores exact prior state); contents kept | `Path` | Reversible; from the overview it also navigates back to `/paths` |
 | Unarchive Path | From `/paths/archived` or the archived overview’s restore banner; returns to end of active order; confirmation toast | `Path` | |
 | Delete Path | Overflow menu / archived list → `AlertDialog` with a cascade summary (estimated counts) | `Path` | Cascades to Vision, Achievements, Goals, Actions; confirmation toast, no undo |
-| View Path overview | The hub screen: Vision summary + Goals + standalone Actions + Achievements + graph | `Path` | Vision / Goals / graph / Actions rendered by other modules |
-| Manage standalone Actions | Schedule, complete, rename, delete, toggle frog, quick-add | `Action` | Rows/dialogs reused from `actions`; disabled while archived |
+| View Path overview | The hub screen: Vision summary + Goals/Actions summary + Achievements + graph | `Path` | Vision / graph rendered by other modules |
+| Open a Path tab | Overview / Actions / Goals / Vision from the Path tab bar | `Path` | Separate routes, `aria-current` marks the active one |
+| View Path Actions | This Path's Goal groups + standalone Actions, in the Actions view's shape | `Action` | `/paths/:pathId/actions`; components shared with `actions` |
+| Manage a Path's Actions | Schedule, complete, rename, move, delete, toggle frog, quick-add | `Action` | Rows/dialogs reused from `actions`; quick-add and dragging disabled while archived |
 | Add Achievement | Inline **+ add achievement** row on the overview | `Achievement` | Appends; order not meaningful |
 | Edit Achievement | Click text → inline edit | `Achievement` | |
 | Mark achieved | Tick checkbox → `achieved` + local date | `Achievement` | Feeds `WinLog` / `ContributionGraph`; re-ticking keeps the original date |
