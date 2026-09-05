@@ -12,6 +12,7 @@ import { todayRoutes } from './modules/today'
 import { winlogRoutes } from './modules/winlog'
 import { visionRoutes } from './modules/vision'
 import { actionsRoutes } from './modules/actions'
+import { dataSyncRoutes } from './modules/data-sync'
 
 function App() {
   return (
@@ -35,6 +36,8 @@ function App() {
             {visionRoutes}
             {/* actions — planned via proto-feature (docs/changes/actions-page.md). */}
             {actionsRoutes}
+            {/* data-sync — settings-level surface, reached from the footer. */}
+            {dataSyncRoutes}
             {/* Other modules — proto-lofi replaces this catch-all as each is built. */}
             <Route path=":moduleName" element={<ModulePlaceholder />} />
             {/* Unknown paths fall back home. */}

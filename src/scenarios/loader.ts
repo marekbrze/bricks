@@ -3,7 +3,9 @@ import { getScenario } from './index';
 const STORAGE_KEY = '__scenario_name__';
 
 export function loadScenario(name: string): void {
-  const keysToKeep = new Set(['__scenario_name__']);
+  // Scenario data is wiped, but sync config isn't data — keeping it means a
+  // scenario switch doesn't force the Dexie Cloud setup again.
+  const keysToKeep = new Set(['__scenario_name__', 'bricks-cloud-url']);
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i);
     if (key && !keysToKeep.has(key)) {

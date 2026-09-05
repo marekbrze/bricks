@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bricks splits into **7 design modules** plus a generic app shell. Everything hangs off `Path` (the `paths` module), so it is the foundation. The core value loop runs across four modules — capture an idea (`capture-triage`), decide where it belongs (`capture-triage` → `goals`/`paths`), schedule and do it (`today`), and watch the wins accumulate (`winlog`). `vision` is a rich, mostly self-contained surface that sits alongside the loop rather than inside it. `actions` is the flat whole-app task list — a Todoist-style aggregation and quick-add surface over the entities the loop modules own.
+Bricks splits into **7 design modules** plus a generic app shell — and, added later, the infrastructure module `data-sync` (optional Dexie Cloud push/pull, ADR 0023). Everything hangs off `Path` (the `paths` module), so it is the foundation. The core value loop runs across four modules — capture an idea (`capture-triage`), decide where it belongs (`capture-triage` → `goals`/`paths`), schedule and do it (`today`), and watch the wins accumulate (`winlog`). `vision` is a rich, mostly self-contained surface that sits alongside the loop rather than inside it. `actions` is the flat whole-app task list — a Todoist-style aggregation and quick-add surface over the entities the loop modules own.
 
 Six of the seven modules are **Core** — this is a focused personal tool with almost no infrastructure surface beyond persistence and navigation.
 
@@ -85,6 +85,16 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 **Key Actions**: Navigate, configure settings.
 **Connects to**: every module (hosts them).
 **Design priority**: Low — mostly handled by `proto-highlevelui` and `proto-devsetup` before module design starts. No novel design problem beyond choosing the navigation pattern.
+
+---
+
+### data-sync
+**Type**: Infrastructure (added after the original 7 — ADR 0023)
+**Description**: Optional cross-device data movement via Dexie Cloud (the same service + addon as the `dopadone` project). LocalStorage stays the app's source of truth; a Dexie mirror of the four entity collections is the sync transport. Sync is manual and directional — the user explicitly picks push (overwrite the server with this device's data) or pull (overwrite this device with the server's); nothing merges. Email-OTP sign-in, no passwords.
+**Entities**: none stored of its own — mirrors `Path`, `Goal`, `Action`, `Vision` rows in the `bricks` Dexie DB.
+**Key Actions**: Connect a database URL, disconnect, sign in via OTP, sign out, push to server, pull from server.
+**Connects to**: every entity-owning module (reads their LocalStorage collections wholesale — `paths`, `goals`, `actions`, `visions`); `app-shell` (footer secondary-nav entry, route `/data-sync`).
+**Design priority**: Low — settings-level surface, one page; the design risk is honest destructive-action communication (both directions lose data), handled with explicit confirm dialogs.
 
 ---
 

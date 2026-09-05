@@ -26,7 +26,7 @@ The application shell — the frame every module screen renders inside. Structur
 | `capture-triage` | Inbox | `/capture-triage` | 4 |
 | `winlog` | Log | `/winlog` | 5 |
 
-Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` and `goals` get nested routes under `/paths/:pathId/...` when `proto-lofi` reaches them. `actions` (order 2) sits next to Today — the two daily surfaces.
+Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` and `goals` get nested routes under `/paths/:pathId/...` when `proto-lofi` reaches them. `actions` (order 2) sits next to Today — the two daily surfaces. Settings-level modules are **not** nav destinations: `data-sync` lives at `/data-sync`, reached from the footer's secondary nav.
 
 ## Content layout
 
@@ -36,7 +36,7 @@ Route segment == module code name, so `proto-lofi` maps each route to its module
 ## Shared elements
 
 - **Header**: yes — always visible, sticky. Brand ("Bricks", links home) + desktop top-bar nav + an empty right-side slot reserved for future actions (settings, export).
-- **Footer**: yes — **non-fixed**, at the end of the content flow. Mostly for mobile, where the user scrolls past content to reach it (the fixed bottom tabs sit below it; the content wrapper carries `pb-16` so it clears them). Placeholder links: Settings, Export, About.
+- **Footer**: yes — **non-fixed**, at the end of the content flow. Mostly for mobile, where the user scrolls past content to reach it (the fixed bottom tabs sit below it; the content wrapper carries `pb-16` so it clears them). Links: **Data sync** (wired → `/data-sync`); Export and About are still placeholders.
 - **Notifications**: no — single-user local tool.
 - **Skip link**: "Skip to content" jump to `#main-content` (WCAG 2.2 AAA target).
 
