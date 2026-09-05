@@ -39,7 +39,10 @@ export class BricksDB extends Dexie {
     if (cloudUrl) {
       this.cloud.configure({
         databaseUrl: cloudUrl,
-        requireAuth: true,
+        // No requireAuth: it would make the addon start its own login flow on
+        // every page load while signed out (whose prompts nobody renders —
+        // customLoginGui below). The page signs in explicitly instead, driving
+        // db.cloud.userInteraction itself.
         // The page renders its own sign-in UI — the addon's default modal
         // would fight it (and hangs awaiting input during logout).
         customLoginGui: true,

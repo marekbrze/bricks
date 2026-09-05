@@ -27,8 +27,17 @@ device (pull), implemented as a `data-sync` module.
   as they are random and globally unique" — so rows sync 1:1 with no FK
   remapping, no topological insert order, and no schema-switch/reload
   dance.
-- **Auth: email OTP** via `db.cloud.login({ email, grant_type: 'otp' })`
-  (send, then verify) and `requireAuth: true` — same flow as `dopadone`.
+- **Auth: email OTP, driven through `db.cloud.userInteraction`.**
+  With the addon's default GUI disabled (`customLoginGui: true`), a single
+  `login({ email, grant_type: 'otp' })` runs the whole flow: it sends the
+  code, then parks on a `type: 'otp'` interaction until the page calls
+  `onSubmit({ otp })` (a second login call's `otp` hint is ignored by the
+  addon — verified in source). The login promise is fire-and-forget; it is
+  only used to surface failures (offline, origin not whitelisted) and
+  success. `requireAuth` is left off: it would start an unattended login
+  flow on every page load while signed out. Addon alerts (INVALID_OTP,
+  whitelist hints with their `npx dexie-cloud whitelist <origin>` command)
+  are rendered inside the Account card.
 - **URL config**: `bricks-cloud-url`, https-validated (no `*.dexie.cloud`
   host check — on-prem Dexie Cloud servers stay possible), applied on
   reload; a dedicated Disconnect button signs out and clears it.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CloudDownload, CloudUpload, DatabaseBackup, RefreshCw } from 'lucide-react'
+import type { DXCAlert, DXCUserInteraction } from 'dexie-cloud-addon'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -31,7 +32,6 @@ import {
 import { pullServerToLocal, pushLocalToServer, readServerCounts } from '../lib/sync-ops'
 import { useCloudStatus } from '../hooks/use-cloud-status'
 
-type LoginStatus = 'idle' | 'sending' | 'awaiting-otp' | 'verifying'
 type ConfirmDirection = 'push' | 'pull' | null
 
 function syncPhaseLabel(phase: string | undefined): string {
@@ -51,11 +51,28 @@ function syncPhaseLabel(phase: string | undefined): string {
   }
 }
 
+function alertTextClass(type: DXCAlert['type']): string {
+  switch (type) {
+    case 'error':
+      return 'text-destructive'
+    case 'warning':
+      return 'text-amber-600 dark:text-amber-400'
+    default:
+      return 'text-muted-foreground'
+  }
+}
+
+/** Errors the addon raised while waiting for login input (bad code, unlisted origin…). */
+function errorAlerts(interaction: DXCUserInteraction | undefined): DXCAlert[] {
+  if (!interaction) return []
+  return interaction.alerts.filter((a) => a.type === 'error')
+}
+
 /**
  * Data sync (docs/modules/data-sync.md). The app's data lives in this
  * browser; a Dexie Cloud database is optional. Sync is manual and
  * directional — the user picks one: overwrite the server (push) or
- * overwrite this device (pull). There is no merge.
+ * overwrite this device (pull). Nothing merges.
  */
 export function DataSyncPage() {
   const { showToast } = useToast()
@@ -76,56 +93,77 @@ export function DataSyncPage() {
   }
 
   const handleDisconnect = () => {
-    // Clear first, reload immediately: logout() can open an interaction
-    // dialog and hang awaiting input (offline, unreachable server) — that
-    // must never block disconnecting. Any leftover token state is harmless
-    // once the URL is gone and the addon stays unconfigured after reload.
+    // Clear first, reload immediately: logout() can hang awaiting input
+    // (interaction prompts nobody renders in between) — that must never
+    // block disconnecting. Any leftover token state is harmless once the
+    // URL is gone and the addon stays unconfigured after reload.
     clearCloudUrl()
     void db.cloud.logout({ force: true }).catch(() => {})
     window.location.reload()
   }
 
-  // --- Account (email + OTP, no passwords) --------------------------------
-  const [loginStatus, setLoginStatus] = useState<LoginStatus>('idle')
+  // --- Sign-in: driven by the addon's interaction observable ---------------
+  // With the default GUI disabled, `login({ email, grant_type: 'otp' })` runs
+  // the whole flow itself: it sends the code, then parks on a `type: 'otp'`
+  // interaction until `onSubmit({ otp })` completes it. Awaiting the login
+  // promise would hang until that point — so the flow below reacts to the
+  // interaction instead, and the promise is only used to surface failures
+  // (offline, origin not whitelisted) and final success.
+  const [interaction, setInteraction] = useState<DXCUserInteraction | undefined>(undefined)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
+  const [loginInFlight, setLoginInFlight] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
 
-  const handleSendCode = async () => {
-    if (!email.trim()) return
-    setLoginStatus('sending')
+  useEffect(() => {
+    const sub = db.cloud.userInteraction.subscribe(setInteraction)
+    return () => sub.unsubscribe()
+  }, [])
+
+  const otpPrompt = interaction?.type === 'otp' ? interaction : null
+
+  const handleSendCode = () => {
+    if (!email.trim() || loginInFlight) return
+    setLoginInFlight(true)
     setLoginError(null)
-    try {
-      await db.cloud.login({ email: email.trim(), grant_type: 'otp' })
-      setLoginStatus('awaiting-otp')
-    } catch (err) {
-      setLoginStatus('idle')
-      setLoginError(err instanceof Error ? err.message : String(err))
-    }
+    setOtp('')
+    void db.cloud
+      .login({ email: email.trim(), grant_type: 'otp' })
+      .then(() => {
+        // Resolves only after the OTP step succeeds — the user is in.
+        setLoginInFlight(false)
+        setEmail('')
+        setOtp('')
+        showToast('Signed in')
+      })
+      .catch((err) => {
+        setLoginInFlight(false)
+        if (err?.name === 'AbortError') return // cancelled by the user
+        setLoginError(err instanceof Error ? err.message : String(err))
+      })
   }
 
-  const handleVerifyOtp = async () => {
-    if (!otp.trim()) return
-    setLoginStatus('verifying')
-    setLoginError(null)
-    try {
-      await db.cloud.login({ email: email.trim(), grant_type: 'otp', otp: otp.trim() })
-      setLoginStatus('idle')
-      setEmail('')
-      setOtp('')
-    } catch (err) {
-      setLoginStatus('awaiting-otp')
-      setLoginError(err instanceof Error ? err.message : String(err))
-    }
+  const handleVerifyOtp = () => {
+    if (!otpPrompt || !otp.trim() || loginInFlight) return
+    // A wrong code comes back as a fresh 'otp' interaction carrying an
+    // INVALID_OTP alert — rendered below; no state change needed here.
+    otpPrompt.onSubmit({ otp: otp.trim() })
   }
 
-  const handleSignOut = async () => {
-    try {
-      await db.cloud.logout()
-      showToast('Signed out')
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : String(err))
-    }
+  const handleCancelOtp = () => {
+    otpPrompt?.onCancel()
+    setOtp('')
+  }
+
+  const handleSignOut = () => {
+    // Best-effort: if the addon raises a logout-confirmation (unsynced
+    // changes), it is rendered as a generic interaction below.
+    void db.cloud
+      .logout()
+      .then(() => showToast('Signed out'))
+      .catch((err) => {
+        if (err?.name !== 'AbortError') showToast(err instanceof Error ? err.message : String(err))
+      })
   }
 
   // --- Sync direction -----------------------------------------------------
@@ -183,6 +221,11 @@ export function DataSyncPage() {
 
   const localTotal = totalEntities(localCounts)
   const serverTotal = serverCounts === null ? null : totalEntities(serverCounts)
+
+  // Generic addon prompt (message-alert, logout-confirmation) — render its
+  // alerts and its own submit/cancel. OTP has its dedicated form above.
+  const genericInteraction =
+    interaction && interaction.type !== 'otp' ? interaction : null
 
   return (
     <div className="flex flex-col gap-6">
@@ -271,64 +314,92 @@ export function DataSyncPage() {
                   Sign out
                 </Button>
               </div>
+            ) : otpPrompt ? (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sync-otp">
+                  Code sent to {email.trim()} — check your inbox
+                </Label>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex min-w-[180px] flex-1 flex-col gap-1">
+                    <Input
+                      id="sync-otp"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="Sign-in code"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()}
+                    />
+                  </div>
+                  <Button onClick={handleVerifyOtp} disabled={!otp.trim()}>
+                    Verify
+                  </Button>
+                  <Button variant="ghost" onClick={handleCancelOtp}>
+                    Back
+                  </Button>
+                </div>
+                {errorAlerts(otpPrompt).map((alert, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <p role="alert" className={`text-sm ${alertTextClass(alert.type)}`}>
+                      {alert.message.replace('{email}', email.trim())}
+                    </p>
+                    {alert.copyText && <CopyHint command={alert.copyText} />}
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {loginStatus === 'idle' || loginStatus === 'sending' ? (
-                  <div className="flex flex-wrap items-end gap-2">
-                    <div className="flex min-w-[220px] flex-1 flex-col gap-1">
-                      <Label htmlFor="sync-email">Email</Label>
-                      <Input
-                        id="sync-email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                    <Button onClick={handleSendCode} disabled={loginStatus === 'sending' || !email.trim()}>
-                      {loginStatus === 'sending' ? 'Sending code…' : 'Send sign-in code'}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="sync-otp">
-                      Code sent to {email.trim()} — check your inbox
-                    </Label>
-                    <div className="flex flex-wrap items-end gap-2">
-                      <div className="flex min-w-[180px] flex-1 flex-col gap-1">
-                        <Input
-                          id="sync-otp"
-                          inputMode="numeric"
-                          autoComplete="one-time-code"
-                          placeholder="Sign-in code"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                        />
-                      </div>
-                      <Button onClick={handleVerifyOtp} disabled={loginStatus === 'verifying' || !otp.trim()}>
-                        {loginStatus === 'verifying' ? 'Verifying…' : 'Verify'}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setLoginStatus('idle')
-                          setOtp('')
-                          setLoginError(null)
-                        }}
-                      >
-                        Back
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {loginError && (
-                  <p role="alert" className="text-sm text-destructive">
-                    {loginError}
-                  </p>
-                )}
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="flex min-w-[220px] flex-1 flex-col gap-1">
+                  <Label htmlFor="sync-email">Email</Label>
+                  <Input
+                    id="sync-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendCode()}
+                  />
+                </div>
+                <Button onClick={handleSendCode} disabled={loginInFlight || !email.trim()}>
+                  {loginInFlight ? 'Sending code…' : 'Send sign-in code'}
+                </Button>
               </div>
             )}
+
+            {loginError && (
+              <p role="alert" className="text-sm text-destructive">
+                {loginError}
+              </p>
+            )}
+
+            {genericInteraction && (
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <p className="text-sm font-medium">{genericInteraction.title}</p>
+                {genericInteraction.alerts.map((alert, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <p className={`text-sm ${alertTextClass(alert.type)}`}>
+                      {alert.message.replace('{email}', email.trim())}
+                    </p>
+                    {alert.copyText && <CopyHint command={alert.copyText} />}
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => genericInteraction.onSubmit({})}
+                  >
+                    {genericInteraction.submitLabel || 'OK'}
+                  </Button>
+                  {genericInteraction.cancelLabel && (
+                    <Button variant="ghost" onClick={() => genericInteraction.onCancel()}>
+                      {genericInteraction.cancelLabel}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {syncState && (
               <p role="status" className="text-sm text-muted-foreground">
                 Sync status: {syncPhaseLabel(syncState.phase)}
@@ -436,5 +507,14 @@ export function DataSyncPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+/** The addon's whitelist hint arrives as a shell command — make it copyable. */
+function CopyHint({ command }: { command: string }) {
+  return (
+    <code className="rounded bg-muted px-2 py-1 text-xs break-all text-muted-foreground">
+      {command}
+    </code>
   )
 }

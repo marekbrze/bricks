@@ -46,8 +46,14 @@ way" operation.
 ### Sign in
 
 1. Enter email → **Send sign-in code** → enter the OTP from the email →
-   **Verify**. No passwords; `db.cloud.login({ grant_type: 'otp' })` twice,
-   as in `dopadone`. Live sync status ("In sync" / "Syncing…" / "Offline" /
+   **Verify**. No passwords. One `db.cloud.login({ email, grant_type: 'otp' })`
+   call drives the whole flow: it sends the code and then waits on a
+   `type: 'otp'` interaction, which the page answers with
+   `interaction.onSubmit({ otp })`. A wrong code returns as a fresh
+   interaction with an INVALID_OTP alert; addon error alerts (e.g. an
+   origin not whitelisted on the Dexie Cloud database, with the exact
+   `npx dexie-cloud whitelist <origin>` command to fix it) render inside
+   the Account card. Live sync status ("In sync" / "Syncing…" / "Offline" /
    "Sync error") is shown once signed in.
 
 ### Push (overwrite the server)
