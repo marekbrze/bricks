@@ -13,6 +13,7 @@ import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnre
 import { usePaths } from '../hooks/use-paths'
 import { AchievementsSection } from './AchievementsSection'
 import { ModuleStubSection } from './ModuleStubSection'
+import { StandaloneActionsSection } from './StandaloneActionsSection'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import { RenamePathDialog } from './RenamePathDialog'
 import { DeletePathDialog } from './DeletePathDialog'
@@ -103,6 +104,8 @@ export function PathOverviewPage() {
         linkTo={`/paths/${path.id}/goals`}
         linkLabel="Open Goals"
       />
+
+      <StandaloneActionsSection pathId={path.id} readOnly={readOnly} />
 
       <AchievementsSection
         achievements={path.achievements}

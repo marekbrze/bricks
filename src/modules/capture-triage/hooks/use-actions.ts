@@ -261,7 +261,7 @@ export function useActions() {
     [actions, setActions, restoreSnapshot],
   )
 
-  /** Permanent removal — only reachable from Review-abandoned, never from an active day view. */
+  /** Permanent removal — reachable from Review-abandoned and the Actions view's row menu; never from an active day view. */
   const deleteAction = useCallback(
     (id: string): UndoFn => {
       const snapshot = actions

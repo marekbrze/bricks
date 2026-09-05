@@ -13,6 +13,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogClose,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
@@ -34,6 +43,7 @@ import { InboxGroup } from './InboxGroup'
 type ScheduleState = { action: Action } | null
 type RenameState = { action: Action; name: string } | null
 type NewGoalState = { pathId: string; pathName: string } | null
+type DeleteState = { action: Action } | null
 
 /**
  * The Actions view — the flat whole-app task list (docs/modules/actions.md).
@@ -46,6 +56,7 @@ export function ActionsPage() {
   const [schedule, setSchedule] = useState<ScheduleState>(null)
   const [rename, setRename] = useState<RenameState>(null)
   const [newGoal, setNewGoal] = useState<NewGoalState>(null)
+  const [deleting, setDeleting] = useState<DeleteState>(null)
   // Persisted collapse choices per Goal id (edgecases #7) — undefined means
   // "use the group's default" (expanded, unless the Goal is inactive).
   const {
@@ -73,6 +84,7 @@ export function ActionsPage() {
     unscheduleAction,
     completeAction,
     uncompleteAction,
+    deleteAction,
     dataUnreadable: actionsUnreadable,
     resetActions,
   } = useActions()
@@ -112,6 +124,7 @@ export function ActionsPage() {
     },
     onRename: (action) => setRename({ action, name: action.name }),
     onToggleFrog: (action) => toggleActionFrog(action.id),
+    onDelete: (action) => setDeleting({ action }),
   }
 
   // An assigned Action can end up pointing at a Goal that no longer exists
@@ -195,6 +208,7 @@ export function ActionsPage() {
                 onUnschedule={() => rowCallbacks.onUnschedule(a)}
                 onRename={() => rowCallbacks.onRename(a)}
                 onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
+                onDelete={() => rowCallbacks.onDelete(a)}
               />
             ))}
           </ul>
@@ -294,6 +308,36 @@ export function ActionsPage() {
             </form>
           </DialogContent>
         </Dialog>
+      )}
+
+      {deleting && (
+        <AlertDialog open onOpenChange={(open) => !open && setDeleting(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete “{deleting.action.name}”?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently removes the Action. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogClose render={<Button variant="ghost">Cancel</Button>} />
+              <AlertDialogClose
+                render={
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const name = deleting.action.name
+                      deleteAction(deleting.action.id)
+                      showToast(`“${name}” deleted`)
+                    }}
+                  >
+                    Delete
+                  </Button>
+                }
+              />
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
 
       {newGoal && (

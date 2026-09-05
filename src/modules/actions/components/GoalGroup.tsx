@@ -17,6 +17,7 @@ export interface ActionRowCallbacks {
   onUnschedule: (action: Action) => void
   onRename: (action: Action) => void
   onToggleFrog: (action: Action) => void
+  onDelete: (action: Action) => void
 }
 
 /**
@@ -132,6 +133,7 @@ export function GoalGroup({
               onUnschedule={() => rowCallbacks.onUnschedule(a)}
               onRename={() => rowCallbacks.onRename(a)}
               onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
+              onDelete={() => rowCallbacks.onDelete(a)}
             />
           ))}
           {visible.length === 0 && openActionCount === 0 && actions.length > 0 && (

@@ -1,4 +1,4 @@
-import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, Pencil, Star, StarOff, RotateCcw } from 'lucide-react'
+import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, Pencil, Star, StarOff, RotateCcw, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,10 +17,10 @@ import { todayLocalIso } from '@/shared/lib/date'
  * One Action row in the Actions view: checkbox, name, frog flame, due-date
  * chip, one-click "add to today" (the view's most frequent action — hover-
  * revealed on desktop, always visible on touch), overflow menu. `done` rows
- * render struck-through and offer only Un-complete; `abandoned` rows render
- * dimmed with an "abandoned" tag and offer reschedule (which returns them to
- * `assigned` via `scheduleAction`) and rename. Delete stays owned by Review
- * abandoned — this view never destroys.
+ * render struck-through and offer only Un-complete (plus Delete); `abandoned`
+ * rows render dimmed with an "abandoned" tag and offer reschedule (which
+ * returns them to `assigned` via `scheduleAction`), rename, and delete. Delete
+ * always opens a confirm dialog (owned by the page) — it's permanent.
  */
 export function ActionRowItem({
   action,
@@ -30,6 +30,7 @@ export function ActionRowItem({
   onUnschedule,
   onRename,
   onToggleFrog,
+  onDelete,
 }: {
   action: Action
   onToggleDone: (done: boolean) => void
@@ -38,6 +39,7 @@ export function ActionRowItem({
   onUnschedule: () => void
   onRename: () => void
   onToggleFrog: () => void
+  onDelete: () => void
 }) {
   const done = action.state === 'done'
   const abandoned = action.state === 'abandoned'
@@ -112,9 +114,15 @@ export function ActionRowItem({
         />
         <DropdownMenuContent align="end">
           {done ? (
-            <DropdownMenuItem onClick={() => onToggleDone(false)}>
-              <RotateCcw aria-hidden="true" /> Un-complete
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem onClick={() => onToggleDone(false)}>
+                <RotateCcw aria-hidden="true" /> Un-complete
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                <Trash2 aria-hidden="true" /> Delete
+              </DropdownMenuItem>
+            </>
           ) : (
             <>
               <DropdownMenuItem onClick={onSchedule}>
@@ -139,6 +147,10 @@ export function ActionRowItem({
                     <Star aria-hidden="true" /> Mark as frog
                   </>
                 )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                <Trash2 aria-hidden="true" /> Delete
               </DropdownMenuItem>
             </>
           )}

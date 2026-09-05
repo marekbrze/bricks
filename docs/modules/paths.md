@@ -52,6 +52,11 @@ out of the way on their own screen; the main list is only active directions.
    - **Goals** — the Path's Goal list in priority order, each with its
      days-remaining countdown if it has a deadline + **Open Goals** /
      add-Goal entry → `/paths/:pathId/goals` (owned by the `goals` module).
+   - **Actions without a goal** — the Path's standalone Actions (`goalId: null`):
+     full rows (schedule, complete, rename, delete, frog) + quick-add. The
+     Actions view already grouped these under a Path's "Standalone" sub-header;
+     this section is the only place to see and manage them from the Path
+     itself, without detouring through `/actions`.
    - **Achievements** — checklist with an `X/Y achieved` counter (see flow below).
    - **Contribution graph** — the full per-Path `ContributionGraph` (owned by the
      `winlog` module, embedded here).
@@ -121,10 +126,12 @@ out of the way on their own screen; the main list is only active directions.
   before discarding on Cancel / Escape / backdrop.
 - **Path overview** (`/paths/:pathId`): contextual header (name, back, overflow:
   Rename / Archive / Delete); stacked sections — Vision summary (+ open board),
-  Goals list (+ open goals), Achievements checklist (inline add/edit/check/delete,
-  `X/Y achieved` header with a done treatment at `Y/Y`), per-Path contribution
-  graph. **Archived Paths render read-only**: a restore banner at the top, and
-  the Achievements section disables add/edit/check/delete until unarchived.
+  Goals list (+ open goals), **Actions without a goal** (full rows + quick-add,
+  reusing the Actions view's row and dialogs), Achievements checklist (inline
+  add/edit/check/delete, `X/Y achieved` header with a done treatment at `Y/Y`),
+  per-Path contribution graph. **Archived Paths render read-only**: a restore
+  banner at the top, and both the standalone-Actions quick-add and the
+  Achievements section disable editing until unarchived.
 - **Archived Paths** (`/paths/archived`): muted list of archived Paths with
   Unarchive / Delete per row; back to `/paths`. Empty state when nothing archived.
 - **Delete confirmation** (`AlertDialog`): destructive cascade summary (counts
@@ -148,7 +155,8 @@ out of the way on their own screen; the main list is only active directions.
 | Archive Path | Overflow menu → immediate + Undo toast (restores exact prior state); contents kept | `Path` | Reversible; from the overview it also navigates back to `/paths` |
 | Unarchive Path | From `/paths/archived` or the archived overview’s restore banner; returns to end of active order; confirmation toast | `Path` | |
 | Delete Path | Overflow menu / archived list → `AlertDialog` with a cascade summary (estimated counts) | `Path` | Cascades to Vision, Achievements, Goals, Actions; confirmation toast, no undo |
-| View Path overview | The hub screen: Vision summary + Goals + Achievements + graph | `Path` | Vision / Goals / graph rendered by other modules |
+| View Path overview | The hub screen: Vision summary + Goals + standalone Actions + Achievements + graph | `Path` | Vision / Goals / graph / Actions rendered by other modules |
+| Manage standalone Actions | Schedule, complete, rename, delete, toggle frog, quick-add | `Action` | Rows/dialogs reused from `actions`; disabled while archived |
 | Add Achievement | Inline **+ add achievement** row on the overview | `Achievement` | Appends; order not meaningful |
 | Edit Achievement | Click text → inline edit | `Achievement` | |
 | Mark achieved | Tick checkbox → `achieved` + local date | `Achievement` | Feeds `WinLog` / `ContributionGraph`; re-ticking keeps the original date |
@@ -219,6 +227,11 @@ harmless while creation is synchronous), and an app-wide date-format convention
   Path order set here (drag-to-reorder).
 - **capture-triage**: a triaged `Action` can be assigned standalone directly to a
   Path (no Goal); such Actions are scoped by the Path and cascade on delete.
+  The overview's **Actions without a goal** section reads/writes through
+  `useActions`, the same hook `capture-triage` owns.
+- **actions**: the Path overview's standalone-Actions section reuses
+  `ActionRowItem`, `QuickAddActionRow`, and `ScheduleActionDialog` from the
+  `actions`/`today` modules rather than re-implementing row behavior.
 - **app-shell**: `/paths` is nav item #2; the overview's nested routes
   (`/paths/:pathId/vision`, `/paths/:pathId/goals`) are registered by those
   modules under the shell's router.

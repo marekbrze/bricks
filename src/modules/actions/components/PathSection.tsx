@@ -67,6 +67,7 @@ export function PathSection({
               onUnschedule={() => rowCallbacks.onUnschedule(a)}
               onRename={() => rowCallbacks.onRename(a)}
               onToggleFrog={() => rowCallbacks.onToggleFrog(a)}
+              onDelete={() => rowCallbacks.onDelete(a)}
             />
           ))}
           {standaloneVisible.length === 0 && standaloneActions.length > 0 && (

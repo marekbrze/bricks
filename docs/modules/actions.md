@@ -54,7 +54,14 @@ the section it belongs to.
    ContributionGraph) — the row fades out of the default view (hidden unless "Show completed").
 2. Un-checking (via "Show completed") reverts to the previous state and removes the Win.
 3. Overflow menu per row: Schedule… (reuses the schedule dialog), Unschedule, Rename, Toggle
-   frog. Completed rows offer only Un-complete.
+   frog, Delete. Completed rows offer only Un-complete and Delete.
+
+### Delete an Action
+
+1. Row overflow menu → **Delete** → an `AlertDialog` confirms ("Delete “X”? This permanently
+   removes the Action. This cannot be undone.").
+2. Confirm → the Action is gone everywhere (this view, Today, WinLog) → confirmation toast.
+   No undo — same stance as deleting from Review abandoned.
 
 ## Screens (rough)
 
@@ -76,6 +83,7 @@ the section it belongs to.
 | Complete / Un-complete | Checkbox toggle, feeds WinLog | Action | Existing actions, list-view affordance |
 | Schedule / Unschedule | Set or clear `scheduledDate` from row menu | Action | Reuses today's schedule dialog |
 | Rename Action | Edit name from row menu | Action | Existing "Edit Action" |
+| Delete Action | Row menu → `AlertDialog` confirm → permanent removal | Action | No undo; reachable from every row, not just Review abandoned |
 | Toggle frog | Star toggle per row | Action | No propagation upward (that stays Goal-side) |
 | Show completed | Toggle done/abandoned visibility | — | View-local, not persisted (prototype) |
 
