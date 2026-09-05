@@ -104,16 +104,24 @@ export function useActions() {
     [actions, setActions],
   )
 
-  /** Triage: assign to a Path (standalone when `goalId` is null) or into a Goal. */
+  /**
+   * Triage: assign to a Path (standalone when `goalId` is null) or into a
+   * Goal — including a Goal just created in the same triage step (see
+   * `AssignPicker`'s "Create Goal and assign here" row). Returns an Undo
+   * that restores the Action to its previous state, same pattern as
+   * `promoteAction`/`discardAction`.
+   */
   const assignAction = useCallback(
-    (id: string, pathId: string, goalId: string | null) => {
+    (id: string, pathId: string, goalId: string | null): UndoFn => {
+      const snapshot = actions
       setActions(
         actions.map((a) =>
           a.id === id ? touch({ ...a, state: 'assigned', pathId, goalId }) : a,
         ),
       )
+      return restoreSnapshot(snapshot)
     },
-    [actions, setActions],
+    [actions, setActions, restoreSnapshot],
   )
 
   /**

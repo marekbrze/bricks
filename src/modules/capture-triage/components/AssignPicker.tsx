@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Lightbulb, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
@@ -10,6 +10,7 @@ type Row =
   | { kind: 'standalone' }
   | { kind: 'goal'; id: string; name: string; depth: number }
   | { kind: 'create'; name: string }
+  | { kind: 'promote'; name: string }
 
 /**
  * Flatten a Path's Goal tree into assign-order (parent, then its children,
@@ -37,19 +38,29 @@ function flattenActiveGoals(
  * Step 1 (`PathPicker`) is a single chip pick, with number-key shortcuts.
  * Step 2 is a live search over that Path's Goals: typing filters the list,
  * arrow keys move the highlight, Enter (or a click) resolves the card
- * immediately — no separate "Assign" confirm. When nothing matches, a
- * "Create Goal" row appears in the same list; picking it creates the Goal
- * and promotes the Action into it right there, without leaving this screen
- * (see docs/adr/0024-triage-seamless-assign.md). Clearing the query with an
+ * immediately — no separate "Assign" confirm. Clearing the query with an
  * empty field surfaces "Standalone (no Goal)" first, so the common case —
  * a one-off Action with no Goal — is a single Enter press after the Path.
+ *
+ * When nothing matches, the list offers **two** distinct rows, not one —
+ * this used to be a single "Create Goal" row that silently discarded the
+ * Action (the old Promote behavior), which surprised an Owner who came back
+ * looking for it (see docs/adr/0025-create-goal-vs-promote.md):
+ * - **Create Goal and assign here** (the default, highlighted first): makes
+ *   a new Goal and keeps the Action, now assigned to it.
+ * - **Promote to Goal**: the deliberate, explicit choice for "this Action's
+ *   idea *is* the Goal" — the Action is discarded, per ADR 0004.
  */
 export function AssignPicker({
   onAssignExisting,
   onCreateGoal,
+  onPromote,
 }: {
   onAssignExisting: (pathId: string, goalId: string | null) => void
+  /** Creates a new Goal and assigns the current Action to it — the Action survives. */
   onCreateGoal: (data: { name: string; pathId: string }) => void
+  /** Converts the current Action into a new Goal — the Action is discarded (ADR 0004). */
+  onPromote: (data: { name: string; pathId: string }) => void
 }) {
   const { activePaths } = usePaths()
   const { topLevelGoals, childGoals } = useGoals()
@@ -70,7 +81,12 @@ export function AssignPicker({
   const rows: Row[] = [
     ...(q === '' ? [{ kind: 'standalone' as const }] : []),
     ...matches.map((g): Row => ({ kind: 'goal', id: g.id, name: g.name, depth: g.depth })),
-    ...(q !== '' && !exactMatch ? [{ kind: 'create' as const, name: query.trim() }] : []),
+    ...(q !== '' && !exactMatch
+      ? [
+          { kind: 'create' as const, name: query.trim() },
+          { kind: 'promote' as const, name: query.trim() },
+        ]
+      : []),
   ]
 
   useEffect(() => setHighlight(0), [query, pathId])
@@ -81,7 +97,8 @@ export function AssignPicker({
     if (!pathId) return
     if (row.kind === 'standalone') onAssignExisting(pathId, null)
     else if (row.kind === 'goal') onAssignExisting(pathId, row.id)
-    else onCreateGoal({ name: row.name, pathId })
+    else if (row.kind === 'create') onCreateGoal({ name: row.name, pathId })
+    else onPromote({ name: row.name, pathId })
   }
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -170,7 +187,7 @@ export function AssignPicker({
             onMouseEnter={() => setHighlight(i)}
             onClick={() => selectRow(row)}
             className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1.5 text-left text-sm outline-none',
+              'flex flex-col items-start gap-0.5 px-2.5 py-1.5 text-left text-sm outline-none',
               i === highlight ? 'bg-muted text-foreground' : 'hover:bg-muted/60',
             )}
           >
@@ -182,9 +199,20 @@ export function AssignPicker({
               </span>
             )}
             {row.kind === 'create' && (
-              <>
+              <span className="flex items-center gap-1.5 truncate">
                 <Plus className="size-3.5 shrink-0" aria-hidden="true" />
-                <span className="truncate">Create Goal “{row.name}”</span>
+                Create Goal “{row.name}” and assign here
+              </span>
+            )}
+            {row.kind === 'promote' && (
+              <>
+                <span className="flex items-center gap-1.5 truncate text-muted-foreground">
+                  <Lightbulb className="size-3.5 shrink-0" aria-hidden="true" />
+                  Promote to Goal “{row.name}” instead
+                </span>
+                <span className="pl-5 text-xs text-muted-foreground">
+                  This Action becomes the Goal — the Inbox item is retired
+                </span>
               </>
             )}
           </button>

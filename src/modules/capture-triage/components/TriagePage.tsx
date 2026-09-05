@@ -48,13 +48,45 @@ export function TriagePage() {
 
   const handleAssign = (pathId: string, goalId: string | null) => {
     if (!currentAction) return
-    assignAction(currentAction.id, pathId, goalId)
+    const undo = assignAction(currentAction.id, pathId, goalId)
     const pathName = activePaths.find((p) => p.id === pathId)?.name ?? 'Path'
     const goalName = goalId ? getGoal(goalId)?.name : null
-    showToast(goalName ? `Assigned to “${goalName}”` : `Assigned to ${pathName} (standalone)`)
+    showToast(goalName ? `Assigned to “${goalName}”` : `Assigned to ${pathName} (standalone)`, {
+      label: 'Undo',
+      onClick: undo,
+    })
     resolveOne()
   }
 
+  /**
+   * Create a brand-new Goal and assign the current Action to it as a normal
+   * child — distinct from Promote below: the Action survives, just pointed
+   * at the Goal that didn't exist a moment ago. This is the safe default
+   * when the search has no match for what was typed; Promote is the
+   * deliberate, separate choice for "this Action's idea *is* the Goal".
+   */
+  const handleCreateGoalAndAssign = ({ name, pathId }: { name: string; pathId: string }) => {
+    if (!currentAction) return
+    const goalId = createGoal({ pathId, parentGoalId: null, name })
+    if (!goalId) return
+    const undoAssign = assignAction(currentAction.id, pathId, goalId)
+    showToast(`Assigned to new Goal “${name}”`, {
+      label: 'Undo',
+      onClick: () => {
+        undoAssign()
+        // Symmetric undo: the Goal created just for this assign shouldn't survive it.
+        deleteGoal(goalId)
+      },
+    })
+    resolveOne()
+  }
+
+  /**
+   * Promote: the Action's idea *becomes* the Goal — the originating Action
+   * is discarded, not kept as a child. See ADR 0004. Kept as an explicit,
+   * separate choice from "Create Goal and assign here" above so creating a
+   * Goal never silently makes the original item disappear.
+   */
   const handlePromote = ({ name, pathId }: { name: string; pathId: string }) => {
     if (!currentAction) return
     const goalId = createGoal({ pathId, parentGoalId: null, name })
@@ -99,6 +131,7 @@ export function TriagePage() {
           position={processedCount + 1}
           total={total}
           onAssign={handleAssign}
+          onCreateGoalAndAssign={handleCreateGoalAndAssign}
           onPromote={handlePromote}
           onDiscard={handleDiscard}
           onSkip={handleSkip}

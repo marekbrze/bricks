@@ -11,14 +11,18 @@ import { AssignPicker } from './AssignPicker'
  * shortcuts (`D` / `S`) — ignored while the Owner is typing into the Goal
  * search below, so triage stays a fast, mostly-keyboard loop without
  * hijacking a Goal name that happens to contain those letters. `Assign`
- * (Path → Goal search, with inline Goal creation) has no separate confirm
- * step: picking a row in `AssignPicker` resolves the card immediately.
+ * (Path → Goal search) has no separate confirm step: picking a row in
+ * `AssignPicker` resolves the card immediately, including creating a Goal
+ * (`onCreateGoalAndAssign`, keeps the Action) or promoting into one
+ * (`onPromote`, discards the Action — a deliberate, separate choice, see
+ * ADR 0025).
  */
 export function TriageCard({
   action,
   position,
   total,
   onAssign,
+  onCreateGoalAndAssign,
   onPromote,
   onDiscard,
   onSkip,
@@ -27,6 +31,7 @@ export function TriageCard({
   position: number
   total: number
   onAssign: (pathId: string, goalId: string | null) => void
+  onCreateGoalAndAssign: (data: { name: string; pathId: string }) => void
   onPromote: (data: { name: string; pathId: string }) => void
   onDiscard: () => void
   onSkip: () => void
@@ -63,7 +68,11 @@ export function TriageCard({
       <h2 className="text-lg font-semibold break-words">{action.name}</h2>
 
       <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
-        <AssignPicker onAssignExisting={onAssign} onCreateGoal={onPromote} />
+        <AssignPicker
+          onAssignExisting={onAssign}
+          onCreateGoal={onCreateGoalAndAssign}
+          onPromote={onPromote}
+        />
       </div>
 
       <Button type="button" variant="destructive" onClick={onDiscard} className="self-start">

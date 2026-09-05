@@ -58,10 +58,10 @@ mainstream goal-tracking tools.
    screen ("Inbox zero — 6 items processed") → back to the Inbox / previous
    screen.
 
-### Assign to Goal, standalone to Path, or promote to a new Goal
+### Assign to Goal, standalone to Path, create a Goal, or promote to one
 
 One unified control, two steps — no separate dialog, no confirm click. See
-ADR 0024.
+ADR 0024 and ADR 0025.
 
 1. **Step 1 — Path**: the Owner picks a `Path` (single-select chips, one
    step). Chips 1-9 carry number-key shortcuts.
@@ -71,15 +71,19 @@ ADR 0024.
    there's no separate "Assign" button to press afterwards.
    - An empty query surfaces **Standalone (no Goal)** first — so a plain
      Action with no Goal is Path pick → Enter, nothing typed.
-   - Typing a name with no exact match appends a **Create Goal "…"** row to
-     the same list. Picking it creates the Goal under the chosen Path and
-     promotes the Action into it in one step — this *is* "Promote to Goal",
-     done inline instead of through a separate form.
-3. Whichever row is picked, `Action.state = assigned` (existing/standalone
-   Goal) or the Action is discarded into a brand-new Goal (create-Goal row —
-   its idea now lives as the Goal itself, not as a leftover Inbox item or a
-   stray first child Action, see ADR 0004), the card resolves, and the loop
-   advances.
+   - Typing a name with no exact match appends **two** rows, not one (ADR
+     0025 — a single row here used to silently discard the Action, which
+     surprised an Owner who came back looking for it):
+     - **Create Goal "…" and assign here** (highlighted by default): makes a
+       new Goal under the chosen Path and assigns the current Action to it.
+       The Action survives — this is the safe, common case.
+     - **Promote to Goal "…" instead**: the deliberate choice for "this
+       Action's idea *is* the Goal" — the Action is discarded, its idea now
+       lives as the Goal itself instead of as a leftover Inbox item or a
+       stray first child Action. See ADR 0004.
+3. Whichever row is picked, the card resolves and the loop advances. Every
+   outcome that keeps the Action (existing Goal, standalone, or a freshly
+   created one) gets an **Undo** toast; Promote already had one.
 
 ### Keyboard shortcuts
 
@@ -135,7 +139,8 @@ hijacked.
 | Process next item | Card-by-card loop; resolving a card auto-advances | Process | Skip defers within the session queue; exiting anytime is allowed |
 | Triage Action → assign to Goal | Path chips → Goal search row pick on the card | `Action` | Sets `assigned` + `Goal`; resolves on pick, no confirm step — see ADR 0024 |
 | Triage Action → assign standalone to Path | "Standalone (no Goal)" row in the same Goal search | `Action` | Sets `assigned` + `Path`, no `Goal` |
-| Promote Action to Goal | "Create Goal '…'" row in the same Goal search, named from the typed query | `Action` → `Goal` | Originating Action is discarded, not kept as a child — see ADR 0004; entry point moved inline — see ADR 0024 |
+| Triage Action → create Goal and assign | "Create Goal '…' and assign here" row, named from the typed query | `Action` + `Goal` | New `Goal` created under the Path; Action set `assigned` to it and **survives** — see ADR 0025 |
+| Promote Action to Goal | "Promote to Goal '…' instead" row, right below Create above | `Action` → `Goal` | Originating Action is discarded, not kept as a child — see ADR 0004; entry point moved inline, kept distinct from Create — see ADR 0024 / ADR 0025 |
 | Discard item | Immediate removal, card-level | `Action` | Undo toast, no blocking confirm — see ADR 0004 |
 
 No new entities or glossary terms were discovered — everything maps to the
@@ -199,6 +204,13 @@ hardened (proto-harden, 2026-09-04). Decided behaviors:
   `A` (focus the Goal search) are ignored whenever a text field has focus,
   so a Path or Goal name containing those letters is never intercepted
   mid-keystroke — see ADR 0024.
+- **Creating a Goal must not disappear the Action**: an unmatched Goal
+  search query offers **Create Goal and assign here** (Action survives,
+  highlighted by default) *and*, as a visually secondary row right below
+  it, **Promote to Goal instead** (Action discarded, per ADR 0004) — never
+  just one row that quietly does the destructive thing. Every outcome that
+  keeps the Action (existing Goal, standalone, or newly created) now gets
+  an Undo toast too, not just Promote/Discard. See ADR 0025.
 
 Deferred: a double-submit guard on Capture/Assign/Promote (harmless while
 every mutation is synchronous — revisit with a Dexie migration), session

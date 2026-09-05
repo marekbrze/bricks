@@ -82,7 +82,8 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Create standalone Action | Add directly under a Path, no Goal | Owner | |
 | Edit Action | Change name (more fields later) | Owner | |
 | Triage Action | Card-by-card: assign to Path/Goal or mark standalone | Owner | Dedicated mode (DoItDone / AutoWork pattern) |
-| Promote Action to Goal | During triage, convert an Action that needs many actions into a Goal | Owner | Originating Inbox Action is discarded once the Goal is created — its idea now lives as the Goal, not as a leftover Inbox item or a stray child Action |
+| Triage Action → create Goal and assign | During triage, create a new Goal from the typed search and assign the Action to it | Owner | The Action survives, now a child of the new Goal — distinct from Promote below |
+| Promote Action to Goal | During triage, convert an Action that needs many actions into a Goal | Owner | Originating Inbox Action is discarded once the Goal is created — its idea now lives as the Goal, not as a leftover Inbox item or a stray child Action. A deliberate, separate choice from "create Goal and assign" — see ADR 0025 |
 | Move Action between Goals/Paths | Re-assign | Owner | Core differentiator vs Griply |
 | Schedule Action | Set `scheduledDate` (today, tomorrow, any day) | Owner | Drives Today / day-navigation views |
 | Unschedule Action | Clear `scheduledDate` | Owner | |
