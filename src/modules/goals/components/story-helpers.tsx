@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { Decorator } from '@storybook/react-vite'
 import { ToastProvider } from '@/shared/components/toast/toast-context'
 import { Toaster } from '@/shared/components/toast/Toaster'
@@ -11,11 +11,25 @@ import { MOCK_GOALS } from '../data/mock'
 
 export { MOCK_GOALS, MOCK_PATHS, MOCK_ACTIONS }
 
-function Providers({ initialPath, children }: { initialPath: string; children: ReactNode }) {
+function Providers({
+  initialPath,
+  route,
+  children,
+}: {
+  initialPath: string
+  /** Route pattern to mount the story under (e.g.
+   * `/paths/:pathId/goals/:goalId`) so pages reading `useParams` get their
+   * params — a bare MemoryRouter matches nothing and every param reads
+   * empty. */
+  route?: string
+  children: ReactNode
+}) {
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <ToastProvider>
-        <div className="mx-auto max-w-[1200px] p-4">{children}</div>
+        <div className="mx-auto max-w-[1200px] p-4">
+          {route ? <Routes><Route path={route} element={children} /></Routes> : children}
+        </div>
         <Toaster />
       </ToastProvider>
     </MemoryRouter>
@@ -23,7 +37,11 @@ function Providers({ initialPath, children }: { initialPath: string; children: R
 }
 
 /** Seed `paths` + `actions` + `goals`, then render at the given route. */
-export function withGoals(goals: Goal[], initialPath = '/paths/path-sport/goals'): Decorator {
+export function withGoals(
+  goals: Goal[],
+  initialPath = '/paths/path-sport/goals',
+  route?: string,
+): Decorator {
   return (Story) => {
     __resetStorageHealth()
     try {
@@ -34,7 +52,7 @@ export function withGoals(goals: Goal[], initialPath = '/paths/path-sport/goals'
       /* ignore — stories still render from the hooks' empty defaults */
     }
     return (
-      <Providers initialPath={initialPath}>
+      <Providers initialPath={initialPath} route={route}>
         <Story />
       </Providers>
     )

@@ -27,27 +27,27 @@ export default meta
 type Story = StoryObj<typeof GoalProgressPage>
 
 export const WithSubGoalsAndActions: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-pullup-program')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-pullup-program', '/paths/:pathId/goals/:goalId')],
 }
 
 export const LeafNoSubGoals: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-earnings/goals/goal-side-product')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-earnings/goals/goal-side-product', '/paths/:pathId/goals/:goalId')],
 }
 
 export const Achieved: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-mobility')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-mobility', '/paths/:pathId/goals/:goalId')],
 }
 
 export const Abandoned: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-earnings/goals/goal-cold-outreach')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-earnings/goals/goal-cold-outreach', '/paths/:pathId/goals/:goalId')],
 }
 
 export const OverdueDeadline: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-5k-block')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-5k-block', '/paths/:pathId/goals/:goalId')],
 }
 
 export const NotFound: Story = {
-  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/does-not-exist')],
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/does-not-exist', '/paths/:pathId/goals/:goalId')],
 }
 
 /** Corrupt `actions` shouldn't silently show `0 Actions` — same recovery screen as `paths`/`capture-triage`. */

@@ -11,7 +11,7 @@ export default meta
 type Story = StoryObj<typeof PathOverviewPage>
 
 export const WithData: Story = {
-  decorators: [withPaths(MOCK_PATHS, '/paths/path-sport')],
+  decorators: [withPaths(MOCK_PATHS, '/paths/path-sport', '/paths/:pathId')],
 }
 
 export const NoAchievements: Story = {
@@ -19,6 +19,7 @@ export const NoAchievements: Story = {
     withPaths(
       [{ ...MOCK_PATHS[0], achievements: [], mockGoalCount: 0, visionSnippet: '' }],
       '/paths/path-sport',
+      '/paths/:pathId',
     ),
   ],
 }
@@ -37,12 +38,13 @@ export const AllAchieved: Story = {
         },
       ],
       '/paths/path-sport',
+      '/paths/:pathId',
     ),
   ],
 }
 
 export const ArchivedPath: Story = {
-  decorators: [withPaths(MOCK_PATHS, '/paths/path-home')],
+  decorators: [withPaths(MOCK_PATHS, '/paths/path-home', '/paths/:pathId')],
 }
 
 export const NotFound: Story = {

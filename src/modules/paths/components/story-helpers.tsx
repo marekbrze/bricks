@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { Decorator } from '@storybook/react-vite'
 import { ToastProvider } from '@/shared/components/toast/toast-context'
 import { Toaster } from '@/shared/components/toast/Toaster'
@@ -9,11 +9,24 @@ import { MOCK_PATHS } from '../data/mock'
 
 export { MOCK_PATHS }
 
-function Providers({ initialPath, children }: { initialPath: string; children: ReactNode }) {
+function Providers({
+  initialPath,
+  route,
+  children,
+}: {
+  initialPath: string
+  /** Route pattern to mount the story under (e.g. `/paths/:pathId`) so pages
+   * reading `useParams` get their params — a bare MemoryRouter matches
+   * nothing and every param reads empty. */
+  route?: string
+  children: ReactNode
+}) {
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <ToastProvider>
-        <div className="mx-auto max-w-[1200px] p-4">{children}</div>
+        <div className="mx-auto max-w-[1200px] p-4">
+          {route ? <Routes><Route path={route} element={children} /></Routes> : children}
+        </div>
         <Toaster />
       </ToastProvider>
     </MemoryRouter>
@@ -56,12 +69,12 @@ export function routerAt(initialPath: string): Decorator {
 }
 
 /** Decorator that seeds a fixed dataset, then renders inside the providers. */
-export function withPaths(paths: Path[], initialPath = '/paths'): Decorator {
+export function withPaths(paths: Path[], initialPath = '/paths', route?: string): Decorator {
   return (Story) => {
     __resetStorageHealth()
     seedPaths(paths)
     return (
-      <Providers initialPath={initialPath}>
+      <Providers initialPath={initialPath} route={route}>
         <Story />
       </Providers>
     )
