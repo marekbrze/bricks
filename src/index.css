@@ -192,6 +192,39 @@
   }
 }
 
+/* Touch hit areas — docs/DESIGN.md scene has the phone as a first-class
+   surface. Small icon-only controls keep their visual size but grow their
+   interactive area to ≥44px on coarse pointers (WCAG 2.5.5 target size).
+   Invisible overlays; only the tappable region expands. */
+@media (pointer: coarse) {
+  button.size-6,
+  button.size-7,
+  button.size-8,
+  [data-slot='checkbox'] {
+    position: relative;
+  }
+  button.size-7::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+  [data-slot='checkbox']::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+  }
+  button.size-8::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
+  button.size-6::after {
+    content: '';
+    position: absolute;
+    inset: -10px;
+  }
+}
+
 /* iOS Safari auto-zooms the page on focus of any text input under 16px,
    and the zoom often doesn't reset when navigating the SPA afterwards.
    Force 16px on iOS only (all iOS browsers are WebKit) to stop the zoom

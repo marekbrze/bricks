@@ -41,7 +41,9 @@ export function ActionRow({
         </span>
         {pathName && <span className="block text-xs text-muted-foreground">{pathName}</span>}
       </span>
-      {action.frog && (
+      {/* Frog hidden once done, matching the actions module's row — the win
+          wash already tells the story; the flag is a call to act. */}
+      {action.frog && !done && (
         <span aria-label="Frog" className="inline-flex shrink-0">
           <Flame className="size-4 text-frog" aria-hidden="true" />
         </span>

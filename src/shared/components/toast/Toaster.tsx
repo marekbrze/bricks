@@ -14,8 +14,9 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      // Sits above the mobile bottom tabs and the dev-only scenario toolbar.
-      className="pointer-events-none fixed inset-x-0 bottom-20 z-[10000] flex flex-col items-center gap-2 px-4 md:bottom-6"
+      // Top of the app's z-index scale: sticky/dropdown 40, modal 50, toast 60
+      // (the dev-only scenario toolbar sits above by design).
+      className="pointer-events-none fixed inset-x-0 bottom-20 z-60 flex flex-col items-center gap-2 px-4 md:bottom-6"
     >
       {toasts.map((toast) => (
         <div
