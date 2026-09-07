@@ -174,9 +174,12 @@ export function GoalProgressPage() {
           Progress
         </h2>
         <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
-          <p className="text-sm text-muted-foreground">
-            {counts.actions} cumulative {counts.actions === 1 ? 'Action' : 'Actions'}
-            {counts.subGoals > 0 && ` across ${counts.subGoals} sub-${counts.subGoals === 1 ? 'Goal' : 'Goals'}`}
+          <p className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold tabular-nums">{counts.actions}</span>
+            <span className="text-sm text-muted-foreground">
+              cumulative {counts.actions === 1 ? 'Action' : 'Actions'}
+              {counts.subGoals > 0 && ` across ${counts.subGoals} sub-${counts.subGoals === 1 ? 'Goal' : 'Goals'}`}
+            </span>
           </p>
           <ContributionGraph winDays={winDaysForGoal(goal.id)} weeks={20} label={`${goal.name} wins`} />
         </div>

@@ -36,11 +36,14 @@ function Providers({
   )
 }
 
-/** Seed `paths` + `actions` + `goals`, then render at the given route. */
+/** Seed `paths` + `actions` + `goals`, then render at the given route.
+ * `route` defaults to the goals tree pattern so `useParams` populates;
+ * pass a deeper pattern (e.g. `/paths/:pathId/goals/:goalId`) for pages
+ * that read the goal param too. */
 export function withGoals(
   goals: Goal[],
   initialPath = '/paths/path-sport/goals',
-  route?: string,
+  route: string | undefined = '/paths/:pathId/goals',
 ): Decorator {
   return (Story) => {
     __resetStorageHealth()

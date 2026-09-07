@@ -29,7 +29,7 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
 function StateBadge({ state }: { state: 'achieved' | 'abandoned' }) {
   if (state === 'achieved') {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-win-soft px-2 py-0.5 text-xs font-medium text-win-strong">
         <Trophy className="size-3" aria-hidden="true" /> Achieved
       </span>
     )
