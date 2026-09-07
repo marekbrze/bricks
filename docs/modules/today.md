@@ -188,6 +188,6 @@ Systematically audited in `docs/modules/today-edgecases.md` and hardened
   here.
 - **capture-triage**: Actions arrive already assigned (or standalone) from
   triage — Today never sees `inbox`-state Actions.
-- **winlog**: completing an Action here creates a Win; un-completing
-  removes it; the per-Path/per-Goal contribution graphs read the same
+- **winlog**: completing an Action here creates a small Win; un-completing
+  removes it; the per-Path/per-Goal win balances read the same
   `completedAt` data.

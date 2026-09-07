@@ -6,7 +6,8 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
-import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
+import { winKindCounts } from '@/modules/winlog/lib/win-counts'
+import { WinBalance } from '@/modules/winlog/components/WinBalance'
 import { useVision } from '@/modules/vision/hooks/use-vision'
 import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
 import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnreadable'
@@ -35,7 +36,7 @@ export function PathOverviewPage() {
   } = usePaths()
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
-  const { winDaysForPath } = useWinLog()
+  const { winsForPath } = useWinLog()
   const {
     visionTileCountForPath,
     achievementCountsForPath,
@@ -114,13 +115,11 @@ export function PathOverviewPage() {
       {/* Achievements live on the Vision board now (ADR 0037) — the summary
           card reports their progress and links one tab over. */}
 
-      <section aria-labelledby="graph-heading" className="flex flex-col gap-2">
-        <h2 id="graph-heading" className="text-sm font-semibold">
-          Contribution graph
+      <section aria-labelledby="wins-heading" className="flex flex-col gap-2">
+        <h2 id="wins-heading" className="text-sm font-semibold">
+          Wins
         </h2>
-        <div className="rounded-lg border border-border p-3">
-          <ContributionGraph winDays={winDaysForPath(path.id)} weeks={26} label={`${path.name} wins`} />
-        </div>
+        <WinBalance counts={winKindCounts(winsForPath(path.id))} size="sm" />
       </section>
 
       <RenamePathDialog

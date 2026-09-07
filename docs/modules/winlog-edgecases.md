@@ -87,3 +87,22 @@ The top-priority gaps a harden pass should implement first:
 | 6 | ✅ | `tone()` gained two more tiers — six total (`0`/`1`/`2`/`3`/`4`/`5+`) — so a 5-win day reads more saturated than a 3-win day | `src/modules/winlog/components/ContributionGraph.tsx` (`tone`) |
 | 7 | ✅ | The History list now shows the first 50 Wins with a "Load more" button appending 50 more; resets on Path-filter change | `src/modules/winlog/components/LogPage.tsx` (`PAGE_SIZE`/`visibleCount`) |
 | 8 | ✅ | Each non-future day cell gets a `title` (date + win count) as a per-cell text alternative, on top of the grid's existing aggregate `aria-label` | `src/modules/winlog/components/ContributionGraph.tsx` |
+
+## ADR 0039 update (2026-09-07)
+
+The contribution graph was removed by designer decision, which supersedes
+three of the states above:
+
+- **#6 (intensity tiers)** and **#8 (per-cell text alternatives)**: the
+  component they described is gone. Their accessibility concern is covered
+  better than before — every win is now real text (the `WinBalance` counters,
+  day-header `WinKindBadges`, and one row per Win), so no per-cell fallback
+  is needed anywhere, including the embedded scopes.
+- **#7 (long history)**: paging survives but moved from rows (50) to whole
+  days (14 per page, "Load more (n more days)") so a page never splits a
+  day group; still resets on Path-filter change.
+- **Filtered Path with no Wins** (Coverage): instead of an all-empty grid the
+  balance now reads an honest `0 · 0` next to the scoped empty message.
+
+`winlog`'s derived-read guarantees (#1–#5) are untouched.
+

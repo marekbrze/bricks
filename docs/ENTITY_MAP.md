@@ -18,7 +18,7 @@ erDiagram
     ACTION }o--o| GOAL : "assigned to (max 1)"
 ```
 
-Derived views (not stored entities): **WinLog** and **ContributionGraph** — both computed from `Action.completedAt` / `Goal` achievement over time. The **ActionsView** (`actions` module) is likewise derived — a grouped read of `Path` → `Goal` → `Action` (plus Inbox items), writing only through the owning modules' hooks; no stored state of its own.
+Derived views (not stored entities): **WinLog** (with its `WinBalance` / `WinKindBadges` summaries) — computed from `Action.completedAt` / `Goal` achievement, split into small wins (completed Actions) and big wins (achieved Goals). The former `ContributionGraph` embeds were removed (ADR 0039). The **ActionsView** (`actions` module) is likewise derived — a grouped read of `Path` → `Goal` → `Action` (plus Inbox items), writing only through the owning modules' hooks; no stored state of its own.
 
 Relationship notes:
 - An `Action` lives in exactly one of three places: the **Inbox** (no Path, no Goal), directly under a **Path** (standalone), or under a **Goal**. It never belongs to more than one `Goal`.
@@ -98,5 +98,5 @@ Relationship notes:
 ### WinLog
 Append-feeling history of completed `Action`s and achieved `Goal`s, ordered by completion date. Un-checking an Action removes it from the log; deleting the Action removes it from history (see Open Questions in PROJECT.md — whether history should survive deletion is unresolved).
 
-### ContributionGraph
-GitHub-contribution-graph-style visualization of cumulative wins toward a Goal / Path over time. Emphasis on accumulation ("how much I've already done"), not percent-complete.
+### WinBalance / WinKindBadges
+The win summary pair (ADR 0039): small wins (completed Actions, checkmark icon) and big wins (achieved Goals, trophy icon), each with its count — a block (`WinBalance`) on the Log / Path overview / Goal progress, an inline line (`WinKindBadges`) on day-group headers and PathCards. Honest zeros. Emphasis on accumulation ("how much I've already done"), not percent-complete.

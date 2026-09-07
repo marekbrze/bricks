@@ -11,17 +11,12 @@ function localIso(iso: string): string {
   return new Date(d.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
-function daysMap(wins: Win[]): Record<string, number> {
-  const map: Record<string, number> = {}
-  for (const w of wins) map[w.date] = (map[w.date] ?? 0) + 1
-  return map
-}
-
 /**
- * `winlog`'s core: every `Win` — a completed `Action` or an achieved `Goal` —
- * computed live from `paths`/`goals`/`capture-triage` state. No storage of
- * its own; un-completing an Action or reactivating a Goal makes its Win
- * disappear on the next render, by design (ADR 0013).
+ * `winlog`'s core: every `Win` — a completed `Action` (small) or an achieved
+ * `Goal` (big) — computed live from `paths`/`goals`/`capture-triage` state. No
+ * storage of its own; un-completing an Action or reactivating a Goal makes its
+ * Win disappear on the next render, by design (ADR 0013). The kind split is
+ * the log's primary axis now (ADR 0039) — count it with `winKindCounts`.
  */
 export function useWinLog() {
   const { paths, activePaths, archivedPaths, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
@@ -61,18 +56,11 @@ export function useWinLog() {
     [wins],
   )
 
-  const winDaysGlobal = useMemo(() => daysMap(wins), [wins])
-
-  const winDaysForPath = useCallback(
-    (pathId: string) => daysMap(wins.filter((w) => w.pathId === pathId)),
-    [wins],
-  )
-
   /** Subtree-inclusive: rolls up sub-Goals' Wins too, matching `cascadeCounts`' Action count on Goal progress. */
-  const winDaysForGoal = useCallback(
+  const winsForGoal = useCallback(
     (goalId: string) => {
       const ids = new Set(subtreeIds(goalId))
-      return daysMap(wins.filter((w) => w.goalId && ids.has(w.goalId)))
+      return wins.filter((w) => w.goalId && ids.has(w.goalId))
     },
     [wins, subtreeIds],
   )
@@ -93,9 +81,7 @@ export function useWinLog() {
   return {
     wins,
     winsForPath,
-    winDaysGlobal,
-    winDaysForPath,
-    winDaysForGoal,
+    winsForGoal,
     activePaths,
     archivedPaths,
     getPathName,

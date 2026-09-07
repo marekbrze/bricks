@@ -35,6 +35,18 @@ export function compareIso(a: string, b: string): number {
 }
 
 /**
+ * Local HH:MM for a full ISO timestamp — the time-of-day line inside a
+ * day-grouped list (the group header already carries the date). Only ever
+ * called with full timestamps; a bare date (`YYYY-MM-DD`, as Goals'
+ * `achievedOn` is) parses as UTC midnight and must not be time-labeled.
+ */
+export function formatTimeLabel(iso: string): string {
+  const d = new Date(iso)
+  const offsetMs = d.getTimezoneOffset() * 60_000
+  return new Date(d.getTime() - offsetMs).toISOString().slice(11, 16)
+}
+
+/**
  * "Today", "Tomorrow", "Yesterday", or a short weekday + date label — with
  * the year appended whenever `iso` falls outside the current calendar year,
  * since nothing constrains how far out an Action can be scheduled/moved to.

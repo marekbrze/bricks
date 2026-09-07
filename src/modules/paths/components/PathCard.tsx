@@ -3,7 +3,8 @@ import { GripVertical, Target, Trophy } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
-import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
+import { winKindCounts } from '@/modules/winlog/lib/win-counts'
+import { WinKindBadges } from '@/modules/winlog/components/WinKindBadges'
 import { useVision } from '@/modules/vision/hooks/use-vision'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import type { Path } from '../types/path'
@@ -31,7 +32,7 @@ export function PathCard({
 }) {
   const { goalCountForPath } = useGoals()
   const goalCount = goalCountForPath(path.id)
-  const { winDaysForPath } = useWinLog()
+  const { winsForPath } = useWinLog()
   // Achievements are Vision tiles (ADR 0037) — the card reads their progress
   // from the board, same as it reads the Vision snippet.
   const { achievementCountsForPath } = useVision()
@@ -87,7 +88,8 @@ export function PathCard({
         </span>
       </div>
 
-      <ContributionGraph winDays={winDaysForPath(path.id)} weeks={16} compact label={`${path.name} wins`} />
+      {/* The Path's win line — the same two kinds the Log speaks (ADR 0039). */}
+      <WinKindBadges counts={winKindCounts(winsForPath(path.id))} />
     </Card>
   )
 }

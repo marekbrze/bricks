@@ -6,7 +6,7 @@
 (the sport path, the earnings path), not a project with an end. The `paths` module
 owns two things: the **list of Paths** (the entry point to everything) and the
 **Path overview** (the hub screen that pulls the Vision summary, Goals and the
-contribution graph into one place). **Achievements** — the order-independent
+win balance into one place). **Achievements** — the order-independent
 "along the way" items ("I can do a pull-up", "muscle-up", "100 push-ups") —
 moved into the Vision board as a tile type (ADR 0037); `paths` surfaces their
 progress in its summaries but no longer owns them.
@@ -17,8 +17,9 @@ on the Vision board, Goals are the execution layer, Vision is the picture of
 the future. Everything else in the app surfaces *through* the Path overview.
 
 The list is a **card grid** — each card is a rich at-a-glance summary (name,
-Goal and achievement counts, a mini contribution graph, a Vision snippet) so
-opening `/paths` already tells the Owner where their energy is going.
+Goal and achievement counts, the Path's win line — small/big wins with counts,
+a Vision snippet) so opening `/paths` already tells the Owner where their
+energy is going.
 Archived Paths are out of the way on their own screen; the main list is only
 active directions.
 
@@ -42,8 +43,9 @@ active directions.
 
 1. User opens `/paths` → sees the card grid of active Paths in manual order.
 2. Each card shows: name, `N goals · X/Y achievements` (read from the Path's
-   Vision achievement tiles), a mini `ContributionGraph` for that Path, a short
-   Vision snippet (first note, truncated).
+   Vision achievement tiles), the Path's win line (`WinKindBadges` — small and
+   big wins with counts, owned by `winlog`), a short Vision snippet (first
+   note, truncated).
 3. User clicks a card → **Path overview** (`/paths/:pathId`).
 
 ### Path overview (the hub)
@@ -61,8 +63,8 @@ active directions.
    - **Goals and Actions** — counts plus **Open Actions** →
      `/paths/:pathId/actions`. The overview stays a summary; the work itself
      lives on that tab.
-   - **Contribution graph** — the full per-Path `ContributionGraph` (owned by the
-     `winlog` module, embedded here).
+   - **Wins** — the per-Path win balance (`WinBalance`, owned by the `winlog`
+     module, embedded here) — small wins and big wins with counts (ADR 0039).
 4. From here the user branches into `actions`, `vision`, `goals`, or `winlog`;
    `paths` itself fully owns only the Path-level actions (rename, archive,
    delete, reorder).
@@ -127,9 +129,9 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
 ## Screens (rough)
 
 - **Paths list** (`/paths`): primary **New Path** button; responsive **card grid**
-  of active Paths (name — clamped to 2 lines, `N goals · M achievements`, mini
-  contribution graph, Vision snippet, drag handle, overflow menu); **View
-  archived** link at the end. Empty state when there are no Paths.
+  of active Paths (name — clamped to 2 lines, `N goals · M achievements`, win
+  line with small/big counts, Vision snippet, drag handle, overflow menu);
+  **View archived** link at the end. Empty state when there are no Paths.
 - **New Path modal**: name input + repeatable achievement rows (+ add another / ✕;
   on Create they seed the new Vision's achievement tiles), Cancel / Create. Name
   required (inline error). A dirty form asks to confirm before discarding on
@@ -137,7 +139,7 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
 - **Path overview** (`/paths/:pathId`): contextual header (name, back, overflow:
   Rename / Archive / Delete); the Path tab bar; stacked sections — Vision summary
   (+ open board; snippet, `X/Y achievements` line, thumbnails), **Goals and
-  Actions** summary (+ open Actions), per-Path contribution graph. Achievements
+  Actions** summary (+ open Actions), per-Path win balance. Achievements
   live on the Vision board (ADR 0037) — the summary reports their progress.
   **Archived Paths render read-only**: a restore banner at the top until
   unarchived.
@@ -170,7 +172,7 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
 | Archive Path | Overflow menu → immediate + Undo toast (restores exact prior state); contents kept | `Path` | Reversible; from the overview it also navigates back to `/paths` |
 | Unarchive Path | From `/paths/archived` or the archived overview’s restore banner; returns to end of active order; confirmation toast | `Path` | |
 | Delete Path | Overflow menu / archived list → `AlertDialog` with a cascade summary | `Path` | Cascades to the Vision (tiles and achievements included), Goals, Actions; confirmation toast, no undo |
-| View Path overview | The hub screen: Vision summary (with achievement progress) + Goals/Actions summary + graph | `Path` | Vision / graph rendered by other modules |
+| View Path overview | The hub screen: Vision summary (with achievement progress) + Goals/Actions summary + win balance | `Path` | Vision / balance rendered by other modules |
 | Open a Path tab | Overview / Actions / Goals / Vision from the Path tab bar | `Path` | Separate routes, `aria-current` marks the active one |
 | View Path Actions | This Path's Goal groups + standalone Actions, in the Actions view's shape | `Action` | `/paths/:pathId/actions`; components shared with `actions` |
 | Manage a Path's Actions | Schedule, complete, rename, move, delete, toggle frog, quick-add | `Action` | Rows/dialogs reused from `actions`; quick-add and dragging disabled while archived |
@@ -214,7 +216,7 @@ Systematically audited in `docs/modules/paths-edgecases.md` and hardened
   route — "we couldn't read your saved Paths" (distinct from the empty state) +
   a confirmed reset.
 - **Deep-link to a deleted `:pathId`**: `PathNotFound` state with a way back.
-- **Timezone**: achievement-tile dates and contribution-graph day keys use the
+- **Timezone**: achievement-tile dates and win-day keys use the
   local calendar date, not UTC.
 
 Deferred (see `paths-edgecases.md` → Hardening status): input length limits (#13),
@@ -235,8 +237,8 @@ harmless while creation is synchronous), and an app-wide date-format convention
   Path's Goals (priority order, deadline countdowns) and links to
   `/paths/:pathId/goals`. Goals are created under a Path; deleting the Path
   cascades its Goals and their Actions.
-- **winlog**: the per-Path `ContributionGraph` is embedded on the overview; the
-  card grid shows a mini version. Goal/Action completions under the Path feed
+- **winlog**: the per-Path `WinBalance` is embedded on the overview; the
+  card grid shows the win line. Goal/Action completions under the Path feed
   it. (Achievement ticks never fed it despite earlier claims to the contrary —
   feeding them is deferred; see `docs/changes/achievements-as-vision-tiles.md`.)
 - **today**: the Today view sections are grouped by Path and ordered by the manual

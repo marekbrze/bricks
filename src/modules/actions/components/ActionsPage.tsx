@@ -48,7 +48,7 @@ export function ActionsPage() {
   } = useActions()
 
   const { rowCallbacks, moveAction, dialogs } = useActionRowActions()
-  const { renderGoalGroup, topLevelGoalsFor, standaloneActionsFor } = useGoalGroups({
+  const { renderGoalGroup, topLevelGoalsFor, standaloneActionsFor, goalDialogs } = useGoalGroups({
     showCompleted,
     rowCallbacks,
   })
@@ -136,6 +136,7 @@ export function ActionsPage() {
         )}
 
         {dialogs}
+        {goalDialogs}
 
         {newGoal && (
           <GoalDialog

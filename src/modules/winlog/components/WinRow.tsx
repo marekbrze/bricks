@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import { CheckCircle2, Trophy } from 'lucide-react'
-import { formatDayLabel } from '@/shared/lib/date'
+import { formatTimeLabel } from '@/shared/lib/date'
 import type { Win } from '../types/win'
 
 /**
- * One entry in the Log's chronological list. An action Win links to the
- * Action's *current* `scheduledDate` when it still has one (it may have
- * been moved to another day since completing — see
+ * One entry in the Log's day-grouped list — the day itself is the group
+ * header's job, so this row carries only the time of day (Action wins have a
+ * full timestamp; a Goal's `achievedOn` is a bare date, so it shows none).
+ * An action Win links to the Action's *current* `scheduledDate` when it still
+ * has one (it may have been moved to another day since completing — see
  * docs/modules/winlog-edgecases.md #2), falling back to the day it was
  * completed on; a goal Win links into that Goal's progress page. See
  * docs/modules/winlog.md → "Read a Win row" and ADR 0013.
@@ -36,7 +38,14 @@ export function WinRow({ win, pathName, goalName }: { win: Win; pathName: string
             {win.kind === 'goal' && ' · Goal achieved'}
           </p>
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">{formatDayLabel(win.date)}</span>
+        {win.kind === 'action' && (
+          <time
+            dateTime={win.at}
+            className="shrink-0 text-xs tabular-nums text-muted-foreground"
+          >
+            {formatTimeLabel(win.at)}
+          </time>
+        )}
       </Link>
     </li>
   )

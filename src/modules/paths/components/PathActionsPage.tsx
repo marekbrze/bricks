@@ -45,9 +45,14 @@ export function PathActionsPage() {
   const { createAction, dataUnreadable: actionsUnreadable, resetActions } = useActions()
 
   const { rowCallbacks, moveAction, dialogs } = useActionRowActions()
-  const { renderGoalGroup, topLevelGoalsFor, standaloneActionsFor } = useGoalGroups({
+  // Read-only is decided before the group hook so an archived Path's groups
+  // mount without their lifecycle menu at all.
+  const path = getPath(pathId)
+  const readOnly = path?.archived ?? false
+  const { renderGoalGroup, topLevelGoalsFor, standaloneActionsFor, goalDialogs } = useGoalGroups({
     showCompleted,
     rowCallbacks,
+    readOnly,
   })
   const orphaned = useOrphanedActions()
 
@@ -55,10 +60,8 @@ export function PathActionsPage() {
   if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
   if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
-  const path = getPath(pathId)
   if (!path) return <PathNotFound />
 
-  const readOnly = path.archived
   const goals = topLevelGoalsFor(path.id)
   const standalone = standaloneActionsFor(path.id)
   // Orphans of *this* Path only — the whole-app view owns the rest.
@@ -151,6 +154,7 @@ export function PathActionsPage() {
       )}
 
       {dialogs}
+      {goalDialogs}
 
       {creatingGoal && (
         <GoalDialog

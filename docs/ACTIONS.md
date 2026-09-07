@@ -18,7 +18,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Archive Path | Move out of active set, keep all contents | Owner | Reversible |
 | Unarchive Path | Return to active | Owner | |
 | Delete Path | Cascade-deletes the Vision (its tiles and achievements included), Goals, Actions | Owner | Confirmation dialog ("na pewno?") |
-| View Path overview | Vision summary (with achievement progress) + Goals + contribution graph | Owner | |
+| View Path overview | Vision summary (with achievement progress) + Goals + win balance | Owner | |
 
 ### Vision
 
@@ -67,11 +67,11 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Reorder Goals | Manual priority order within a Path | Owner | Not sequential |
 | Move Goal to another Path | Re-parent the Goal (and its Actions) | Owner | |
 | Toggle frog | Mark/unmark as a frog | Owner | Marking a Goal frog marks all its Actions frog |
-| Mark achieved | Set to `achieved` with a date — manual, not auto when all tasks done | Owner | Feeds WinLog / ContributionGraph |
+| Mark achieved | Set to `achieved` with a date — manual, not auto when all tasks done | Owner | Lands a big win in WinLog; also offered on the Actions screens' Goal groups (ADR 0039) |
 | Abandon Goal | Set to `abandoned` | Owner | Alternative to achieving |
 | Reactivate Goal | Back to `active` from achieved/abandoned | Owner | |
 | Delete Goal | Cascade-deletes sub-Goals and every Action under them | Owner | Confirmation dialog (`AlertDialog` with a cascade summary), same pattern as Path delete; no undo |
-| View Goal progress | Cumulative action count + contribution graph toward this Goal | Owner | |
+| View Goal progress | Cumulative action count + win balance toward this Goal | Owner | |
 
 ### Action
 
@@ -88,7 +88,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Schedule Action | Set `scheduledDate` (today, tomorrow, any day) | Owner | Drives Today / day-navigation views |
 | Unschedule Action | Clear `scheduledDate` | Owner | |
 | Toggle frog | Mark/unmark as a frog (star-like toggle) | Owner | |
-| Complete Action | Set `done` + `completedAt` | Owner | Appears in WinLog, bumps ContributionGraph |
+| Complete Action | Set `done` + `completedAt` | Owner | Appears in WinLog as a small win |
 | Un-complete Action | Back to previous state | Owner | Removes the win from the log |
 | Abandon Action | Set to `abandoned` | Owner | |
 | Review abandoned Actions | Periodically look through abandoned items | Owner | |
@@ -114,13 +114,13 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Navigate days | Step to tomorrow / day-after / back | Owner | |
 | Open Schedule view | Day-header + tasks, day-header + tasks — agenda layout | Owner | Likely its own module later (calendar) |
 
-### WinLog / ContributionGraph (derived views)
+### WinLog (derived view)
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
-| Open WinLog | Chronological history of completed Actions and achieved Goals | Owner | Main motivational fuel |
-| Open ContributionGraph | GitHub-style cumulative graph per Goal / Path | Owner | Emphasis on accumulation, not % |
-| Filter WinLog by Path | Re-scope the global Log's graph + list to one Path | Owner | New — proto-detail(winlog) |
+| Open WinLog | Day-grouped history of completed Actions (small wins) and achieved Goals (big wins) | Owner | Main motivational fuel |
+| Read the win balance | Small/big counts on the Log, Path overview, Goal progress, PathCard | Owner | Replaces the removed contribution graph — ADR 0039 |
+| Filter WinLog by Path | Re-scope the global Log's balance + history to one Path | Owner | New — proto-detail(winlog) |
 
 ## Deferred
 

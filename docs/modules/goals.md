@@ -88,7 +88,9 @@ per-Goal progress rollup.
 ### Mark achieved / abandon / reactivate
 
 1. Row overflow → **Mark achieved** → state `achieved`, stamped with today's
-   local date; feeds `WinLog` / `ContributionGraph`. This is always a manual
+   local date; lands a big win in `WinLog` (the Goals screens keep the
+   one-click achieve; the Actions screens wrap the same write in the
+   celebration dialog — ADR 0039). This is always a manual
    call — never automatic when all child Actions are done (PROJECT.md Open
    Question, resolved: manual, matching how `Achievement` already works in
    `paths`).
@@ -116,9 +118,9 @@ per-Goal progress rollup.
 
 1. `/paths/:pathId/goals/:goalId` — header (name, deadline countdown if
    any, frog/lifecycle badges), a cumulative Action count toward this Goal,
-   the per-Goal `ContributionGraph` (owned by `winlog`, embedded here), and
-   the list of this Goal's own Actions plus its sub-Goals (each linking
-   further in).
+   the per-Goal win balance (`WinBalance`, owned by `winlog`, embedded here,
+   subtree-inclusive like the count), and the list of this Goal's own Actions
+   plus its sub-Goals (each linking further in).
 2. From here the Owner can jump into `today` for any schedulable Action, or
    drill into a sub-Goal's own progress view.
 
@@ -135,8 +137,8 @@ per-Goal progress rollup.
 - **Move to Path dialog**: Path picker (reuses the `capture-triage` picker
   pattern), warns that the whole subtree + its Actions move together.
 - **Goal progress** (`/paths/:pathId/goals/:goalId`): header with
-  badges/countdown, Action count, embedded `ContributionGraph`, this Goal's
-  own Actions, its sub-Goals (linking further in).
+  badges/countdown, Action count, embedded `WinBalance` (small/big), this
+  Goal's own Actions, its sub-Goals (linking further in).
 - **Delete confirmation** (`AlertDialog`): cascade summary (sub-Goal +
   Action counts), Cancel / Delete Goal — same component as Path delete.
 - **Data-unreadable recovery** (all `goals` routes): shown instead of
@@ -162,7 +164,7 @@ per-Goal progress rollup.
 | Abandon Goal | Overflow → `abandoned` | `Goal` | Alternative outcome, not a failure/blocking state |
 | Reactivate Goal | Overflow → back to `active` | `Goal` | Reversible from either achieved or abandoned |
 | Delete Goal | Overflow → `AlertDialog` cascade summary | `Goal` | Cascades to sub-Goals and all their Actions — resolves PROJECT.md Open Question; no undo |
-| View Goal progress | Action count + `ContributionGraph` + own Actions/sub-Goals | `Goal` | Graph rendered by `winlog` |
+| View Goal progress | Action count + `WinBalance` + own Actions/sub-Goals | `Goal` | Balance rendered by `winlog` |
 
 `docs/ACTIONS.md` already listed every one of these; this interview resolved
 the two behaviors it flagged as open (manual achieve, cascade delete) rather
@@ -176,7 +178,7 @@ Systematically audited in `docs/modules/goals-edgecases.md` and hardened
 - **Path has no Goals yet**: tree screen shows an empty state explaining
   Goals live under Paths, with **New Goal** front and center.
 - **Goal with no Actions**: progress view shows `0` cumulative count and an
-  empty `ContributionGraph`, not an error.
+  honest `0 · 0` win balance, not an error.
 - **Goal with an overdue deadline**: the countdown badge flips to an overdue
   treatment (still shows, doesn't block achieving/abandoning/editing it
   away).
@@ -228,5 +230,5 @@ achieve/abandon).
   discarded, per `capture-triage`'s ADR 0004).
 - **today**: a Goal's Actions with a `scheduledDate` show up in the Today
   view, grouped under their Path.
-- **winlog**: achieving a Goal creates a Win; the per-Goal `ContributionGraph`
+- **winlog**: achieving a Goal creates a big Win; the per-Goal `WinBalance`
   on the progress view is embedded from here.

@@ -11,7 +11,8 @@
 (planning the day, closing wins, reading the log). The bar is earned familiarity:
 a user fluent in Things 3 / Linear / Raycast trusts it immediately and the tool
 disappears into the work. Distinctiveness is spent in exactly one place — the
-ContributionGraph — where accumulation *is* the content.
+win balance (ADR 0039), where the two counts *are* the content: small wins
+rising, big wins rising slower.
 
 ## Scene
 
@@ -43,9 +44,10 @@ only where it means something.
   scale, restrained near-monochrome chrome, keyboard-first interactions taken
   seriously. Bricks borrows this for structure: rows, dialogs, hover states,
   focus rings.
-- **GitHub contribution graph — accumulation** (WinLog only): a grid of small
-  squares thickening into a wall is the exact emotional payload of Bricks. This
-  is the one surface allowed to carry visible color at full strength.
+- **openloops — the win-kind balance**: two icons, two counts, nothing else —
+  small wins (actions) and big wins (closed goals) side by side, honest zeros
+  included. Bricks borrows this for the Log and every embedded win summary
+  (ADR 0039).
 
 ## Anti-references
 
@@ -65,9 +67,9 @@ only where it means something.
 ## Color
 
 **Strategy**: **Restrained** — granite-tinted neutrals carry ~100% of the chrome;
-one accent at ≤10% of any surface; hue reserved for meaning. One carved-out
-exception: the **ContributionGraph** may carry the win-green ramp at full strength
-— there, accumulation is the content, not decoration.
+one accent at ≤10% of any surface; hue reserved for meaning. The win-green
+appears only where a win *is*: icons and balance counts (the Log's one moment
+of visual strength), never as decoration (ADR 0039).
 
 **Seed hue**: granite — `oklch(0.52 0.05 260)`, the designer's explicit choice
 (grafit/granit) over reflex hues. It reads as *material* — pencil graphite,
@@ -83,7 +85,7 @@ the UI's visible color budget goes to semantics instead:
 | Ink (body) | `--foreground` | `oklch(0.225 0.012 260)` | `oklch(0.92 0.006 260)` | body text, tinted toward seed |
 | Card | `--card` | `oklch(1 0 0)` | `oklch(0.21 0.01 260)` | the one elevation step above canvas |
 | Popover | `--popover` | `oklch(1 0 0)` | `oklch(0.23 0.01 260)` | |
-| Muted fill | `--muted` | `oklch(0.955 0.006 260)` | `oklch(0.25 0.012 260)` | chips, graph "empty" cell, secondary fills |
+| Muted fill | `--muted` | `oklch(0.955 0.006 260)` | `oklch(0.25 0.012 260)` | chips, day-group headers, secondary fills |
 | Muted text | `--muted-foreground` | `oklch(0.48 0.016 260)` | `oklch(0.68 0.012 260)` | secondary text & placeholders — ≥4.5:1, no lighter |
 | Secondary | `--secondary` | `oklch(0.95 0.007 260)` | `oklch(0.26 0.012 260)` | subtle buttons |
 | Accent fill | `--accent` | `oklch(0.925 0.012 260)` | `oklch(0.28 0.014 260)` | hover/selected row tint |
@@ -93,17 +95,12 @@ the UI's visible color budget goes to semantics instead:
 | Input edge | `--input` | `oklch(0.89 0.01 260)` | `oklch(1 0 0 / 16%)` | a hair darker than border |
 | Focus ring | `--ring` | `oklch(0.52 0.05 260)` | `oklch(0.70 0.04 260)` | **the granite accent** — most saturated chrome token |
 | Destructive | `--destructive` | `oklch(0.55 0.2 27)` | `oklch(0.68 0.17 25)` | delete / abandon-for-good only |
-| Win | `--win` | `oklch(0.55 0.13 150)` | `oklch(0.72 0.12 150)` | completed, achieved, graph top step |
-| Win deep | `--win-strong` | `oklch(0.45 0.11 150)` | `oklch(0.82 0.10 150)` | win text on soft tint |
-| Win tint | `--win-soft` | `oklch(0.94 0.045 150)` | `oklch(0.30 0.05 150)` | "done" row wash, achievement states |
+| Win | `--win` | `oklch(0.55 0.13 150)` | `oklch(0.72 0.12 150)` | win icons, the Log's balance numbers (large text) |
+| Win deep | `--win-strong` | `oklch(0.45 0.11 150)` | `oklch(0.82 0.10 150)` | win text on soft tint, badge counts (≥4.5:1) |
+| Win tint | `--win-soft` | `oklch(0.94 0.045 150)` | `oklch(0.30 0.05 150)` | "done" row wash, achievement states, close-goal badge |
 | Frog | `--frog` | `oklch(0.60 0.13 70)` | `oklch(0.76 0.12 70)` | the frog glyph/star — ≥3:1 on canvas |
 | Frog deep | `--frog-strong` | `oklch(0.48 0.11 70)` | `oklch(0.85 0.10 70)` | frog as text (≥4.5:1) |
 | Frog tint | `--frog-soft` | `oklch(0.95 0.05 80)` | `oklch(0.32 0.05 75)` | frog row wash |
-| Graph q1 | `--chart-1` | `oklch(0.87 0.06 150)` | `oklch(0.35 0.05 150)` | win ramp, lowest intensity |
-| Graph q2 | `--chart-2` | `oklch(0.77 0.10 150)` | `oklch(0.47 0.08 150)` | |
-| Graph q3 | `--chart-3` | `oklch(0.66 0.12 150)` | `oklch(0.60 0.10 150)` | |
-| Graph q4 | `--chart-4` | `oklch(0.55 0.13 150)` | `oklch(0.72 0.12 150)` | full win (= `--win`) |
-| Graph empty | `--chart-5` | `oklch(0.955 0.006 260)` | `oklch(0.25 0.012 260)` | no wins that day (= `--muted`) |
 
 **Neutrals**: tinted chroma 0.004–0.016 toward hue 260 — the project's own stone,
 NOT default-warm cream (`60`), NOT pure gray (chroma 0 is dead). 9-step working
@@ -135,7 +132,7 @@ second family — contrast comes from weight and size, not from typeface switchi
 | lg | 1.125 | 18 | page titles |
 | xl | 1.266 | 20 | section headers, Path names |
 | 2xl | 1.424 | 23 | sub-counters |
-| 3xl | 1.6 | 26 | the Log's win counter (tabular-nums) |
+| 3xl | 1.6 | 26 | the Log's win-balance counters (tabular-nums) |
 
 Override Tailwind's `text-*` steps to this ramp in `@theme` (defaults 1.25/1.5/
 1.875 are too loose for Linear-density lists).
@@ -143,7 +140,7 @@ Override Tailwind's `text-*` steps to this ramp in `@theme` (defaults 1.25/1.5/
 and counters. Variable font: set weight via `font-weight`, no axis games.
 **Loading**: self-hosted variable woff2, `font-display: swap`, single file —
 nothing to preload beyond the existing import; fallback `system-ui` stack.
-**Details**: `tabular-nums` on every date, count, counter and graph tooltip;
+**Details**: `tabular-nums` on every date, count and counter;
 line-height 1.5 body / 1.2 headings; vision-note prose measure 65–75ch;
 no letter-spacing games (no tracked uppercase eyebrows — banned below).
 
@@ -158,7 +155,7 @@ no letter-spacing games (no tracked uppercase eyebrows — banned below).
   animation, no entrance effects anywhere
 - `prefers-reduced-motion: reduce` → all transitions off
 
-The Log may *update* live (counter increments, a graph cell fills) but always as
+The Log may *update* live (a balance count increments) but always as
 a state change at 150ms — a brick is laid, not celebrated.
 
 ## Guardrails
@@ -186,7 +183,7 @@ a state change at 150ms — a brick is laid, not celebrated.
 - Gradient slogans, emoji-fire, motivational-poster energy
 - Hue anywhere the semantic map doesn't justify it (green=win, amber=frog,
   red=destructive, granite=interactive — nothing else)
-- Percent-complete framing anywhere the ContributionGraph speaks — accumulation,
+- Percent-complete framing in the Log or any win summary — accumulation,
   not completion
 
 **Contrast floor**: body text ≥4.5:1 · large text & UI components ≥3:1 ·
@@ -210,8 +207,8 @@ it instantly.
 1. **app-shell + today** — the token layer lands with the highest-daily-use
    surface; information hierarchy (per-Path sections, frog/valuable signalling)
    is the product's core design problem
-2. **winlog** — the differentiator; the ContributionGraph gets its green ramp
-   and the one allowed moment of visual strength
+2. **winlog** — the differentiator; the win balance gets the one allowed
+   moment of visual strength
 3. **capture-triage** — the most novel interaction; triage card needs the
    calmest possible frame around it
 4. **paths** — hub screen; Path identity stays typographic (no per-Path colors —

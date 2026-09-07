@@ -7,6 +7,7 @@ import type { Goal } from '@/modules/goals/types/goal'
 import { daysUntil, deadlineLabel } from '@/modules/goals/lib/deadline'
 import { compareActionsForList, isSettled } from '../lib/group-actions'
 import { ActionRowItem } from './ActionRowItem'
+import { GoalLifecycleMenu } from './GoalLifecycleMenu'
 import { QuickAddActionRow } from './QuickAddActionRow'
 import { useActionDropZone } from './action-dnd'
 
@@ -21,6 +22,14 @@ export interface ActionRowCallbacks {
   /** Opens the move picker — the keyboard twin of dragging the row elsewhere. */
   onMoveTo?: (action: Action) => void
   onDelete: (action: Action) => void
+}
+
+/** The Goal-state turns a group header offers — lifecycle only, no edit/move/delete. */
+export interface GoalLifecycleCallbacks {
+  /** Opens the celebration dialog; the write happens on its confirm. */
+  onAchieve: () => void
+  onAbandon: () => void
+  onReactivate: () => void
 }
 
 /** Spreadable row props built from the shared callbacks — one row, one place. */
@@ -54,7 +63,9 @@ export function actionRowProps(action: Action, callbacks: ActionRowCallbacks) {
  *
  * Inside an `ActionDndProvider` the group is also a drop target: dragging an
  * Action onto it (collapsed groups included — the header is the target) files
- * the Action under this Goal.
+ * the Action under this Goal. The header's lifecycle menu (when `lifecycle` is
+ * given) closes the Goal from where its work happens — achieving lands a big
+ * win in the Log (ADR 0039).
  */
 export function GoalGroup({
   goal,
@@ -62,6 +73,7 @@ export function GoalGroup({
   childGoals,
   showCompleted,
   rowCallbacks,
+  lifecycle,
   onCreate,
   renderChild,
   expandedOverride,
@@ -73,6 +85,8 @@ export function GoalGroup({
   childGoals: Goal[]
   showCompleted: boolean
   rowCallbacks: ActionRowCallbacks
+  /** Omitted on read-only screens (archived Path) — then the header carries no menu. */
+  lifecycle?: GoalLifecycleCallbacks
   onCreate: (name: string, scheduledDate: string | null) => void
   /** Renders a nested child group — recursion without importing this file into itself. */
   renderChild: (child: Goal) => React.ReactNode
@@ -157,6 +171,15 @@ export function GoalGroup({
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
           {visible.length}
         </span>
+        {lifecycle && (
+          <GoalLifecycleMenu
+            goalName={goal.name}
+            state={goal.state}
+            onAchieve={lifecycle.onAchieve}
+            onAbandon={lifecycle.onAbandon}
+            onReactivate={lifecycle.onReactivate}
+          />
+        )}
       </div>
 
       {expanded && (

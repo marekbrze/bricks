@@ -10,10 +10,10 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ### paths
 **Type**: Core
-**Description**: The container layer. Create and manage never-ending life directions (the sport path, the earnings path) and see the per-Path hub screen that pulls together the Vision summary, the Goal list, and the contribution graph. Archiving and cascade-delete (with confirmation) live here. Achievements are Vision tiles now (ADR 0037) — `paths` no longer owns them.
+**Description**: The container layer. Create and manage never-ending life directions (the sport path, the earnings path) and see the per-Path hub screen that pulls together the Vision summary, the Goal list, and the win balance. Archiving and cascade-delete (with confirmation) live here. Achievements are Vision tiles now (ADR 0037) — `paths` no longer owns them.
 **Entities**: `Path`
 **Key Actions**: Create Path (+ seed achievement tiles onto its Vision), rename, reorder, archive/unarchive, delete (cascade), view Path overview.
-**Connects to**: `vision` (Path overview embeds Vision summary — including achievement progress; "open Vision board"; Path creation seeds achievement tiles through `useVision`); `goals` (Path overview lists Goals; Goals are created under a Path); `winlog` (Path overview embeds ContributionGraph for the Path); `today` (Today view groups Actions by Path); `capture-triage` (an Action can be assigned standalone to a Path).
+**Connects to**: `vision` (Path overview embeds Vision summary — including achievement progress; "open Vision board"; Path creation seeds achievement tiles through `useVision`); `goals` (Path overview lists Goals; Goals are created under a Path); `winlog` (Path overview embeds the Path's win balance; PathCard shows the win line); `today` (Today view groups Actions by Path); `capture-triage` (an Action can be assigned standalone to a Path).
 **Design priority**: High — it is the hub screen every other module surfaces through, and the mental model (the "Path") has to land here first.
 
 ---
@@ -30,7 +30,7 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ### goals
 **Type**: Core
-**Description**: The execution layer under a Path. A tree of `Goal`s and sub-`Goal`s in manual priority order, each with an optional deadline and days-remaining countdown. Goals are marked achieved manually (or abandoned), can be flagged as a frog (which propagates to their Actions), and can be moved between Paths. A per-Goal progress view shows the cumulative action count and contribution graph toward that Goal.
+**Description**: The execution layer under a Path. A tree of `Goal`s and sub-`Goal`s in manual priority order, each with an optional deadline and days-remaining countdown. Goals are marked achieved manually (or abandoned), can be flagged as a frog (which propagates to their Actions), and can be moved between Paths. A per-Goal progress view shows the cumulative action count and the win balance toward that Goal.
 **Entities**: `Goal`
 **Key Actions**: Create Goal / sub-Goal, edit, reorder by priority, move to another Path, toggle frog, mark achieved, abandon, reactivate, delete, view Goal progress.
 **Connects to**: `paths` (every Goal belongs to exactly one Path); `capture-triage` (Actions get assigned to Goals; an Action can be promoted into a Goal); `today` (a Goal's scheduled Actions show up in Today); `winlog` (achieving a Goal creates a Win).
@@ -60,10 +60,10 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ### winlog
 **Type**: Core
-**Description**: The motivational payoff and the #1 differentiator vs Griply. A chronological history of completed Actions and achieved Goals, plus a GitHub-contribution-graph-style visualization of cumulative wins — global, per Path, and per Goal. Emphasis on accumulation ("how much I've already done"), not percent-complete, as a deliberate counterweight to negative bias.
+**Description**: The motivational payoff and the #1 differentiator vs Griply. A day-grouped history of completed Actions (small wins) and achieved Goals (big wins), headed by a two-kind win balance — global, per Path, and per Goal. Emphasis on accumulation ("how much I've already done"), not percent-complete, as a deliberate counterweight to negative bias. The contribution graph was removed by designer decision (ADR 0039).
 **Entities**: none stored — derived from `Action.completedAt` and `Goal` achievement.
-**Key Actions**: Open WinLog, open ContributionGraph (global / per Path / per Goal).
-**Connects to**: `today` (completed Actions feed it); `goals` (achieved Goals feed it; per-Goal graph shown in Goal progress); `paths` (per-Path graph shown in Path overview).
+**Key Actions**: Open WinLog, read the win balance (global / per Path / per Goal), filter the Log by Path.
+**Connects to**: `today` (completed Actions feed it); `actions` (closing a Goal lands a big win — ADR 0039); `goals` (achieved Goals feed it; per-Goal balance shown in Goal progress); `paths` (per-Path balance shown in Path overview, win line on PathCard).
 **Design priority**: High — it is the reason the app exists over alternatives. The design risk is emotional: making the accumulating "bricks" genuinely rewarding to look at.
 
 ---
@@ -104,7 +104,7 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 graph LR
     PATHS[paths] -->|embeds Vision summary + achievement counts; seeds achievement tiles| VISION[vision]
     PATHS -->|lists / hosts Goals| GOALS[goals]
-    PATHS -->|embeds ContributionGraph| WINLOG[winlog]
+    PATHS -->|embeds WinBalance / WinKindBadges| WINLOG[winlog]
     CAPTURE[capture-triage] -->|assign / promote to Goal| GOALS
     CAPTURE -->|assign standalone| PATHS
     CAPTURE -->|triaged Actions become schedulable| TODAY[today]
@@ -135,7 +135,7 @@ graph LR
 ## Priority Areas
 
 - **today**: The information hierarchy is the product. Per-Path sectioning, "what's valuable" vs "what's a frog" signalling, day-focus vs full-list — get this wrong and the daily ritual doesn't stick. Most design attention.
-- **winlog**: The differentiator. The `ContributionGraph` and the framing of accumulating wins must feel genuinely rewarding, not like a stats page. Emotional design risk.
+- **winlog**: The differentiator. The win balance and the framing of accumulating wins must feel genuinely rewarding, not like a stats page. Emotional design risk.
 - **capture-triage**: The most novel interaction — card-by-card processing to escape decision paralysis. No obvious reference in mainstream goal apps. Also the future home of `PairwisePrioritization`, so leave room for it.
 - **goals**: Structurally the most complex module — self-referential tree, manual priority ordering, frog propagation, achieve/abandon/reactivate lifecycle, move-between-Paths. High risk of an over-complicated UI.
 - **vision**: Highest raw craft effort (block editor + gallery + Unsplash + export), but lower risk to the core loop. Budget time, not worry.

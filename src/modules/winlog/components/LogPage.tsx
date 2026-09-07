@@ -5,24 +5,48 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { GoalsDataUnreadable } from '@/modules/goals/components/GoalsDataUnreadable'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
+import { formatDayLabel } from '@/shared/lib/date'
 import { useWinLog } from '../hooks/use-win-log'
-import { ContributionGraph } from './ContributionGraph'
+import { winKindCounts } from '../lib/win-counts'
+import type { Win } from '../types/win'
+import { WinBalance } from './WinBalance'
+import { WinKindBadges } from './WinKindBadges'
 import { PathFilterChips } from './PathFilterChips'
 import { WinRow } from './WinRow'
 
-/** Rows shown before "Load more" — see docs/modules/winlog-edgecases.md #7. */
-const PAGE_SIZE = 50
+/** Day groups shown before "Load more" — a page never splits a day (ADR 0039). */
+const PAGE_DAYS = 14
+
+interface DayGroup {
+  date: string
+  wins: Win[]
+}
+
+/** Group a newest-first Win list by calendar day, preserving the list's order. */
+function groupByDay(wins: Win[]): DayGroup[] {
+  const groups: DayGroup[] = []
+  const indexByDate = new Map<string, number>()
+  for (const win of wins) {
+    const i = indexByDate.get(win.date)
+    if (i === undefined) {
+      indexByDate.set(win.date, groups.length)
+      groups.push({ date: win.date, wins: [win] })
+    } else {
+      groups[i].wins.push(win)
+    }
+  }
+  return groups
+}
 
 /**
- * The global Log — `winlog`'s dedicated page. Graph + Path filter + full
- * chronological history. See docs/modules/winlog.md → "Open the Log (global)".
+ * The global Log — `winlog`'s dedicated page. Win balance (small/big) +
+ * Path filter + the day-grouped history. See docs/modules/winlog.md →
+ * "Open the Log (global)" and ADR 0039.
  */
 export function LogPage() {
   const {
     wins,
     winsForPath,
-    winDaysGlobal,
-    winDaysForPath,
     activePaths,
     archivedPaths,
     getPathName,
@@ -55,17 +79,15 @@ export function LogPage() {
   const filterablePaths = useMemo(() => [...activePaths, ...archivedPaths], [activePaths, archivedPaths])
 
   const filteredWins = useMemo(() => winsForPath(pathId), [winsForPath, pathId])
-  const winDays = pathId ? winDaysForPath(pathId) : winDaysGlobal
-  const scopeLabel = pathId ? `${getPathName(pathId)} wins` : 'All wins'
-  // The accumulation counter — the module's whole point, given the visual
-  // weight the type ramp reserves for it (docs/DESIGN.md Typography, 3xl).
-  const totalWins = useMemo(() => Object.values(winDays).reduce((s, n) => s + n, 0), [winDays])
+  const balance = useMemo(() => winKindCounts(filteredWins), [filteredWins])
+  const dayGroups = useMemo(() => groupByDay(filteredWins), [filteredWins])
 
-  // Un-paginated history would already run to hundreds of rows with a few
-  // months of daily use — see docs/modules/winlog-edgecases.md #7.
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  useEffect(() => setVisibleCount(PAGE_SIZE), [pathId])
-  const visibleWins = filteredWins.slice(0, visibleCount)
+  // Un-paginated history would already run to hundreds of days with a few
+  // months of daily use — see docs/modules/winlog-edgecases.md #7. Paging by
+  // days (not rows) keeps every visible day whole.
+  const [visibleDays, setVisibleDays] = useState(PAGE_DAYS)
+  useEffect(() => setVisibleDays(PAGE_DAYS), [pathId])
+  const shownDays = dayGroups.slice(0, visibleDays)
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
   if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
@@ -104,8 +126,8 @@ export function LogPage() {
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">No wins yet</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Complete an Action in Today or mark a Goal achieved — it’ll show up here, and start
-              filling in the graph below.
+              Complete an Action in Today or close a Goal — every finished Action lands here as a
+              small win, every achieved Goal as a big one.
             </p>
           </div>
         </section>
@@ -115,54 +137,50 @@ export function LogPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold">Log</h1>
-        <p className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tabular-nums">{totalWins}</span>
-          <span className="text-sm text-muted-foreground">
-            {totalWins === 1 ? 'win' : 'wins'} so far
-          </span>
-        </p>
-      </div>
+      <h1 className="text-xl font-semibold">Log</h1>
 
       <PathFilterChips paths={filterablePaths} value={pathId} onChange={setPathId} />
 
-      <section aria-labelledby="graph-heading" className="flex flex-col gap-2">
-        <h2 id="graph-heading" className="text-sm font-semibold">
-          Contribution graph
-        </h2>
-        <div className="rounded-lg border border-border p-3">
-          <ContributionGraph winDays={winDays} weeks={52} label={scopeLabel} />
-        </div>
-      </section>
+      <WinBalance counts={balance} size="lg" />
 
       <section aria-labelledby="history-heading" className="flex flex-col gap-2">
         <h2 id="history-heading" className="text-sm font-semibold">
           History
         </h2>
-        {filteredWins.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No wins for this Path yet.</p>
+        {dayGroups.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No wins on this Path yet.</p>
         ) : (
           <>
             <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
-              {visibleWins.map((win) => (
-                <WinRow
-                  key={win.id}
-                  win={win}
-                  pathName={getPathName(win.pathId)}
-                  goalName={win.kind === 'action' && win.goalId ? getGoalName(win.goalId) : null}
-                />
+              {shownDays.map((day) => (
+                <li key={day.date} className="flex flex-col">
+                  <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-3 py-1.5">
+                    <h3 className="text-xs font-medium">{formatDayLabel(day.date)}</h3>
+                    <WinKindBadges counts={winKindCounts(day.wins)} />
+                  </div>
+                  <ul className="flex flex-col divide-y divide-border/60">
+                    {day.wins.map((win) => (
+                      <WinRow
+                        key={win.id}
+                        win={win}
+                        pathName={getPathName(win.pathId)}
+                        goalName={win.kind === 'action' && win.goalId ? getGoalName(win.goalId) : null}
+                      />
+                    ))}
+                  </ul>
+                </li>
               ))}
             </ul>
-            {visibleCount < filteredWins.length && (
+            {visibleDays < dayGroups.length && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="self-start"
-                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                onClick={() => setVisibleDays((d) => d + PAGE_DAYS)}
               >
-                Load more ({filteredWins.length - visibleCount} more)
+                Load more ({dayGroups.length - visibleDays} more{' '}
+                {dayGroups.length - visibleDays === 1 ? 'day' : 'days'})
               </Button>
             )}
           </>

@@ -50,8 +50,8 @@ the section it belongs to.
 
 ### Complete / un-complete
 
-1. Checkbox on each Action row. Checking sets `done` + `completedAt` (feeds WinLog /
-   ContributionGraph) — the row fades out of the default view (hidden unless "Show completed").
+1. Checkbox on each Action row. Checking sets `done` + `completedAt` (lands a small win in
+   the Log) — the row fades out of the default view (hidden unless "Show completed").
 2. Un-checking (via "Show completed") reverts to the previous state and removes the Win.
 3. Overflow menu per row: Schedule… (reuses the schedule dialog), Unschedule, Rename, Toggle
    frog, Delete. Completed rows offer only Un-complete and Delete.
@@ -69,6 +69,21 @@ the section it belongs to.
 5. A move preserves `state`, `scheduledDate` and `completedAt` — a completed Action keeps its
    Win when it's filed elsewhere (ADR 0026).
 
+### Close a Goal (mark achieved)
+
+1. Every Goal group header carries a lifecycle menu (ADR 0039): **Mark achieved**,
+   **Abandon** — or **Reactivate** when the Goal is already closed.
+2. *Mark achieved* opens the celebration dialog ("Goal achieved — it lands in the Log as a
+   big win. Open Actions don't stand in the way — closing a Goal is a decision, not a
+   checkbox."); only its confirm writes `setGoalState('achieved')`, stamping today as the
+   achieved date.
+3. The confirmed big win shows up in the Log (day group for today, trophy row) immediately.
+4. *Abandon* and *Reactivate* write immediately with a toast — same behavior as the
+   Goals-tree menu, just without leaving the work surface. Editing, moving and deleting a
+   Goal stay in `goals`, where the whole Goal lives.
+5. An achieved Goal with no open Actions stops rendering here (there is nothing left to
+   file into it) — its win lives on in the Log.
+
 ## Screens (rough)
 
 - **ActionsPage** (`/actions`): single scrolling page. Header (title + Show completed
@@ -76,12 +91,13 @@ the section it belongs to.
   name, frog star, date chip ("Today"/"Tomorrow"/date or countdown-style label for overdue),
   one-click **add-to-today** button (the view's most frequent action — hover-revealed on
   desktop, always visible on touch; hidden when the row is already on today), overflow menu.
-  Group headers carry the quick-add row; Path headers carry "New goal".
+  Group headers carry the quick-add row, the visible-row count, and the Goal lifecycle menu
+  (ADR 0039); Path headers carry "New goal".
 - **PathActionsPage** (`/paths/:pathId/actions`, owned by `paths`): the same groups scoped
   to one Path, on that Path's tab bar. Built from the same `PathActionsBody`,
   `useGoalGroups` and `useActionRowActions` as the view above, so the two can't drift —
-  including the shared collapse memory. An archived Path renders it read-only: no quick-add,
-  no "New goal", no dragging.
+  including the shared collapse memory and the Goal lifecycle menus. An archived Path
+  renders it read-only: no quick-add, no "New goal", no dragging, no lifecycle menus.
 
 ## Actions
 
@@ -97,6 +113,8 @@ the section it belongs to.
 | Delete Action | Row menu → `AlertDialog` confirm → permanent removal | Action | No undo; reachable from every row, not just Review abandoned |
 | Toggle frog | Star toggle per row | Action | No propagation upward (that stays Goal-side) |
 | Move Action | Drag onto a Goal group / Standalone block, or row menu → "Move to…" | Action | `moveActionToGoal`; keeps `state`/`scheduledDate`; undoable; crosses Paths |
+| Close Goal (mark achieved) | Goal group menu → celebration dialog → confirm | Goal | `setGoalState('achieved')` — stamps today; lands a big win in WinLog (ADR 0039) |
+| Abandon / Reactivate Goal | Goal group menu, immediate write + toast | Goal | Parity with the Goals-tree menu (ADR 0007) |
 | Show completed | Toggle done/abandoned visibility | — | View-local, not persisted (prototype) |
 
 ## Edge Cases
@@ -135,7 +153,11 @@ Hardened against docs/modules/actions-edgecases.md — all 8 gaps closed (ADR 00
 - **Drop that changes nothing** (row dropped back on its own group): no write, no toast —
   the toast is also the screen-reader announcement, so it has to describe a real change.
 - **Nested Goal groups**: a drop on a sub-Goal lands only there, never also on its parent.
-- **Archived Path**: its Actions tab mounts no drag provider — no grips, no drop targets.
+- **Archived Path**: its Actions tab mounts no drag provider — no grips, no drop targets —
+  and mounts no Goal lifecycle menus (read-only means read-only).
+- **Closing a Goal by mistake**: reactivate from the same menu while the group still renders
+  (it holds open work), or from the Goals screens once it's gone from here; re-achieving
+  keeps the original achieved date (ADR 0007).
 
 ## Integration Points
 
@@ -146,4 +168,5 @@ Hardened against docs/modules/actions-edgecases.md — all 8 gaps closed (ADR 00
 - **paths**: consumes `usePaths` for active Paths and nav order; empty-app state links here.
 - **today**: shares `scheduledDate` semantics — the date popover and schedule dialog use the
   same date helpers; completing here feeds the same WinLog.
-- **winlog**: completing/un-completing a row immediately moves/removed its Win.
+- **winlog**: completing/un-completing a row immediately moves/removed its Win; closing a
+  Goal here lands its big win the same instant (ADR 0039).

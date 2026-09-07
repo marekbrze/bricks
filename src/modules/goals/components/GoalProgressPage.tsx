@@ -6,8 +6,9 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
 import { PathNotFound } from '@/modules/paths/components/PathNotFound'
-import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
+import { winKindCounts } from '@/modules/winlog/lib/win-counts'
+import { WinBalance } from '@/modules/winlog/components/WinBalance'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useGoals } from '../hooks/use-goals'
@@ -29,8 +30,8 @@ type DialogState =
   | null
 
 /**
- * A Goal's own hub: its deadline/state/frog, the cumulative Action count +
- * contribution graph toward it (subtree-inclusive), its own Actions, and its
+ * A Goal's own hub: its deadline/state/frog, the cumulative Action count and
+ * win balance toward it (subtree-inclusive), its own Actions, and its
  * sub-Goals (each drilling further in). See docs/modules/goals.md →
  * "View Goal progress".
  */
@@ -40,7 +41,7 @@ export function GoalProgressPage() {
   const { showToast } = useToast()
   const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
   const { dataUnreadable: actionsUnreadable, resetActions } = useActions()
-  const { winDaysForGoal } = useWinLog()
+  const { winsForGoal } = useWinLog()
   const {
     getGoal,
     childGoals,
@@ -173,16 +174,16 @@ export function GoalProgressPage() {
         <h2 id="progress-heading" className="text-sm font-semibold">
           Progress
         </h2>
-        <div className="flex flex-col gap-3 rounded-lg border border-border p-3">
-          <p className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold tabular-nums">{counts.actions}</span>
-            <span className="text-sm text-muted-foreground">
-              cumulative {counts.actions === 1 ? 'Action' : 'Actions'}
-              {counts.subGoals > 0 && ` across ${counts.subGoals} sub-${counts.subGoals === 1 ? 'Goal' : 'Goals'}`}
-            </span>
-          </p>
-          <ContributionGraph winDays={winDaysForGoal(goal.id)} weeks={20} label={`${goal.name} wins`} />
-        </div>
+        <p className="flex items-baseline gap-2">
+          <span className="text-3xl font-semibold tabular-nums">{counts.actions}</span>
+          <span className="text-sm text-muted-foreground">
+            cumulative {counts.actions === 1 ? 'Action' : 'Actions'}
+            {counts.subGoals > 0 && ` across ${counts.subGoals} sub-${counts.subGoals === 1 ? 'Goal' : 'Goals'}`}
+          </span>
+        </p>
+        {/* Subtree-inclusive, matching the cumulative count above — the two
+            readings of "toward this Goal" agree (docs/modules/winlog.md). */}
+        <WinBalance counts={winKindCounts(winsForGoal(goal.id))} size="sm" />
       </section>
 
       <section aria-labelledby="own-actions-heading" className="flex flex-col gap-2">

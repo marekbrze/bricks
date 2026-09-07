@@ -14,7 +14,7 @@ The application shell — the frame every module screen renders inside. Structur
 
 ## Home page
 
-`/` redirects straight to **`/today`** (the Today view). No separate dashboard — the summary/stats/streak surface lives inside the **Log** module (`winlog`), which already owns `ContributionGraph` and win history.
+`/` redirects straight to **`/today`** (the Today view). No separate dashboard — the summary/stats surface lives inside the **Log** module (`winlog`), which owns the win balance and the day-grouped win history.
 
 ## Module navigation
 

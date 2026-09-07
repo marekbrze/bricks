@@ -56,8 +56,8 @@ export const NoWinsAtAll: Story = {
 
 /**
  * Wins exist elsewhere, but "Craft" has none — click its chip to see the
- * scoped empty message (graph still renders, all-empty cells) instead of
- * the Path silently vanishing from the filter.
+ * honest-zero balance (`0 · 0`) and the scoped empty message instead of the
+ * Path silently vanishing from the filter.
  */
 export const NoWinsForFilteredPath: Story = {
   decorators: [
