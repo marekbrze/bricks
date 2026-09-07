@@ -83,7 +83,7 @@ export function PathActionsBody({
 
       {inactiveGoals.length > 0 && (
         <div className="flex flex-col gap-2 border-t border-dashed border-border pt-3">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <h3 className="text-sm font-medium text-muted-foreground">
             Closed goals with open actions
           </h3>
           {inactiveGoals.map((g) => renderGoalGroup(g, 0))}

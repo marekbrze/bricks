@@ -62,7 +62,8 @@ export function ActionRowItem({
       draggable={draggable}
       {...dragProps}
       className={cn(
-        'group flex items-center gap-3 rounded-lg border border-border bg-background p-2',
+        'group flex items-center gap-3 rounded-lg border border-border bg-background p-2 transition-colors',
+        done && 'border-win/25 bg-win-soft',
         abandoned && 'opacity-60',
         isDragging && 'opacity-50',
       )}
