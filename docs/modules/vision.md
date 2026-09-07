@@ -3,18 +3,26 @@
 ## Vision
 
 Vision is the picture of the future for a Path — a Notion-like board of short
-text notes and photo tiles, not one long document written in a single sitting.
-The Owner drops in small fragments (how they want to feel, small things they
-want) and photos (their own or pulled from Unsplash) whenever inspiration
-hits, in any order. There's no "finish writing your vision" moment — the
-board is always editable, grows over the life of the Path, and can be
-exported as a single markdown document when the Owner wants to read it as one
-piece (e.g. to print, or paste elsewhere).
+text notes, photo tiles, and achievement tiles, not one long document written
+in a single sitting. The Owner drops in small fragments (how they want to
+feel, small things they want), photos (their own or pulled from Unsplash),
+and the things they want to be able to do one day — achievements — whenever
+inspiration hits, in any order. There's no "finish writing your vision"
+moment — the board is always editable, grows over the life of the Path, and
+can be exported as a single markdown document when the Owner wants to read it
+as one piece (e.g. to print, or paste elsewhere).
+
+Achievements are a tile type here rather than a Path-level checklist (ADR
+0037): an achievement ("I can do a pull-up", "100 push-ups") is just an
+element of the wanted future, one that can be achieved — so it sits on the
+board next to the notes and photos describing that same future, and is
+ticked in place when it comes true.
 
 It sits alongside the core value loop (capture → triage → do → log wins)
 rather than inside it — it's not something the Owner touches daily, but it's
 what the daily Actions are *for*. The Path overview shows a short Vision
-summary so that connection stays visible without opening the full board.
+summary (including achievement progress) so that connection stays visible
+without opening the full board.
 
 ## User Flows
 
@@ -61,6 +69,20 @@ summary so that connection stays visible without opening the full board.
 4. Owner can close the search panel without picking anything — no tile is
    added.
 
+### Add an achievement and tick it off
+
+1. From the "+ Add" menu, picks "Add achievement" → an inline input tile opens
+   at the end of the board.
+2. Types the achievement ("I can do a strict pull-up"), confirms (Enter or
+   "Save") → tile is saved as an unchecked achievement.
+3. Ticking the tile's checkbox marks it achieved: the tile gets the win tint
+   (done wash), the title strikes through, and today's local date shows on
+   the tile. Un-ticking reverts it to open — deliberately reversible.
+4. The title edits in place (click it), the tile deletes from the tile menu
+   (Undo toast), and it reorders with the board like any other tile.
+5. Creating a Path can seed these: the New Path dialog's achievement rows
+   land on the new Path's Vision as achievement tiles.
+
 ### Reorder the board
 
 1. Owner drags a tile by its drag handle to a new position — notes and
@@ -75,7 +97,8 @@ summary so that connection stays visible without opening the full board.
 1. Owner clicks "Export" on the board.
 2. Tiles merge, in board order, into a single markdown document — notes as
    paragraphs, images as `![]()` markdown image tags with the Unsplash
-   photographer credit as a caption line where applicable.
+   photographer credit as a caption line where applicable, achievements as
+   task-list items (`- [x] I can do a pull-up — achieved 2026-03-12`).
 3. The file downloads immediately as `[path-name]-vision.md` — no
    intermediate preview screen. (Prototype default, chosen to match the
    board's own "keep it lightweight" spirit; revisit if user testing wants a
@@ -84,12 +107,13 @@ summary so that connection stays visible without opening the full board.
 ## Screens (rough)
 
 - **Vision board** (`/paths/:pathId/vision`): the main surface. Ordered grid
-  of note + image tiles, "+ Add" control, "Export" action. Empty state when
-  no tiles exist yet.
+  of note, image and achievement tiles, "+ Add" control, "Export" action.
+  Empty state when no tiles exist yet.
 - **Unsplash search panel**: opens over/beside the board (dialog or side
   panel) — query field + results grid. Doesn't navigate away from the board.
 - **Vision summary** (embedded in Path overview, not its own route): first
-  note(s) + thumbnail strip, "Open Vision board" link. Read-only here.
+  note(s) + `X/Y achievements` line + thumbnail strip, "Open Vision board"
+  link. Read-only here.
 
 ## Actions
 
@@ -102,7 +126,11 @@ summary so that connection stays visible without opening the full board.
 | Upload image | Add tile from local file | VisionImage | Stored as data URL in this prototype |
 | Search Unsplash | Query + pick a result to add | VisionImage | Live Unsplash API; bundled samples when no key (ADR 0027) |
 | Remove image | Delete tile | VisionImage | |
-| Reorder tile | Drag handle or Move up/down | VisionNote / VisionImage | Notes and images share one order |
+| Add achievement | New achievement tile, inline input on creation | VisionAchievementTile | ADR 0037; Path creation can seed these |
+| Edit achievement | Click title → inline edit | VisionAchievementTile | |
+| Mark / un-mark achieved | Tick / untick the tile's checkbox | VisionAchievementTile | Reversible; un-tick clears the date, re-ticking an already-achieved tile keeps it |
+| Delete achievement | Remove tile | VisionAchievementTile | Undo toast |
+| Reorder tile | Drag handle or Move up/down | VisionNote / VisionImage / VisionAchievementTile | All tile types share one order |
 | Export Vision | Merge board into one markdown file, download | Vision | No preview step |
 
 ## Edge Cases
@@ -111,8 +139,8 @@ summary so that connection stays visible without opening the full board.
 `docs/modules/vision-edgecases.md` — all 10 gaps found there are closed as of
 `proto-harden`.)
 
-- **Empty board**: no notes or images yet → empty state prompting the first
-  add (with the Add menu built in), not a blank grid.
+- **Empty board**: no notes, images or achievements yet → empty state
+  prompting the first add (with the Add menu built in), not a blank grid.
 - **Unsplash search, no results**: query matches nothing → "no results"
   message, search field stays open to retry.
 - **Unsplash unavailable**: no Access Key, a rejected key, a spent hourly
@@ -135,14 +163,25 @@ summary so that connection stays visible without opening the full board.
   already-gone tile shows no toast and no Undo — feedback is always true.
 - **Very long note**: clamped to six lines on the board; the full text stays
   in storage and opens on click-to-edit.
+- **Achievement toggles are reversible**: un-ticking clears the achieved
+  date (the date line disappears with the wash); re-ticking stamps today —
+  the same convention Goals and the contribution graph use for dates.
+- **Archived Path**: achievement tiles render read-only like every other
+  tile — checkboxes disabled, no inline edit, no menu, no Add.
+- **Legacy data**: Paths stored before ADR 0037 embedded achievements on the
+  Path record; `useVision` migrates them onto the board once, idempotently
+  (tiles keep the legacy ids), and strips the old field.
 - **Corrupt stored Vision data**: the recovery screen shows on the board
   *and* on the Path overview, not just where the corruption is discovered.
 
 ## Integration Points
 
 - **paths**: one Vision per Path (confirmed — ADR 0016); Path overview
-  embeds the Vision summary and links to the full board. Deleting a Path
-  cascade-deletes its Vision.
+  embeds the Vision summary (snippet, `X/Y achievements`, thumbnails) and
+  links to the full board. Deleting a Path cascade-deletes its Vision —
+  achievement tiles included. Creating a Path seeds its dialog's achievement
+  rows onto the new Vision via `useVision.addAchievements` (ADR 0037) —
+  `usePaths` itself never writes the `visions` key.
 - **app-shell**: none required — the Unsplash Access Key is asked for inside
   the search dialog itself (or baked in via `VITE_UNSPLASH_ACCESS_KEY`), so
   no separate settings screen is needed (ADR 0027).

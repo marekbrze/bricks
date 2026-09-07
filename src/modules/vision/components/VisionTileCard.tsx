@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ArrowDown, ArrowUp, GripVertical, MoreVertical, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -14,7 +16,7 @@ import type { VisionTile } from '../types/vision'
 /** Notes longer than this clamp on the board (full text via click-to-edit). */
 const NOTE_CLAMP = 6 * 60
 
-/** One tile on the Vision board — a note (click to edit in place) or an image. */
+/** One tile on the Vision board — a note (click to edit in place), an image, or an achievement. */
 export function VisionTileCard({
   tile,
   index,
@@ -27,6 +29,8 @@ export function VisionTileCard({
   onMoveUp,
   onMoveDown,
   onEditNote,
+  onEditAchievement,
+  onToggleAchieved,
   onDelete,
 }: {
   tile: VisionTile
@@ -40,6 +44,8 @@ export function VisionTileCard({
   onMoveUp: () => void
   onMoveDown: () => void
   onEditNote: (text: string) => void
+  onEditAchievement: (title: string) => void
+  onToggleAchieved: (achieved: boolean) => void
   onDelete: () => void
 }) {
   const [editing, setEditing] = useState(false)
@@ -47,15 +53,23 @@ export function VisionTileCard({
   const draggable = !readOnly && tileCount > 1
 
   const commit = () => {
-    if (tile.type !== 'note') return
     const t = draft.trim()
-    if (t && t !== tile.text) onEditNote(t)
-    else setDraft(tile.text)
+    if (tile.type === 'note') {
+      if (t && t !== tile.text) onEditNote(t)
+      else setDraft(tile.text)
+    } else if (tile.type === 'achievement') {
+      if (t && t !== tile.title) onEditAchievement(t)
+      else setDraft(tile.title)
+    }
     setEditing(false)
   }
 
   const menuLabel =
-    tile.type === 'note' ? `Actions for note “${tile.text.slice(0, 30)}”` : `Actions for image “${tile.alt}”`
+    tile.type === 'note'
+      ? `Actions for note “${tile.text.slice(0, 30)}”`
+      : tile.type === 'achievement'
+        ? `Actions for achievement “${tile.title.slice(0, 30)}”`
+        : `Actions for image “${tile.alt}”`
 
   return (
     /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drag handlers on a
@@ -71,7 +85,12 @@ export function VisionTileCard({
       onDragEnd={onDragEnd}
       className={cn('list-none', dragId === tile.id && 'opacity-50')}
     >
-      <Card className="gap-2 p-3">
+      <Card
+        className={cn(
+          'gap-2 p-3',
+          tile.type === 'achievement' && tile.state === 'achieved' && 'border-win/25 bg-win-soft',
+        )}
+      >
         <div className="flex items-start gap-1">
           {draggable && (
             <GripVertical
@@ -80,7 +99,62 @@ export function VisionTileCard({
             />
           )}
           <div className="min-w-0 flex-1">
-            {tile.type === 'note' ? (
+            {tile.type === 'achievement' ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    checked={tile.state === 'achieved'}
+                    disabled={readOnly}
+                    onCheckedChange={(value) => onToggleAchieved(value)}
+                    aria-label={
+                      tile.state === 'achieved'
+                        ? `Mark “${tile.title}” not achieved`
+                        : `Mark “${tile.title}” achieved`
+                    }
+                    className="mt-0.5"
+                  />
+                  {editing && !readOnly ? (
+                    <Input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onBlur={commit}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commit()
+                        if (e.key === 'Escape') {
+                          setDraft(tile.title)
+                          setEditing(false)
+                        }
+                      }}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- focus follows the user into inline edit mode
+                      autoFocus
+                      aria-label={`Edit achievement “${tile.title.slice(0, 30)}”`}
+                      className="h-7"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={readOnly}
+                      onClick={() => {
+                        setDraft(tile.title)
+                        setEditing(true)
+                      }}
+                      aria-label={readOnly ? undefined : `Edit achievement “${tile.title.slice(0, 30)}”`}
+                      className={cn(
+                        'flex-1 rounded-sm text-left text-sm break-words outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default',
+                        tile.state === 'achieved' && 'text-muted-foreground line-through',
+                      )}
+                    >
+                      {tile.title}
+                    </button>
+                  )}
+                </div>
+                {tile.state === 'achieved' && tile.achievedOn && (
+                  <p className="pl-6 text-xs tabular-nums text-win-strong">
+                    Achieved {tile.achievedOn}
+                  </p>
+                )}
+              </div>
+            ) : tile.type === 'note' ? (
               editing && !readOnly ? (
                 <textarea
                   value={draft}

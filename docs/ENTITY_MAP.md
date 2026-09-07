@@ -8,11 +8,11 @@ Single role: **Owner** (the sole user). Everything below is owned by the Owner; 
 erDiagram
     OWNER ||--o{ PATH : owns
     PATH ||--|| VISION : "has one"
-    PATH ||--o{ ACHIEVEMENT : "has"
     PATH ||--o{ GOAL : "has"
     PATH ||--o{ ACTION : "scopes standalone"
     VISION ||--o{ VISION_NOTE : contains
     VISION ||--o{ VISION_IMAGE : contains
+    VISION ||--o{ VISION_ACHIEVEMENT_TILE : contains
     GOAL ||--o{ GOAL : "has subgoal"
     GOAL ||--o{ ACTION : contains
     ACTION }o--o| GOAL : "assigned to (max 1)"
@@ -23,8 +23,8 @@ Derived views (not stored entities): **WinLog** and **ContributionGraph** — bo
 Relationship notes:
 - An `Action` lives in exactly one of three places: the **Inbox** (no Path, no Goal), directly under a **Path** (standalone), or under a **Goal**. It never belongs to more than one `Goal`.
 - A `Goal` always belongs to exactly one `Path` and may nest into a tree of sub-`Goal`s.
-- A `Vision` is a 1:1 container for a `Path`; it holds an ordered mix of `VisionNote` and `VisionImage` tiles.
-- `Achievement`s hang directly off the `Path`, independent of any `Goal` or `Vision`.
+- A `Vision` is a 1:1 container for a `Path`; it holds an ordered mix of `VisionNote`, `VisionImage`, and `VisionAchievementTile` tiles.
+- Achievements are Vision tiles (ADR 0037) — they hang off the Path's Vision, not the Path record. Creating a Path can seed them through `useVision`.
 
 ## Entities
 
@@ -32,18 +32,18 @@ Relationship notes:
 **Description**: Top-level, never-ending direction of life (the sport path, the earnings path). The container everything else sits under.
 **Instances per user**: Many (a handful active at a time).
 **Ownership**: Owner.
-**Lifecycle**: Created with a name + a few initial `Achievement`s (Vision optional at creation). Never "completed". Can be archived, then deleted. **Deleting a Path cascades** — removes its Vision, Achievements, Goals and Actions — behind a confirmation dialog ("are you sure?").
+**Lifecycle**: Created with a name (the New Path dialog's achievement rows seed achievement tiles onto the new Vision). Never "completed". Can be archived, then deleted. **Deleting a Path cascades** — removes its Vision (with all its tiles, achievements included), Goals and Actions — behind a confirmation dialog ("are you sure?").
 **States**: `active` → `archived` (reversible) → *deleted*.
-**Contains**: one `Vision`, many `Achievement`, many `Goal`, many standalone `Action`.
+**Contains**: one `Vision`, many `Goal`, many standalone `Action`.
 **Belongs to**: Owner.
 
 ### Vision
-**Description**: The picture of the future for a Path — a Notion-like collection of short notes and image tiles rather than one long document. Exportable: tiles merge into a single markdown document.
+**Description**: The picture of the future for a Path — a Notion-like collection of short notes, image tiles, and achievement tiles rather than one long document. Exportable: tiles merge into a single markdown document.
 **Instances per user**: One per Path.
 **Ownership**: Owner.
-**Lifecycle**: Exists for the life of the Path (created lazily when the Owner first adds to it). Dies with the Path.
+**Lifecycle**: Exists for the life of the Path (created lazily when the Owner first adds to it; eagerly when Path creation seeds achievement tiles). Dies with the Path.
 **States**: none (always editable).
-**Contains**: many `VisionNote`, many `VisionImage` (ordered).
+**Contains**: many `VisionNote`, many `VisionImage`, many `VisionAchievementTile` (one shared order).
 **Belongs to**: `Path`.
 
 ### VisionNote
@@ -64,14 +64,14 @@ Relationship notes:
 **Contains**: —
 **Belongs to**: `Vision`.
 
-### Achievement
-**Description**: A thing to reach "along the way" on a Path — order-independent, not a task and not requiring concrete actions ("I can do a pull-up", "muscle-up", "100 push-ups"). Renamed from "Milestone" because milestones read as sequential; these are not.
-**Instances per user**: Many per Path.
+### VisionAchievementTile
+**Description**: A thing to reach "along the way", living on the Vision board as a tile (ADR 0037, moved off the Path record) — order-independent, not a task and not requiring concrete actions ("I can do a pull-up", "muscle-up", "100 push-ups"). Renamed from "Milestone" because milestones read as sequential; these are not. Ticked in place on the board.
+**Instances per user**: Many per Vision.
 **Ownership**: Owner.
-**Lifecycle**: Created on the Path (often several at Path creation), toggled done, deleted.
-**States**: `open` ↔ `achieved` (with a date; **reversible** — mistakes happen).
+**Lifecycle**: Added from the board's Add menu (often seeded during Path creation), edited inline, reordered with the board's shared order, ticked/unticked, deleted with the tile menu.
+**States**: `open` ↔ `achieved` (with a date; **reversible** — mistakes happen; re-ticking after a mistaken un-tick stamps today, matching the Goal/Action convention).
 **Contains**: —
-**Belongs to**: `Path`.
+**Belongs to**: `Vision`.
 
 ### Goal
 **Description**: An execution-oriented sub-goal with a work layer — contains tasks and needs concrete actions to move forward. Distinct from Vision and from Achievement.

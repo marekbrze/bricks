@@ -4,6 +4,8 @@ import type { Decorator } from '@storybook/react-vite'
 import { ToastProvider } from '@/shared/components/toast/toast-context'
 import { Toaster } from '@/shared/components/toast/Toaster'
 import { __resetStorageHealth } from '@/shared/lib/storage-health'
+import type { Vision } from '@/modules/vision/types/vision'
+import { MOCK_VISIONS } from '@/modules/vision/data/mock'
 import type { Path } from '../types/path'
 import { MOCK_PATHS } from '../data/mock'
 
@@ -73,6 +75,33 @@ export function withPaths(paths: Path[], initialPath = '/paths', route?: string)
   return (Story) => {
     __resetStorageHealth()
     seedPaths(paths)
+    return (
+      <Providers initialPath={initialPath} route={route}>
+        <Story />
+      </Providers>
+    )
+  }
+}
+
+/**
+ * Like `withPaths` but also seeds `visions` — the overview reads the Vision
+ * summary (including achievement progress, ADR 0037), so stories need both
+ * keys to render their intended data.
+ */
+export function withPathsAndVisions(
+  paths: Path[],
+  visions: Vision[] = MOCK_VISIONS,
+  initialPath = '/paths',
+  route?: string,
+): Decorator {
+  return (Story) => {
+    __resetStorageHealth()
+    seedPaths(paths)
+    try {
+      window.localStorage.setItem('visions', JSON.stringify(visions))
+    } catch {
+      /* ignore — the summary renders its empty state */
+    }
     return (
       <Providers initialPath={initialPath} route={route}>
         <Story />

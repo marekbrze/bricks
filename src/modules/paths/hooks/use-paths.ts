@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
-import type { Achievement, Path, PathCascadeCounts } from '../types/path'
+import type { LegacyAchievement, LegacyPath, Path, PathCascadeCounts } from '../types/path'
 
 const STORAGE_KEY = 'paths'
 
@@ -22,13 +22,6 @@ export function isStorageAvailable(): boolean {
   } catch {
     return false
   }
-}
-
-/** Local calendar date (YYYY-MM-DD) — not UTC, so "today" matches the user's day. */
-function todayLocalIso(): string {
-  const d = new Date()
-  const offsetMs = d.getTimezoneOffset() * 60_000
-  return new Date(d.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
 function byOrder(a: Path, b: Path): number {
@@ -72,7 +65,7 @@ export function usePaths() {
   )
 
   const createPath = useCallback(
-    (name: string, achievementTitles: string[]) => {
+    (name: string) => {
       const now = new Date().toISOString()
       const maxOrder = paths.reduce((m, p) => (p.archived ? m : Math.max(m, p.order)), -1)
       const newPath: Path = {
@@ -84,15 +77,6 @@ export function usePaths() {
         archived: false,
         archivedAt: null,
         visionSnippet: '',
-        achievements: achievementTitles
-          .map((t) => t.trim())
-          .filter(Boolean)
-          .map<Achievement>((title) => ({
-            id: generateId(),
-            title,
-            state: 'open',
-            achievedOn: null,
-          })),
         mockGoalCount: 0,
         mockActionCount: 0,
         mockVisionTileCount: 0,
@@ -170,58 +154,33 @@ export function usePaths() {
     [paths, setPaths, restoreSnapshot],
   )
 
-  // --- Achievements -------------------------------------------------------
+  // --- Legacy migration hand-off (ADR 0037) -------------------------------
 
-  const mutateAchievements = (
-    pathId: string,
-    fn: (list: Achievement[]) => Achievement[],
-  ) => {
+  /**
+   * One-time data move, `vision`-driven: Achievements are Vision achievement
+   * tiles now, but stored Paths may still embed the old checklist. Returns the
+   * legacy lists keyed by Path id and strips them from `paths` — `useVision`
+   * appends the returned items as tiles. Idempotent: with no legacy data this
+   * touches nothing and returns `{}`.
+   */
+  const stripLegacyAchievements = useCallback((): Record<string, LegacyAchievement[]> => {
+    const withLegacy = paths.filter((p) => (p as LegacyPath).achievements?.length)
+    if (withLegacy.length === 0) return {}
+    const extracted: Record<string, LegacyAchievement[]> = {}
+    for (const p of withLegacy) extracted[p.id] = (p as LegacyPath).achievements as LegacyAchievement[]
     setPaths(
       paths.map((p) =>
-        p.id === pathId ? touch({ ...p, achievements: fn(p.achievements) }) : p,
+        extracted[p.id] ? ({ ...p, achievements: undefined } as Path) : p,
       ),
     )
-  }
-
-  const addAchievement = (pathId: string, title: string) => {
-    const t = title.trim()
-    if (!t) return
-    mutateAchievements(pathId, (list) => [
-      ...list,
-      { id: generateId(), title: t, state: 'open', achievedOn: null },
-    ])
-  }
-
-  const editAchievement = (pathId: string, achievementId: string, title: string) => {
-    const t = title.trim()
-    if (!t) return
-    mutateAchievements(pathId, (list) =>
-      list.map((a) => (a.id === achievementId ? { ...a, title: t } : a)),
-    )
-  }
-
-  const setAchievementState = (pathId: string, achievementId: string, achieved: boolean) => {
-    mutateAchievements(pathId, (list) =>
-      list.map((a) => {
-        if (a.id !== achievementId) return a
-        if (!achieved) return { ...a, state: 'open', achievedOn: null }
-        // Preserve the original achieved date if it was set before — re-ticking
-        // after a mistaken un-tick shouldn't rewrite history.
-        return { ...a, state: 'achieved', achievedOn: a.achievedOn ?? todayLocalIso() }
-      }),
-    )
-  }
-
-  const deleteAchievement = (pathId: string, achievementId: string) => {
-    mutateAchievements(pathId, (list) => list.filter((a) => a.id !== achievementId))
-  }
+    return extracted
+  }, [paths, setPaths])
 
   const cascadeCounts = useCallback(
     (id: string): PathCascadeCounts => {
       const p = getPath(id)
       return {
         visionTiles: p?.mockVisionTileCount ?? 0,
-        achievements: p?.achievements.length ?? 0,
         goals: p?.mockGoalCount ?? 0,
         actions: p?.mockActionCount ?? 0,
       }
@@ -245,10 +204,7 @@ export function usePaths() {
     unarchivePath,
     deletePath,
     reorderPath,
-    addAchievement,
-    editAchievement,
-    setAchievementState,
-    deleteAchievement,
+    stripLegacyAchievements,
     cascadeCounts,
   }
 }

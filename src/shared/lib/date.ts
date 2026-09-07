@@ -1,8 +1,8 @@
 /**
  * Local-calendar-date (YYYY-MM-DD) helpers shared across modules that key
- * data by day — `today` (day nav, scheduling), `paths`/`goals` (win-day
- * maps, Achievement dates). Always local, never UTC, so "today" matches the
- * Owner's own day rather than flipping at UTC midnight.
+ * data by day — `today` (day nav, scheduling), `goals` (deadlines, win-day
+ * maps), `vision` (achievement-tile dates). Always local, never UTC, so
+ * "today" matches the Owner's own day rather than flipping at UTC midnight.
  */
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/

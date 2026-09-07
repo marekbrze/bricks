@@ -1,4 +1,4 @@
-import { Plus, Search, StickyNote, Upload } from 'lucide-react'
+import { Plus, Search, StickyNote, Trophy, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -7,15 +7,17 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 
-/** The board's single "+ Add" entry point — a type picker rather than three permanent buttons. See ADR 0016. */
+/** The board's single "+ Add" entry point — a type picker rather than four permanent buttons. See ADR 0016, ADR 0037. */
 export function AddTileMenu({
   onAddNote,
   onUploadImage,
   onSearchUnsplash,
+  onAddAchievement,
 }: {
   onAddNote: () => void
   onUploadImage: () => void
   onSearchUnsplash: () => void
+  onAddAchievement: () => void
 }) {
   return (
     <DropdownMenu>
@@ -35,6 +37,9 @@ export function AddTileMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSearchUnsplash}>
           <Search aria-hidden="true" /> Search Unsplash
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onAddAchievement}>
+          <Trophy aria-hidden="true" /> Add achievement
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

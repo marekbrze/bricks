@@ -4,6 +4,14 @@ Scope: whole module (all screens — `/paths`, `/paths/archived`, `/paths/:pathI
 and the nested `vision` / `goals` placeholders). Audited against
 `docs/modules/paths.md` and the built prototype in `src/modules/paths/`.
 
+> **Post-audit move (2026-09-07, ADR 0037):** Achievements are Vision
+> achievement tiles now. Rows below that name `AchievementsSection`, the
+> overview checklist, or `usePaths`' achievement mutations describe moved
+> behavior — see `docs/modules/vision.md` and `docs/modules/vision-edgecases.md`
+> for where those cases live today. Row 12's "keeps the original achievedOn"
+> claim was doc drift: un-ticking always cleared the date, so a re-tick stamps
+> today; the tile port preserves exactly that behavior.
+
 ## Coverage
 
 - **Spec already captured** (from `paths.md` → Edge Cases): no Paths at all; Path

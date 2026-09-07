@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { useVision } from '@/modules/vision/hooks/use-vision'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathOverflowMenu } from './PathOverflowMenu'
@@ -16,6 +17,7 @@ export function ArchivedPathsPage() {
     usePaths()
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
+  const { achievementCountsForPath } = useVision()
   const { showToast } = useToast()
   const [deleting, setDeleting] = useState<Path | null>(null)
 
@@ -42,14 +44,14 @@ export function ArchivedPathsPage() {
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border">
           {archivedPaths.map((path) => {
-            const achieved = path.achievements.filter((a) => a.state === 'achieved').length
+            const { achieved, total: achievementTotal } = achievementCountsForPath(path.id)
             return (
               <li key={path.id} className="flex items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-muted-foreground">{path.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {goalCountForPath(path.id)} {goalCountForPath(path.id) === 1 ? 'goal' : 'goals'} ·{' '}
-                    {achieved}/{path.achievements.length} achievements
+                    {achieved}/{achievementTotal} achievements
                     {path.archivedAt ? ` · archived ${path.archivedAt.slice(0, 10)}` : ''}
                   </p>
                 </div>
@@ -76,6 +78,7 @@ export function ArchivedPathsPage() {
             ...cascadeCounts(deleting.id),
             goals: goalCountForPath(deleting.id),
             actions: actionCountForPath(deleting.id),
+            achievements: achievementCountsForPath(deleting.id).total,
           }}
           onConfirm={() => {
             const name = deleting.name

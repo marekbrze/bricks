@@ -1,7 +1,7 @@
 /**
  * Days remaining until an ISO (YYYY-MM-DD) deadline, using local calendar
  * dates on both sides — negative means overdue. Matches the local-date
- * convention `paths`/`goals` use for Achievement dates and win-day keys.
+ * convention `goals`/`vision` use for deadline and achievement-tile dates.
  */
 export function daysUntil(deadlineIso: string): number {
   const [y, m, d] = deadlineIso.split('-').map(Number)

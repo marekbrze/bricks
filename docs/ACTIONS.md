@@ -12,22 +12,21 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
-| Create Path | Name + a few initial Achievements; Vision optional at this point | Owner | |
+| Create Path | Name (+ optional achievement rows that seed the new Vision's achievement tiles) | Owner | |
 | Rename Path | Change the name | Owner | |
-| Add Achievements on create | Seed the "along the way" list during Path creation | Owner | |
 | Reorder Paths | Arrange active Paths | Owner | Affects Today view ordering |
 | Archive Path | Move out of active set, keep all contents | Owner | Reversible |
 | Unarchive Path | Return to active | Owner | |
-| Delete Path | Cascade-deletes Vision, Achievements, Goals, Actions | Owner | Confirmation dialog ("na pewno?") |
-| View Path overview | Vision summary + Goals + Achievements + contribution graph | Owner | |
+| Delete Path | Cascade-deletes the Vision (its tiles and achievements included), Goals, Actions | Owner | Confirmation dialog ("na pewno?") |
+| View Path overview | Vision summary (with achievement progress) + Goals + contribution graph | Owner | |
 
 ### Vision
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
-| Open Vision board | Notion-like board of note + image tiles for a Path | Owner | Created lazily on first edit |
-| Export Vision | Merge all tiles into one markdown document | Owner | |
-| Reorder tiles | Arrange notes and images on the board | Owner | Mixed ordering |
+| Open Vision board | Notion-like board of note, image and achievement tiles for a Path | Owner | Created lazily on first edit |
+| Export Vision | Merge all tiles into one markdown document | Owner | Achievements become task-list items |
+| Reorder tiles | Arrange notes, images and achievements on the board | Owner | Mixed, one shared order |
 
 ### VisionNote
 
@@ -47,15 +46,16 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Remove image | Delete the tile | Owner | |
 | Reorder image | Move within board | Owner | |
 
-### Achievement
+### VisionAchievementTile
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
-| Add Achievement | New "along the way" item on a Path | Owner | Order-independent |
-| Edit Achievement | Change wording | Owner | |
-| Mark achieved | Set to `achieved` with a date | Owner | Feeds WinLog / ContributionGraph |
-| Un-mark achieved | Back to `open` | Owner | Reversible — mistakes happen |
-| Delete Achievement | Remove | Owner | |
+| Add achievement tile | New "along the way" item on the board | Owner | Order-independent; Path creation can seed these |
+| Edit achievement tile | Change wording inline | Owner | |
+| Mark achieved | Tick in place → `achieved` with a local date | Owner | Does not feed WinLog (deferred — see docs/changes/achievements-as-vision-tiles.md) |
+| Un-mark achieved | Back to `open`, date cleared | Owner | Reversible — mistakes happen |
+| Delete achievement tile | Tile menu remove | Owner | |
+| Reorder achievement tile | Move within board | Owner | |
 
 ### Goal
 

@@ -11,7 +11,6 @@ import { useVision } from '@/modules/vision/hooks/use-vision'
 import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
 import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnreadable'
 import { usePaths } from '../hooks/use-paths'
-import { AchievementsSection } from './AchievementsSection'
 import { ModuleStubSection } from './ModuleStubSection'
 import { PathTabs } from './PathTabs'
 import { PathOverflowMenu } from './PathOverflowMenu'
@@ -32,16 +31,17 @@ export function PathOverviewPage() {
     archivePath,
     unarchivePath,
     deletePath,
-    addAchievement,
-    editAchievement,
-    setAchievementState,
-    deleteAchievement,
     cascadeCounts,
   } = usePaths()
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
   const { winDaysForPath } = useWinLog()
-  const { visionTileCountForPath, dataUnreadable: visionUnreadable, resetVisions } = useVision()
+  const {
+    visionTileCountForPath,
+    achievementCountsForPath,
+    dataUnreadable: visionUnreadable,
+    resetVisions,
+  } = useVision()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -111,14 +111,8 @@ export function PathOverviewPage() {
         linkLabel="Open Actions"
       />
 
-      <AchievementsSection
-        achievements={path.achievements}
-        readOnly={readOnly}
-        onAdd={(title) => addAchievement(path.id, title)}
-        onEdit={(id, title) => editAchievement(path.id, id, title)}
-        onToggle={(id, achieved) => setAchievementState(path.id, id, achieved)}
-        onDelete={(id) => deleteAchievement(path.id, id)}
-      />
+      {/* Achievements live on the Vision board now (ADR 0037) — the summary
+          card reports their progress and links one tab over. */}
 
       <section aria-labelledby="graph-heading" className="flex flex-col gap-2">
         <h2 id="graph-heading" className="text-sm font-semibold">
@@ -144,6 +138,7 @@ export function PathOverviewPage() {
           goals: goalCountForPath(path.id),
           actions: actionCountForPath(path.id),
           visionTiles: visionTileCountForPath(path.id),
+          achievements: achievementCountsForPath(path.id).total,
         }}
         onConfirm={() => {
           const name = path.name

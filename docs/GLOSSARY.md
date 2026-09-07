@@ -9,10 +9,10 @@ Code Name.
 | Term (PL, from interview) | Code Name | Definition | Avoid saying |
 |---|---|---|---|
 | Droga | `Path` | Top level of the hierarchy — a long-term direction in life (e.g. the sport path, the earnings path). Holds one Vision, a list of execution Goals, and assigned Actions. | "project", "category", "area" as a separate entity |
-| Wizja | `Vision` | The picture of the future for a Path: a container of short notes and image tiles (Notion-like), not one long document. One Vision per Path. Export merges the tiles into a single markdown document. | "goal", "Path description", "one document" |
+| Wizja | `Vision` | The picture of the future for a Path: a container of short notes, image tiles, and achievement tiles (Notion-like), not one long document. One Vision per Path. Export merges the tiles into a single markdown document. | "goal", "Path description", "one document" |
 | Notatka wizji | `VisionNote` | A short text block in the Vision (how I want to feel, small things). Deliberately small — no editing one giant wall of text. | "description", "vision document" |
 | Kafelek zdjęcia | `VisionImage` | A photo tile on the Vision board — a separate entity from notes, forming a gallery. From upload or fetched from Unsplash. | "note attachment" |
-| Rzecz po drodze / osiągnięcie | `Achievement` | Something to reach along a Path — order-independent, not a task and not requiring hard actions (e.g. "I can do a pull-up", "muscle-up", "100 push-ups"). Hangs directly off the Path. State `open` ↔ `achieved` is reversible. | "milestone" (sounds sequential), "execution goal", "task" |
+| Rzecz po drodze / osiągnięcie | `VisionAchievementTile` | Something to reach along a Path — order-independent, not a task and not requiring hard actions (e.g. "I can do a pull-up", "muscle-up", "100 push-ups"). A tile on the Vision board (ADR 0037) — ticked in place, not a Path-level checklist. State `open` ↔ `achieved` is reversible. | "milestone" (sounds sequential), "execution goal", "task" |
 | Cel egzekucyjny | `Goal` | A concrete sub-goal with an execution layer — contains tasks and needs concrete actions. Always one Path, a tree of sub-goals, manual priority order, optional deadline with a days-remaining countdown. Achieved manually. States: `active` / `achieved` / `abandoned`. | "vision", "achievement", "dream" |
 | Zadanie / działanie / akcja | `Action` | An atomic thing to do. Lives in the Inbox, under one `Goal` (max 1), or standalone directly under a `Path`. Movable between Paths / Goals. States: `inbox` / `assigned` / `done` / `abandoned`. `scheduled` = presence of `scheduledDate`. Can be promoted to a `Goal` during triage. | "goal", "project"; don't conflate with `Achievement` |
 | Inbox | `Inbox` | A place to quickly capture Action ideas before deciding where they belong. | "task list", "goal backlog" |
@@ -40,8 +40,8 @@ Module names (folder / code namespace) — see `docs/MODULES.md`.
 
 | Module | Role | Scope |
 |---|---|---|
-| `paths` | Core | Paths + Achievements + the Path hub screen |
-| `vision` | Core | Vision board (notes + gallery + Unsplash + export) |
+| `paths` | Core | Paths + the Path hub screen |
+| `vision` | Core | Vision board (notes + gallery + achievement tiles + Unsplash + export) |
 | `goals` | Core | Goal tree, priorities, frog, achieve/abandon |
 | `capture-triage` | Core | Inbox + card-by-card review + Action→Goal promotion |
 | `today` | Core | Today view per Path, schedule, planning, complete |

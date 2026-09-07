@@ -24,7 +24,31 @@ export const LongNoteClamped: Story = {
   decorators: [withVision(LONG_NOTE_VISION)],
 }
 
-/** An archived Path's board renders read-only: Add hidden, menus gone, Unarchive offered, Export kept. */
+/**
+ * Achievement tiles (ADR 0037) sit on the board like any other tile: tick to
+ * achieve (win tint wash), untick to reopen, edit inline, reorder, delete.
+ */
+export const WithAchievements: Story = {
+  decorators: [withVision([MOCK_VISIONS[0]])],
+}
+
+/** Every achievement ticked — all tiles carry the done wash and their achieved dates. */
+export const AllAchievementsAchieved: Story = {
+  decorators: [
+    withVision([
+      {
+        ...MOCK_VISIONS[0],
+        tiles: MOCK_VISIONS[0].tiles.map((tile) =>
+          tile.type === 'achievement'
+            ? { ...tile, state: 'achieved' as const, achievedOn: tile.achievedOn ?? '2026-08-01' }
+            : tile,
+        ),
+      },
+    ]),
+  ],
+}
+
+/** An archived Path's board renders read-only: Add hidden, menus gone, checkboxes disabled, Unarchive offered, Export kept. */
 export const ArchivedPathReadOnly: Story = {
   decorators: [withVision(MOCK_VISIONS, '/paths/path-home/vision')],
 }

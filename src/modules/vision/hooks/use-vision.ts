@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
+import { todayLocalIso } from '@/shared/lib/date'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
-import type { Vision, VisionImageAttribution, VisionImageTile, VisionTile } from '../types/vision'
+import type {
+  Vision,
+  VisionAchievementState,
+  VisionAchievementTile,
+  VisionImageAttribution,
+  VisionImageTile,
+  VisionTile,
+} from '../types/vision'
 
 const STORAGE_KEY = 'visions'
 
@@ -30,7 +38,7 @@ export function useVision() {
     removeValue: clearVisions,
     corrupt,
   } = useLocalStorageState<Vision[]>(STORAGE_KEY, INITIAL_VISIONS)
-  const { paths } = usePaths()
+  const { paths, stripLegacyAchievements } = usePaths()
 
   // Self-heal: a Path can be deleted elsewhere (usePaths.deletePath only
   // touches the `paths` key) — `vision` has no way to hear about it directly,
@@ -42,6 +50,48 @@ export function useVision() {
     if (!orphaned) return
     setVisions((prev) => prev.filter((v) => validPathIds.has(v.pathId)))
   }, [paths, visions, setVisions])
+
+  // One-time data move (ADR 0037): Achievements used to be embedded in the
+  // Path record and shown as an overview checklist — they are Vision tiles
+  // now. Move any legacy lists into their Path's board and strip them from
+  // `paths`. Skipped while `visions` is unreadable: appending into a corrupt
+  // key's fresh snapshot could wipe the original data on the next write.
+  // Idempotent — migrated tiles keep the legacy achievement's id, so a
+  // re-run (e.g. the strip write failing on quota) skips what is already
+  // on the board instead of duplicating it.
+  const visionsUnreadable = corrupt
+  useEffect(() => {
+    if (visionsUnreadable) return
+    const legacyByPathId = stripLegacyAchievements()
+    const entries = Object.entries(legacyByPathId)
+    if (entries.length === 0) return
+    setVisions((prev) => {
+      let next = prev
+      for (const [pathId, legacy] of entries) {
+        const existing = next.find((v) => v.pathId === pathId)
+        const existingIds = new Set(existing?.tiles.map((t) => t.id) ?? [])
+        const tiles = legacy
+          .filter((a) => !existingIds.has(a.id))
+          .map<VisionAchievementTile>((a) => ({
+            id: a.id,
+            type: 'achievement',
+            title: a.title,
+            state: a.state,
+            achievedOn: a.achievedOn,
+          }))
+        if (tiles.length === 0) continue
+        if (existing) {
+          next = next.map((v) => (v.id === existing.id ? touch({ ...v, tiles: [...v.tiles, ...tiles] }) : v))
+        } else {
+          const now = new Date().toISOString()
+          next = [...next, { id: generateId(), createdAt: now, updatedAt: now, pathId, tiles }]
+        }
+      }
+      return next
+    })
+    // Runs on mount and whenever the legacy strip leaves data behind — after
+    // a successful strip the snapshot holds no legacy lists and this no-ops.
+  }, [visionsUnreadable, stripLegacyAchievements, setVisions])
 
   const touch = (v: Vision): Vision => ({ ...v, updatedAt: new Date().toISOString() })
 
@@ -78,6 +128,22 @@ export function useVision() {
         .filter((t): t is VisionImageTile => t.type === 'image')
         .slice(0, count),
     [tilesForPath],
+  )
+
+  /** Achievement tiles, in board order — order-independent in meaning, board order is just placement. */
+  const achievementTilesForPath = useCallback(
+    (pathId: string): VisionAchievementTile[] =>
+      tilesForPath(pathId).filter((t): t is VisionAchievementTile => t.type === 'achievement'),
+    [tilesForPath],
+  )
+
+  /** `achieved`/total — the card grid, the archived list, the overview summary, the delete cascade summary. */
+  const achievementCountsForPath = useCallback(
+    (pathId: string): { achieved: number; total: number } => {
+      const tiles = achievementTilesForPath(pathId)
+      return { achieved: tiles.filter((t) => t.state === 'achieved').length, total: tiles.length }
+    },
+    [achievementTilesForPath],
   )
 
   /** Restore the entire list to a snapshot — the basis for every Undo. */
@@ -119,6 +185,69 @@ export function useVision() {
       if (!t) return
       mutateTiles(pathId, (tiles) =>
         tiles.map((tile) => (tile.id === tileId && tile.type === 'note' ? { ...tile, text: t } : tile)),
+      )
+    },
+    [mutateTiles],
+  )
+
+  // --- Achievement tiles (ADR 0037) --------------------------------------
+
+  const addAchievement = useCallback(
+    (pathId: string, title: string) => {
+      const t = title.trim()
+      if (!t) return
+      mutateTiles(pathId, (tiles) => [
+        ...tiles,
+        { id: generateId(), type: 'achievement', title: t, state: 'open', achievedOn: null },
+      ])
+    },
+    [mutateTiles],
+  )
+
+  /** Seed several at once — the New Path dialog's achievement rows land here. */
+  const addAchievements = useCallback(
+    (pathId: string, titles: string[]) => {
+      const cleaned = titles.map((t) => t.trim()).filter(Boolean)
+      if (cleaned.length === 0) return
+      mutateTiles(pathId, (tiles) => [
+        ...tiles,
+        ...cleaned.map<VisionAchievementTile>((title) => ({
+          id: generateId(),
+          type: 'achievement',
+          title,
+          state: 'open',
+          achievedOn: null,
+        })),
+      ])
+    },
+    [mutateTiles],
+  )
+
+  const editAchievement = useCallback(
+    (pathId: string, tileId: string, title: string) => {
+      const t = title.trim()
+      if (!t) return
+      mutateTiles(pathId, (tiles) =>
+        tiles.map((tile) => (tile.id === tileId && tile.type === 'achievement' ? { ...tile, title: t } : tile)),
+      )
+    },
+    [mutateTiles],
+  )
+
+  /**
+   * Tick / untick in place — deliberately reversible. Re-ticking after a
+   * mistaken un-tick keeps the original achieved date instead of stamping
+   * today over history (the rule the old Path-embedded checklist used).
+   */
+  const setAchievementAchieved = useCallback(
+    (pathId: string, tileId: string, achieved: boolean) => {
+      mutateTiles(pathId, (tiles) =>
+        tiles.map((tile) => {
+          if (tile.id !== tileId || tile.type !== 'achievement') return tile
+          const state: VisionAchievementState = achieved ? 'achieved' : 'open'
+          const achievedOn = achieved ? (tile.achievedOn ?? todayLocalIso()) : null
+          return { ...tile, state, achievedOn }
+        }),
       )
     },
     [mutateTiles],
@@ -210,9 +339,15 @@ export function useVision() {
     visionTileCountForPath,
     visionSnippetForPath,
     imageTilesForPath,
+    achievementTilesForPath,
+    achievementCountsForPath,
     addNote,
     editNote,
     addImage,
+    addAchievement,
+    addAchievements,
+    editAchievement,
+    setAchievementAchieved,
     deleteTile,
     reorderTile,
   }

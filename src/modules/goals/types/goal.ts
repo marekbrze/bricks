@@ -2,12 +2,12 @@ import type { BaseEntity } from '@/shared/types'
 
 /**
  * `Goal` — an execution-oriented sub-goal under a `Path`. Distinct from
- * `Vision` (no hard actions) and `Achievement` (order-independent, no work
- * layer) — a Goal contains `Action`s and needs concrete work to move.
- * Forms a shallow tree via `parentGoalId`. Priority order is manual, per
- * sibling group (top-level Goals under a Path, or sub-Goals under one
- * parent) — never an automatic sort. See docs/GLOSSARY.md and
- * docs/modules/goals.md.
+ * the Vision's notes and images (no work layer) and from its achievement
+ * tiles (order-independent, no work layer) — a Goal contains `Action`s and
+ * needs concrete work to move. Forms a shallow tree via `parentGoalId`.
+ * Priority order is manual, per sibling group (top-level Goals under a
+ * Path, or sub-Goals under one parent) — never an automatic sort. See
+ * docs/GLOSSARY.md and docs/modules/goals.md.
  */
 export type GoalState = 'active' | 'achieved' | 'abandoned'
 

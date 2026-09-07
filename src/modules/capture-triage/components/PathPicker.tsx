@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/shared/components/Kbd'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
+import { useVision } from '@/modules/vision/hooks/use-vision'
 import { NewPathDialog } from '@/modules/paths/components/NewPathDialog'
 
 /**
@@ -27,6 +28,7 @@ export function PathPicker({
   shortcuts?: boolean
 }) {
   const { activePaths, createPath } = usePaths()
+  const { addAchievements } = useVision()
   const [creating, setCreating] = useState(false)
 
   // Ignore keys while the Owner is typing elsewhere (e.g. the inline New Path
@@ -64,7 +66,9 @@ export function PathPicker({
           open={creating}
           onOpenChange={setCreating}
           onCreate={(name, achievements) => {
-            const id = createPath(name, achievements)
+            // Seed titles land on the new Path's Vision board (ADR 0037).
+            const id = createPath(name)
+            addAchievements(id, achievements)
             onChange(id)
           }}
         />

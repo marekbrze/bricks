@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { useVision } from '@/modules/vision/hooks/use-vision'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathCard } from './PathCard'
@@ -28,6 +29,7 @@ export function PathsPage() {
   } = usePaths()
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
+  const { addAchievements, achievementCountsForPath } = useVision()
   const navigate = useNavigate()
   const location = useLocation()
   const { showToast } = useToast()
@@ -136,7 +138,10 @@ export function PathsPage() {
         open={creating}
         onOpenChange={setCreating}
         onCreate={(name, achievements) => {
-          const id = createPath(name, achievements)
+          // The seed titles become achievement tiles on the new Path's Vision
+          // board (ADR 0037) — `usePaths` stays free of `vision` writes.
+          const id = createPath(name)
+          addAchievements(id, achievements)
           navigate(`/paths/${id}`)
         }}
       />
@@ -159,6 +164,7 @@ export function PathsPage() {
             ...cascadeCounts(deleting.id),
             goals: goalCountForPath(deleting.id),
             actions: actionCountForPath(deleting.id),
+            achievements: achievementCountsForPath(deleting.id).total,
           }}
           onConfirm={() => {
             const name = deleting.name

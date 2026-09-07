@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArchiveRestore, ArrowLeft, Download, Image as ImageIcon } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
@@ -34,6 +35,9 @@ export function VisionBoardPage() {
     addNote,
     editNote,
     addImage,
+    addAchievement,
+    editAchievement,
+    setAchievementAchieved,
     deleteTile,
     reorderTile,
   } = useVision()
@@ -41,6 +45,8 @@ export function VisionBoardPage() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [addingNote, setAddingNote] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
+  const [addingAchievement, setAddingAchievement] = useState(false)
+  const [achievementDraft, setAchievementDraft] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -77,6 +83,13 @@ export function VisionBoardPage() {
     if (t) addNote(pathId, t)
     setNoteDraft('')
     setAddingNote(false)
+  }
+
+  const commitNewAchievement = () => {
+    const t = achievementDraft.trim()
+    if (t) addAchievement(pathId, t)
+    setAchievementDraft('')
+    setAddingAchievement(false)
   }
 
   const handleUploadFile = (file: File | undefined) => {
@@ -146,6 +159,7 @@ export function VisionBoardPage() {
                 onAddNote={() => setAddingNote(true)}
                 onUploadImage={() => fileInputRef.current?.click()}
                 onSearchUnsplash={() => setSearchOpen(true)}
+                onAddAchievement={() => setAddingAchievement(true)}
               />
             )}
           </div>
@@ -165,7 +179,7 @@ export function VisionBoardPage() {
         </div>
       )}
 
-      {tiles.length === 0 && !addingNote ? (
+      {tiles.length === 0 && !addingNote && !addingAchievement ? (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
           <ImageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
@@ -181,6 +195,7 @@ export function VisionBoardPage() {
               onAddNote={() => setAddingNote(true)}
               onUploadImage={() => fileInputRef.current?.click()}
               onSearchUnsplash={() => setSearchOpen(true)}
+              onAddAchievement={() => setAddingAchievement(true)}
             />
           )}
         </section>
@@ -200,6 +215,8 @@ export function VisionBoardPage() {
               onMoveUp={() => handleReorder(tile.id, i - 1)}
               onMoveDown={() => handleReorder(tile.id, i + 1)}
               onEditNote={(text) => editNote(pathId, tile.id, text)}
+              onEditAchievement={(title) => editAchievement(pathId, tile.id, title)}
+              onToggleAchieved={(achieved) => setAchievementAchieved(pathId, tile.id, achieved)}
               onDelete={() => handleDelete(tile.id)}
             />
           ))}
@@ -234,6 +251,45 @@ export function VisionBoardPage() {
                     Cancel
                   </Button>
                   <Button size="sm" onClick={commitNewNote} disabled={!noteDraft.trim()}>
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </li>
+          )}
+          {addingAchievement && (
+            <li className="list-none">
+              <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3">
+                <Input
+                  value={achievementDraft}
+                  onChange={(e) => setAchievementDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      commitNewAchievement()
+                    }
+                    if (e.key === 'Escape') {
+                      setAchievementDraft('')
+                      setAddingAchievement(false)
+                    }
+                  }}
+                  placeholder="e.g. I can do a pull-up"
+                  aria-label="New achievement"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- focus follows the user into the new tile
+                  autoFocus
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setAchievementDraft('')
+                      setAddingAchievement(false)
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={commitNewAchievement} disabled={!achievementDraft.trim()}>
                     Save
                   </Button>
                 </div>

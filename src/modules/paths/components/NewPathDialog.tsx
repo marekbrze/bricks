@@ -123,7 +123,8 @@ export function NewPathDialog({
             <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium">Achievements along the way</legend>
               <p className="text-xs text-muted-foreground">
-                Things you want to be able to do one day — not tasks. Optional.
+                Things you want to be able to do one day — not tasks. They’ll be on this Path’s
+                Vision board. Optional.
               </p>
               <ul className="flex flex-col gap-2">
                 {rows.map((value, i) => (

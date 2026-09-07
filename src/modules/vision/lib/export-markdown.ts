@@ -3,13 +3,17 @@ import type { VisionTile } from '../types/vision'
 /**
  * Merge a Vision's ordered tiles into a single markdown document — notes as
  * paragraphs, images as `![]()` tags with the Unsplash photographer credited
- * as a caption line where the tile carries attribution. See docs/modules/vision.md.
+ * as a caption line where the tile carries attribution, achievements as
+ * task-list items with their achieved date. See docs/modules/vision.md.
  */
 export function buildVisionMarkdown(pathName: string, tiles: VisionTile[]): string {
   const parts = [`# ${pathName} — Vision`, '']
   for (const tile of tiles) {
     if (tile.type === 'note') {
       parts.push(tile.text, '')
+    } else if (tile.type === 'achievement') {
+      const suffix = tile.state === 'achieved' && tile.achievedOn ? ` — achieved ${tile.achievedOn}` : ''
+      parts.push(`- [${tile.state === 'achieved' ? 'x' : ' '}] ${tile.title}${suffix}`, '')
     } else {
       parts.push(`![${tile.alt}](${tile.src})`)
       if (tile.attribution) {

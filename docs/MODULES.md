@@ -10,20 +10,20 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ### paths
 **Type**: Core
-**Description**: The container layer. Create and manage never-ending life directions (the sport path, the earnings path), seed and tick off order-independent `Achievement`s, and see the per-Path hub screen that pulls together the Vision summary, the Goal list, Achievements, and the contribution graph. Archiving and cascade-delete (with confirmation) live here.
-**Entities**: `Path`, `Achievement`
-**Key Actions**: Create Path (+ initial Achievements), rename, reorder, archive/unarchive, delete (cascade), view Path overview; add/edit/delete Achievement, mark/un-mark achieved.
-**Connects to**: `vision` (Path overview embeds Vision summary; "open Vision board"); `goals` (Path overview lists Goals; Goals are created under a Path); `winlog` (Path overview embeds ContributionGraph for the Path); `today` (Today view groups Actions by Path); `capture-triage` (an Action can be assigned standalone to a Path).
+**Description**: The container layer. Create and manage never-ending life directions (the sport path, the earnings path) and see the per-Path hub screen that pulls together the Vision summary, the Goal list, and the contribution graph. Archiving and cascade-delete (with confirmation) live here. Achievements are Vision tiles now (ADR 0037) — `paths` no longer owns them.
+**Entities**: `Path`
+**Key Actions**: Create Path (+ seed achievement tiles onto its Vision), rename, reorder, archive/unarchive, delete (cascade), view Path overview.
+**Connects to**: `vision` (Path overview embeds Vision summary — including achievement progress; "open Vision board"; Path creation seeds achievement tiles through `useVision`); `goals` (Path overview lists Goals; Goals are created under a Path); `winlog` (Path overview embeds ContributionGraph for the Path); `today` (Today view groups Actions by Path); `capture-triage` (an Action can be assigned standalone to a Path).
 **Design priority**: High — it is the hub screen every other module surfaces through, and the mental model (the "Path") has to land here first.
 
 ---
 
 ### vision
 **Type**: Core
-**Description**: A Notion-like board per Path — an ordered mix of short text notes and photo tiles rather than one long document. Photos come from local upload or an Unsplash search. The whole board exports to a single merged markdown document.
-**Entities**: `Vision`, `VisionNote`, `VisionImage`
-**Key Actions**: Open Vision board, add/edit/delete/reorder note, upload image, fetch from Unsplash, remove/reorder image, export Vision.
-**Connects to**: `paths` (one Vision per Path; Path overview shows a Vision summary and links in); `app-shell` (Unsplash API key lives in settings).
+**Description**: A Notion-like board per Path — an ordered mix of short text notes, photo tiles, and achievement tiles (ADR 0037) rather than one long document. Photos come from local upload or an Unsplash search; achievements are the "along the way" things you can achieve, ticked in place. The whole board exports to a single merged markdown document.
+**Entities**: `Vision`, `VisionNote`, `VisionImage`, `VisionAchievementTile`
+**Key Actions**: Open Vision board, add/edit/delete/reorder note, upload image, fetch from Unsplash, remove/reorder image, add/edit/delete/reorder achievement, mark/un-mark achieved, export Vision.
+**Connects to**: `paths` (one Vision per Path; Path overview shows a Vision summary — with achievement counts — and links in; Path creation seeds achievement tiles); `app-shell` (Unsplash API key lives in settings).
 **Design priority**: Medium — highest craft effort (block editor + gallery + external image source + export), but independent of the core value loop, so it can be prototyped after the loop is proven.
 
 ---
@@ -102,7 +102,7 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ```mermaid
 graph LR
-    PATHS[paths] -->|embeds Vision summary| VISION[vision]
+    PATHS[paths] -->|embeds Vision summary + achievement counts; seeds achievement tiles| VISION[vision]
     PATHS -->|lists / hosts Goals| GOALS[goals]
     PATHS -->|embeds ContributionGraph| WINLOG[winlog]
     CAPTURE[capture-triage] -->|assign / promote to Goal| GOALS
@@ -122,7 +122,7 @@ graph LR
 
 ## Prototyping Order
 
-1. **paths** — everything else attaches to `Path`; nothing is usable without it. Establishes the container model, the hub screen, and `Achievement`s. Lowest dependency, highest downstream leverage.
+1. **paths** — everything else attaches to `Path`; nothing is usable without it. Establishes the container model and the hub screen. Lowest dependency, highest downstream leverage. (Originally also established `Achievement`s; those moved into `vision` as board tiles — ADR 0037.)
 2. **capture-triage** — the entry point for every `Action`. Introduces the `Action` entity and its assignment logic. Relatively self-contained and testable in isolation.
 3. **goals** — needs `Path`. Completes the "where does this belong" picture that triage feeds into; Actions become properly homed.
 4. **today** — needs Actions that are homed and schedulable. This is the heart of daily use and where the completion flow is born.

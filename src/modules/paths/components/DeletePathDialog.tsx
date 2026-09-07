@@ -10,6 +10,12 @@ import {
 } from '@/components/ui/alert-dialog'
 import type { PathCascadeCounts } from '../types/path'
 
+/**
+ * `achievements` comes from the Path's Vision (achievement tiles, ADR 0037) —
+ * the caller reads it through `useVision`, the rest through `cascadeCounts`.
+ */
+export type PathDeleteCounts = PathCascadeCounts & { achievements: number }
+
 export function DeletePathDialog({
   open,
   onOpenChange,
@@ -20,7 +26,7 @@ export function DeletePathDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
   pathName: string
-  counts: PathCascadeCounts
+  counts: PathDeleteCounts
   onConfirm: () => void
 }) {
   const lines: string[] = []
@@ -43,8 +49,8 @@ export function DeletePathDialog({
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Vision tile count is an estimate until that module is built. Goal and Action counts are
-          real.
+          The Vision board, its achievement tiles, the Goals and their Actions are all deleted with
+          it.
         </p>
         <p className="text-sm font-medium text-destructive">This cannot be undone.</p>
         <AlertDialogFooter>

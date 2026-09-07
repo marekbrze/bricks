@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
 import { ContributionGraph } from '@/modules/winlog/components/ContributionGraph'
+import { useVision } from '@/modules/vision/hooks/use-vision'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import type { Path } from '../types/path'
 
@@ -28,10 +29,13 @@ export function PathCard({
   onMoveDown: () => void
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>
 }) {
-  const achievedCount = path.achievements.filter((a) => a.state === 'achieved').length
   const { goalCountForPath } = useGoals()
   const goalCount = goalCountForPath(path.id)
   const { winDaysForPath } = useWinLog()
+  // Achievements are Vision tiles (ADR 0037) — the card reads their progress
+  // from the board, same as it reads the Vision snippet.
+  const { achievementCountsForPath } = useVision()
+  const { achieved: achievedCount, total: achievementTotal } = achievementCountsForPath(path.id)
 
   return (
     <Card className="gap-3">
@@ -79,7 +83,7 @@ export function PathCard({
         </span>
         <span className="inline-flex items-center gap-1">
           <Trophy className="size-3.5" aria-hidden="true" />
-          {achievedCount}/{path.achievements.length} achievements
+          {achievedCount}/{achievementTotal} achievements
         </span>
       </div>
 

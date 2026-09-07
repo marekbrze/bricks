@@ -35,7 +35,7 @@ export const NoPaths: Story = {
 
 /** A Path with no Goals and no Actions — still renders, carrying only its quick-add rows. */
 export const EmptyPath: Story = {
-  decorators: [withActionsData([], [], [MOCK_PATHS[0]].map((p) => ({ ...p, achievements: [] })))],
+  decorators: [withActionsData([], [], [MOCK_PATHS[0]])],
 }
 
 /** Stored `actions` value is present but unparseable — recovery screen, not a silently-empty list. */

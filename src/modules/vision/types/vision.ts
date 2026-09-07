@@ -37,15 +37,31 @@ export interface VisionImageTile {
   attribution: VisionImageAttribution | null
 }
 
-export type VisionTile = VisionNoteTile | VisionImageTile
+/**
+ * `VisionAchievementTile` — a thing to reach "along the way", as a board tile
+ * rather than a Path-level checklist entry (ADR 0037). Order-independent by
+ * nature; `open` ↔ `achieved` is deliberately reversible (mistakes happen).
+ */
+export type VisionAchievementState = 'open' | 'achieved'
+
+export interface VisionAchievementTile {
+  id: string
+  type: 'achievement'
+  title: string
+  state: VisionAchievementState
+  /** ISO date (YYYY-MM-DD) stamped when marked achieved; null while open. */
+  achievedOn: string | null
+}
+
+export type VisionTile = VisionNoteTile | VisionImageTile | VisionAchievementTile
 
 /**
  * `Vision` — the picture of the future for a Path: one ordered board of
- * note + image tiles. One per Path (ADR 0016), created lazily on first tile
- * add. See docs/modules/vision.md.
+ * note, image and achievement tiles. One per Path (ADR 0016), created lazily
+ * on first tile add. See docs/modules/vision.md.
  */
 export interface Vision extends BaseEntity {
   pathId: string
-  /** Board order — notes and images share one sequence, no separate ordering per type. */
+  /** Board order — all tile types share one sequence, no separate ordering per type. */
   tiles: VisionTile[]
 }

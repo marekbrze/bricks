@@ -7,6 +7,8 @@ const nowIso = new Date().toISOString()
  * tile counts here match each Path's `mockVisionTileCount` so the overview
  * summary and the real board agree. Images reuse the bundled sample pool
  * (`data/unsplash-samples.ts`) so their attribution renders for real.
+ * Achievement tiles (ADR 0037) keep the ids the old Path-embedded checklist
+ * used, so a migrated board and this mock agree tile-for-tile.
  */
 export const MOCK_VISIONS: Vision[] = [
   {
@@ -54,6 +56,13 @@ export const MOCK_VISIONS: Vision[] = [
         source: 'unsplash',
         attribution: { photographer: 'Jenny Hill', profileUrl: 'https://unsplash.com/@jennyhill' },
       },
+      // Achievement tiles (ADR 0037) — ids carried over from the old
+      // Path-embedded checklist so a migrated board keeps its history.
+      { id: 'ach-1', type: 'achievement', title: 'I can do a strict pull-up', state: 'achieved', achievedOn: '2026-03-12' },
+      { id: 'ach-2', type: 'achievement', title: 'I can do a muscle-up', state: 'open', achievedOn: null },
+      { id: 'ach-3', type: 'achievement', title: '100 push-ups in one session', state: 'open', achievedOn: null },
+      { id: 'ach-4', type: 'achievement', title: 'I can touch the floor with straight legs', state: 'achieved', achievedOn: '2026-06-01' },
+      { id: 'ach-5', type: 'achievement', title: 'Run 10 km without stopping', state: 'open', achievedOn: null },
     ],
   },
   {
@@ -88,6 +97,9 @@ export const MOCK_VISIONS: Vision[] = [
         type: 'note',
         text: 'One good client is not a business. Building toward three.',
       },
+      { id: 'ach-6', type: 'achievement', title: 'Three months of runway saved', state: 'achieved', achievedOn: '2026-05-20' },
+      { id: 'ach-7', type: 'achievement', title: 'A second income stream that covers rent', state: 'open', achievedOn: null },
+      { id: 'ach-8', type: 'achievement', title: 'Shipped one paid product', state: 'open', achievedOn: null },
     ],
   },
   {
@@ -109,6 +121,8 @@ export const MOCK_VISIONS: Vision[] = [
         source: 'unsplash',
         attribution: { photographer: 'Estée Janssens', profileUrl: 'https://unsplash.com/@esteejanssens' },
       },
+      { id: 'ach-9', type: 'achievement', title: 'Wrote 10 essays', state: 'open', achievedOn: null },
+      { id: 'ach-10', type: 'achievement', title: 'Gave a conference talk', state: 'open', achievedOn: null },
     ],
   },
   {
@@ -122,6 +136,7 @@ export const MOCK_VISIONS: Vision[] = [
         type: 'note',
         text: 'A home that resets easily. Less stuff, clearer surfaces, a place that breathes.',
       },
+      { id: 'ach-11', type: 'achievement', title: 'Every room has a place for everything', state: 'open', achievedOn: null },
     ],
   },
 ]

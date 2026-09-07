@@ -2,8 +2,9 @@ import type { AppData } from './types';
 import type { Path } from '@/modules/paths/types/path';
 import type { Action } from '@/modules/capture-triage/types/action';
 import type { Goal } from '@/modules/goals/types/goal';
+import type { Vision } from '@/modules/vision/types/vision';
 
-/** One young Path, a couple of open Achievements, no wins yet, two ideas waiting in the Inbox. */
+/** One young Path, a couple of open achievement tiles on its Vision, no wins yet, two ideas waiting in the Inbox. */
 export function minimalScenario(): AppData {
   const now = new Date().toISOString();
   const paths: Path[] = [
@@ -16,13 +17,9 @@ export function minimalScenario(): AppData {
       archived: false,
       archivedAt: null,
       visionSnippet: '',
-      achievements: [
-        { id: 'ach-1', title: 'I can do a strict pull-up', state: 'open', achievedOn: null },
-        { id: 'ach-2', title: 'Run 5 km without stopping', state: 'open', achievedOn: null },
-      ],
       mockGoalCount: 0,
       mockActionCount: 0,
-      mockVisionTileCount: 0,
+      mockVisionTileCount: 2,
     },
   ];
   const actions: Action[] = [
@@ -67,5 +64,17 @@ export function minimalScenario(): AppData {
       frog: false,
     },
   ];
-  return { paths, actions, goals };
+  const visions: Vision[] = [
+    {
+      id: 'vision-minimal-sport',
+      createdAt: now,
+      updatedAt: now,
+      pathId: 'path-sport',
+      tiles: [
+        { id: 'ach-1', type: 'achievement', title: 'I can do a strict pull-up', state: 'open', achievedOn: null },
+        { id: 'ach-2', type: 'achievement', title: 'Run 5 km without stopping', state: 'open', achievedOn: null },
+      ],
+    },
+  ];
+  return { paths, actions, goals, visions };
 }
