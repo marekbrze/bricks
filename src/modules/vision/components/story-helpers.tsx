@@ -77,7 +77,7 @@ export function seedCorruptVisions(initialPath = '/paths/path-sport/vision'): De
   }
 }
 
-/** A vision holding one wall-of-text note, to show the display-only clamp. */
+/** A vision holding one wall-of-text note — the article column reads it in full (ADR 0040). */
 export const LONG_NOTE_VISION: Vision[] = [
   {
     id: 'vision-long-note',

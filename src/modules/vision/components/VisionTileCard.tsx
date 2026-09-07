@@ -13,10 +13,11 @@ import {
 import { cn } from '@/lib/utils'
 import type { VisionTile } from '../types/vision'
 
-/** Notes longer than this clamp on the board (full text via click-to-edit). */
-const NOTE_CLAMP = 6 * 60
-
-/** One tile on the Vision board — a note (click to edit in place), an image, or an achievement. */
+/**
+ * One tile of the Vision editor (edit mode) — a note (click to edit in
+ * place), an image, or an achievement. The article's quieter rendering of
+ * the same tile lives in VisionBlock.
+ */
 export function VisionTileCard({
   tile,
   index,
@@ -180,11 +181,10 @@ export function VisionTileCard({
                     setDraft(tile.text)
                     setEditing(true)
                   }}
-                  title={tile.text.length > NOTE_CLAMP ? 'Click to read and edit the full note' : undefined}
                   aria-label={readOnly ? undefined : `Edit note “${tile.text.slice(0, 30)}”`}
-                  // Display-only clamp — storage and the editor keep the full
-                  // text; a pasted wall can't blow out the grid row.
-                  className="line-clamp-6 w-full rounded-sm text-left text-sm break-words whitespace-pre-wrap outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default"
+                  // Full text, no display clamp — the editor is one column,
+                  // there is no grid row to blow out.
+                  className="w-full rounded-sm text-left text-sm break-words whitespace-pre-wrap outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-default"
                 >
                   {tile.text}
                 </button>

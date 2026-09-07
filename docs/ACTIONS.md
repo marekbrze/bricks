@@ -24,9 +24,10 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
-| Open Vision board | Notion-like board of note, image and achievement tiles for a Path | Owner | Created lazily on first edit |
+| Open Vision board | Notion-like board of note, image and achievement tiles for a Path | Owner | Created lazily on first edit; opens in view mode (ADR 0040) |
+| Toggle Vision edit mode | Header Edit ↔ Done — gates adding, editing, deleting, reordering | Owner | View mode is the default; achievement ticking stays live in view mode |
 | Export Vision | Merge all tiles into one markdown document | Owner | Achievements become task-list items |
-| Reorder tiles | Arrange notes, images and achievements on the board | Owner | Mixed, one shared order |
+| Reorder tiles | Arrange notes, images and achievements on the board | Owner | Edit mode only; mixed, one shared order |
 
 ### VisionNote
 

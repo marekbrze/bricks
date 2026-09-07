@@ -8,9 +8,17 @@ in a single sitting. The Owner drops in small fragments (how they want to
 feel, small things they want), photos (their own or pulled from Unsplash),
 and the things they want to be able to do one day — achievements — whenever
 inspiration hits, in any order. There's no "finish writing your vision"
-moment — the board is always editable, grows over the life of the Path, and
-can be exported as a single markdown document when the Owner wants to read it
-as one piece (e.g. to print, or paste elsewhere).
+moment — the board grows over the life of the Path, and can be exported as a
+single markdown document when the Owner wants to take it as one piece (e.g.
+to print, or paste elsewhere).
+
+The board has two modes (ADR 0040). **View mode is the default** and reads
+like an article: the tiles render one under another on the prose measure —
+notes as paragraphs, images as figures, achievements as to-do checklist
+rows — with no editing chrome in the way. **Edit mode** (Edit ↔ Done in the
+header) carries everything mutating: adding, inline editing, reordering,
+deleting. Achievements are the one exception — ticking one ("it came true")
+is a reading moment, so the checkboxes stay live in view mode.
 
 Achievements are a tile type here rather than a Path-level checklist (ADR
 0037): an achievement ("I can do a pull-up", "100 push-ups") is just an
@@ -30,22 +38,30 @@ without opening the full board.
 
 1. Owner opens a Path overview → sees a Vision summary card (first note or
    two, a strip of image thumbnails) with an "Open Vision board" link.
-2. Owner clicks through → sees the full board: an ordered grid mixing note
-   tiles and image tiles.
+2. Owner clicks through → sees the Vision as an article (view mode): the
+   tiles stacked one under another on the prose measure, in board order.
 3. If this is the first time the Owner touches Vision for this Path, the
    Vision doesn't exist yet — it's created lazily on the first tile added
    (see Edge Cases).
 
+### Edit the Vision
+
+1. Owner clicks "Edit" in the header → the article becomes the editor: each
+   block is a card with a drag handle and an overflow menu (Move up /
+   Move down / Delete), notes and achievement titles open inline editing on
+   click, and the "+ Add" control appears in the header.
+2. Owner clicks "Done" → back to view mode. An open draft commits on blur,
+   so switching modes never loses text.
+
 ### Add a note
 
-1. Owner clicks the board's "+ Add" control → a small menu: "Add note" /
-   "Upload image" / "Search Unsplash".
-2. Picks "Add note" → an inline text tile opens in edit mode at the end of
-   the board.
-3. Types a short fragment, confirms (blur or explicit "Done") → tile is
-   saved and rendered as a note card among the others.
-4. Owner can click any existing note tile to edit it in place, or delete it
-   from its tile menu.
+1. In edit mode, Owner clicks "+ Add" → a small menu: "Add note" /
+   "Upload image" / "Search Unsplash" / "Add achievement".
+2. Picks "Add note" → an inline text tile opens at the end of the board.
+3. Types a short fragment, confirms (blur or explicit "Save") → tile is
+   saved and rendered in the article among the others.
+4. In edit mode, Owner can click any existing note tile to edit it in
+   place, or delete it from its tile menu.
 
 ### Upload an image
 
@@ -75,22 +91,26 @@ without opening the full board.
    at the end of the board.
 2. Types the achievement ("I can do a strict pull-up"), confirms (Enter or
    "Save") → tile is saved as an unchecked achievement.
-3. Ticking the tile's checkbox marks it achieved: the tile gets the win tint
-   (done wash), the title strikes through, and today's local date shows on
-   the tile. Un-ticking reverts it to open — deliberately reversible.
-4. The title edits in place (click it), the tile deletes from the tile menu
-   (Undo toast), and it reorders with the board like any other tile.
+3. Ticking the checkbox marks it achieved — in view mode as well as in edit
+   mode, because "it came true" happens while reading: the block gets the
+   win tint (done wash), the title strikes through, and today's local date
+   shows under it. Un-ticking reverts it to open — deliberately reversible.
+4. In edit mode the title edits in place (click it), the tile deletes from
+   the tile menu (Undo toast), and it reorders with the board like any
+   other tile.
 5. Creating a Path can seed these: the New Path dialog's achievement rows
    land on the new Path's Vision as achievement tiles.
 
 ### Reorder the board
 
-1. Owner drags a tile by its drag handle to a new position — notes and
-   images reorder freely together, there's no separate ordering per type.
+1. In edit mode, Owner drags a tile by its drag handle to a new position —
+   notes and images reorder freely together, there's no separate ordering
+   per type.
 2. Keyboard-accessible alternative: each tile's overflow menu has "Move up"
    / "Move down", for Owners not using a mouse (WCAG AAA — dragging alone is
    never the only way to reorder). Same pattern already used for Achievement
-   and Goal reordering.
+   and Goal reordering. View mode offers no reordering at all — reading is
+   not editing.
 
 ### Export the Vision
 
@@ -106,9 +126,13 @@ without opening the full board.
 
 ## Screens (rough)
 
-- **Vision board** (`/paths/:pathId/vision`): the main surface. Ordered grid
-  of note, image and achievement tiles, "+ Add" control, "Export" action.
-  Empty state when no tiles exist yet.
+- **Vision board** (`/paths/:pathId/vision`): the main surface, with two
+  modes (ADR 0040). **View (default)** — the tiles as an article: one
+  centred prose-measure column of paragraphs, figures and to-do checklist
+  rows in board order; "Export" and the Edit toggle in the header; empty
+  state when no tiles exist yet. **Edit** — the same single column, blocks
+  as cards with drag handle + overflow menu, "+ Add" control, inline draft
+  forms for new notes and achievements at the end.
 - **Unsplash search panel**: opens over/beside the board (dialog or side
   panel) — query field + results grid. Doesn't navigate away from the board.
 - **Vision summary** (embedded in Path overview, not its own route): first
@@ -120,17 +144,18 @@ without opening the full board.
 | Action | Description | Entity | Notes |
 |--------|------------|--------|-------|
 | Open Vision board | Full board for a Path | Vision | Created lazily on first tile add |
-| Add note | New short text tile | VisionNote | Inline edit on creation |
-| Edit note | Change text in place | VisionNote | |
-| Delete note | Remove tile | VisionNote | |
+| Toggle edit mode | Header Edit ↔ Done; gates every mutating tile action | Vision | View mode is the default; achievement ticking stays live in view mode (ADR 0040) |
+| Add note | New short text tile | VisionNote | Edit mode; inline edit on creation |
+| Edit note | Change text in place | VisionNote | Edit mode |
+| Delete note | Remove tile | VisionNote | Edit mode |
 | Upload image | Add tile from local file | VisionImage | Stored as data URL in this prototype |
 | Search Unsplash | Query + pick a result to add | VisionImage | Live Unsplash API; bundled samples when no key (ADR 0027) |
-| Remove image | Delete tile | VisionImage | |
-| Add achievement | New achievement tile, inline input on creation | VisionAchievementTile | ADR 0037; Path creation can seed these |
-| Edit achievement | Click title → inline edit | VisionAchievementTile | |
+| Remove image | Delete tile | VisionImage | Edit mode |
+| Add achievement | New achievement tile, inline input on creation | VisionAchievementTile | Edit mode; ADR 0037; Path creation can seed these |
+| Edit achievement | Click title → inline edit | VisionAchievementTile | Edit mode |
 | Mark / un-mark achieved | Tick / untick the tile's checkbox | VisionAchievementTile | Reversible; un-tick clears the date, re-ticking an already-achieved tile keeps it |
-| Delete achievement | Remove tile | VisionAchievementTile | Undo toast |
-| Reorder tile | Drag handle or Move up/down | VisionNote / VisionImage / VisionAchievementTile | All tile types share one order |
+| Delete achievement | Remove tile | VisionAchievementTile | Edit mode; Undo toast |
+| Reorder tile | Drag handle or Move up/down | VisionNote / VisionImage / VisionAchievementTile | Edit mode only; all tile types share one order |
 | Export Vision | Merge board into one markdown file, download | Vision | No preview step |
 
 ## Edge Cases
@@ -166,8 +191,8 @@ without opening the full board.
 - **Achievement toggles are reversible**: un-ticking clears the achieved
   date (the date line disappears with the wash); re-ticking stamps today —
   the same convention Goals and the contribution graph use for dates.
-- **Archived Path**: achievement tiles render read-only like every other
-  tile — checkboxes disabled, no inline edit, no menu, no Add.
+- **Archived Path**: renders in view mode with no Edit toggle at all —
+  checkboxes disabled, no inline edit, no menu, no Add.
 - **Legacy data**: Paths stored before ADR 0037 embedded achievements on the
   Path record; `useVision` migrates them onto the board once, idempotently
   (tiles keep the legacy ids), and strips the old field.
