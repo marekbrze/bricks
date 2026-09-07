@@ -25,7 +25,7 @@ export function useGoalGroups({
   showCompleted: boolean
   rowCallbacks: ActionRowCallbacks
 }): {
-  renderGoalGroup: (goal: Goal, depth: number) => ReactNode
+  renderGoalGroup: (goal: Goal) => ReactNode
   /** Top-level Goals of a Path worth rendering, in priority order. */
   topLevelGoalsFor: (pathId: string) => Goal[]
   /** Actions assigned to the Path itself, with no Goal in between. */
@@ -48,7 +48,7 @@ export function useGoalGroups({
   )
 
   const renderGoalGroup = useCallback(
-    (goal: Goal, depth: number): ReactNode => {
+    (goal: Goal): ReactNode => {
       // An inactive child renders only while it still holds open work — same
       // rule as top-level Goals (GoalGroup also self-checks, this trims the tree).
       const children = childGoals(goal.id).filter(worthRendering)
@@ -59,13 +59,12 @@ export function useGoalGroups({
           actions={actions.filter((a) => a.goalId === goal.id)}
           childGoals={children}
           showCompleted={showCompleted}
-          depth={depth}
           rowCallbacks={rowCallbacks}
           onCreate={(name, scheduledDate) => {
             if (!goal.pathId) return
             createAction({ name, pathId: goal.pathId, goalId: goal.id, scheduledDate })
           }}
-          renderChild={(child, childDepth) => renderGoalGroup(child, childDepth)}
+          renderChild={(child) => renderGoalGroup(child)}
           expandedOverride={expandedOverrides[goal.id]}
           onToggleExpanded={toggleExpanded}
         />

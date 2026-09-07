@@ -39,12 +39,18 @@ export function actionRowProps(action: Action, callbacks: ActionRowCallbacks) {
 }
 
 /**
- * One Goal's group: header (collapse chevron, name, frog flame, deadline
- * countdown), the Goal's Actions in list order, quick-add, then nested
- * sub-Goal groups. Inactive Goals (achieved/abandoned) that still hold open
- * Actions render collapsed and dimmed by default — their open work stays
- * reachable without shouting (docs/modules/actions.md). Inactive Goals with
- * no open Actions aren't rendered at all (the caller filters them out).
+ * One Goal's group as a card: header (collapse chevron, name, frog flame,
+ * deadline countdown), the Goal's Actions in list order, quick-add, then
+ * nested sub-Goal cards. The card surface (`bg-card`) lifts each Goal one
+ * elevation step above the canvas — the Goal is the container the Owner
+ * files work into, so it carries the box; the Path above it stays a header.
+ * Inactive Goals (achieved/abandoned) that still hold open Actions render
+ * collapsed and dimmed by default — their open work stays reachable without
+ * shouting (docs/modules/actions.md). Inactive Goals with no open Actions
+ * aren't rendered at all (the caller filters them out).
+ *
+ * Nested sub-Goal cards inherit the inset from the parent card's padding —
+ * one card vocabulary at every depth, no side-stripe indentation.
  *
  * Inside an `ActionDndProvider` the group is also a drop target: dragging an
  * Action onto it (collapsed groups included — the header is the target) files
@@ -55,7 +61,6 @@ export function GoalGroup({
   actions,
   childGoals,
   showCompleted,
-  depth = 0,
   rowCallbacks,
   onCreate,
   renderChild,
@@ -67,11 +72,10 @@ export function GoalGroup({
   actions: Action[]
   childGoals: Goal[]
   showCompleted: boolean
-  depth?: number
   rowCallbacks: ActionRowCallbacks
   onCreate: (name: string, scheduledDate: string | null) => void
   /** Renders a nested child group — recursion without importing this file into itself. */
-  renderChild: (child: Goal, depth: number) => React.ReactNode
+  renderChild: (child: Goal) => React.ReactNode
   /** The Owner's persisted choice for this group, when they've made one (undefined = default). */
   expandedOverride?: boolean
   onToggleExpanded: (goalId: string, next: boolean) => void
@@ -109,8 +113,7 @@ export function GoalGroup({
       aria-label={`Goal: ${goal.name}`}
       {...dropProps}
       className={cn(
-        'flex flex-col gap-1.5 rounded-lg',
-        depth > 0 && 'border-l border-border pl-4',
+        'flex flex-col gap-1.5 rounded-xl border border-border bg-card p-3',
         inactive && 'opacity-60',
         dropActive && 'outline-1 outline-dashed outline-border',
         isOver && 'bg-primary/5 outline-2 outline-solid outline-primary',
@@ -171,7 +174,7 @@ export function GoalGroup({
 
       {expanded && <QuickAddActionRow label={`Add action to “${goal.name}”`} onCreate={onCreate} />}
 
-      {expanded && childGoals.map((child) => renderChild(child, depth + 1))}
+      {expanded && childGoals.map((child) => renderChild(child))}
     </section>
   )
 }

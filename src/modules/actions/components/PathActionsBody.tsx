@@ -34,7 +34,7 @@ export function PathActionsBody({
   rowCallbacks: ActionRowCallbacks
   /** Omitted while the Path is archived — read-only, so no new work. */
   onQuickAddStandalone?: (name: string, scheduledDate: string | null) => void
-  renderGoalGroup: (goal: Goal, depth: number) => React.ReactNode
+  renderGoalGroup: (goal: Goal) => React.ReactNode
 }) {
   const activeGoals = topLevelGoals.filter((g) => g.state === 'active')
   const inactiveGoals = topLevelGoals.filter((g) => g.state !== 'active')
@@ -48,15 +48,17 @@ export function PathActionsBody({
 
   return (
     <>
-      {activeGoals.map((g) => renderGoalGroup(g, 0))}
+      {activeGoals.map((g) => renderGoalGroup(g))}
 
       {/* Drop handlers only; the keyboard-accessible way to file an Action
-          here is the row menu's "Move to…". */}
+          here is the row menu's "Move to…". The standalone block carries the
+          same card surface as a Goal group — it is one more place work files
+          into, and one row-group vocabulary keeps the column reading true. */}
       <div
         {...dropProps}
         role="group"
         className={cn(
-          'flex flex-col gap-1.5 rounded-lg',
+          'flex flex-col gap-1.5 rounded-xl border border-border bg-card p-3',
           dropActive && 'outline-1 outline-dashed outline-border',
           isOver && 'bg-primary/5 outline-2 outline-solid outline-primary',
         )}
@@ -86,7 +88,7 @@ export function PathActionsBody({
           <h3 className="text-sm font-medium text-muted-foreground">
             Closed goals with open actions
           </h3>
-          {inactiveGoals.map((g) => renderGoalGroup(g, 0))}
+          {inactiveGoals.map((g) => renderGoalGroup(g))}
         </div>
       )}
     </>

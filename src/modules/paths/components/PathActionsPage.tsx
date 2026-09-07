@@ -120,10 +120,7 @@ export function PathActionsPage() {
         </p>
       )}
 
-      <section
-        aria-label={`Actions in ${path.name}`}
-        className="flex flex-col gap-3 rounded-xl border border-border p-4"
-      >
+      <section aria-label={`Actions in ${path.name}`} className="flex flex-col gap-3">
         <PathActionsBody
           path={path}
           topLevelGoals={goals}
