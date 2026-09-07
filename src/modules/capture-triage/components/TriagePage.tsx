@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, PartyPopper } from 'lucide-react'
+import { ArrowLeft, CheckCheck, Inbox } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
@@ -138,7 +138,13 @@ export function TriagePage() {
         />
       ) : (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
-          <PartyPopper className="size-8 text-muted-foreground" aria-hidden="true" />
+          {/* No celebration tchotchkes (docs/DESIGN.md project bans) — a quiet
+              "all clear" glyph, not confetti. */}
+          {processedCount > 0 ? (
+            <CheckCheck className="size-8 text-win" aria-hidden="true" />
+          ) : (
+            <Inbox className="size-8 text-muted-foreground" aria-hidden="true" />
+          )}
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">
               {processedCount > 0 ? `Inbox zero — ${processedCount} processed` : 'Nothing to triage'}
