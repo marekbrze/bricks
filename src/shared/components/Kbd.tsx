@@ -11,7 +11,7 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
     <kbd
       aria-hidden="true"
       className={cn(
-        'ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-[4px] border border-border/80 bg-muted px-1 font-mono text-[0.65rem] font-medium text-muted-foreground',
+        'ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-[4px] border border-border/80 bg-muted px-1 font-mono text-xs font-medium text-muted-foreground',
         className,
       )}
     >

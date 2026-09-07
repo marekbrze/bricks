@@ -76,7 +76,7 @@ export function ReviewAbandonedPage() {
               </span>
               {a.frog && (
                 <span aria-label="Frog" className="inline-flex shrink-0">
-                  <Flame className="size-4 text-destructive" aria-hidden="true" />
+                  <Flame className="size-4 text-frog" aria-hidden="true" />
                 </span>
               )}
               <Button variant="outline" size="sm" onClick={() => setRescheduling(a)}>

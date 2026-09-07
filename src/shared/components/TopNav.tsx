@@ -15,7 +15,7 @@ export function TopNav({ className }: { className?: string }) {
               'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors outline-none',
               'focus-visible:ring-3 focus-visible:ring-ring/50',
               isActive
-                ? 'bg-muted text-foreground'
+                ? 'bg-muted text-granite'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
             )
           }

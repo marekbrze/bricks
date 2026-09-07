@@ -23,7 +23,7 @@ export function BottomTabs() {
                 cn(
                   'flex flex-col items-center gap-1 py-2 text-xs font-medium transition-colors outline-none',
                   'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset',
-                  isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  isActive ? 'text-granite' : 'text-muted-foreground hover:text-foreground',
                 )
               }
             >

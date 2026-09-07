@@ -120,7 +120,7 @@ export function GoalProgressPage() {
             <h1 className="text-xl font-semibold break-words">{goal.name}</h1>
             {goal.frog && (
               <span aria-label="Frog" className="inline-flex shrink-0">
-                <Flame className="size-5 text-destructive" aria-hidden="true" />
+                <Flame className="size-5 text-frog" aria-hidden="true" />
               </span>
             )}
             {goal.deadline && (
@@ -196,7 +196,7 @@ export function GoalProgressPage() {
               <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
                 {a.frog && (
                   <span aria-label="Frog" className="inline-flex shrink-0">
-                    <Flame className="size-3.5 text-destructive" aria-hidden="true" />
+                    <Flame className="size-3.5 text-frog" aria-hidden="true" />
                   </span>
                 )}
                 <span className="min-w-0 flex-1 truncate">{a.name}</span>

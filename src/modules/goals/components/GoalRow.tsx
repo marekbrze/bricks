@@ -122,7 +122,7 @@ export function GoalRow({
         </Link>
         {goal.frog && (
           <span aria-label="Frog" className="inline-flex shrink-0">
-            <Flame className="size-4 text-destructive" aria-hidden="true" />
+            <Flame className="size-4 text-frog" aria-hidden="true" />
           </span>
         )}
         {goal.deadline && <DeadlineBadge deadline={goal.deadline} />}

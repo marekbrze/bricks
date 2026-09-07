@@ -92,7 +92,7 @@ export function ActionRowItem({
       </span>
       {action.frog && !done && (
         <span aria-label="Frog" className="inline-flex shrink-0">
-          <Flame className="size-4 text-destructive" aria-hidden="true" />
+          <Flame className="size-4 text-frog" aria-hidden="true" />
         </span>
       )}
       {/* A stale date chip on an abandoned row is noise — the "abandoned" tag says enough. (edgecases #4) */}

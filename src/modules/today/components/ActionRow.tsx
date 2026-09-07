@@ -24,7 +24,12 @@ export function ActionRow({
   const done = action.state === 'done'
 
   return (
-    <li className="group flex items-center gap-3 rounded-lg border border-border bg-background p-2">
+    <li
+      className={cn(
+        'group flex items-center gap-3 rounded-lg border border-border bg-background p-2 transition-colors',
+        done && 'border-win/25 bg-win-soft',
+      )}
+    >
       <Checkbox
         checked={done}
         onCheckedChange={(value) => onToggleDone(Boolean(value))}
@@ -38,7 +43,7 @@ export function ActionRow({
       </span>
       {action.frog && (
         <span aria-label="Frog" className="inline-flex shrink-0">
-          <Flame className="size-4 text-destructive" aria-hidden="true" />
+          <Flame className="size-4 text-frog" aria-hidden="true" />
         </span>
       )}
       <ActionOverflowMenu

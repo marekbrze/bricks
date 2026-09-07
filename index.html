@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bricks</title>
+    <script>
+      // Theme follows the system (docs/DESIGN.md Scene): light is canonical,
+      // dark is a first-class adaptation. Applied before first paint so a dark
+      // system never flashes light. A manual override is a settings concern,
+      // deliberately not built yet.
+      (function () {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)')
+        var root = document.documentElement
+        var apply = function () { root.classList.toggle('dark', mq.matches) }
+        apply()
+        mq.addEventListener('change', apply)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
