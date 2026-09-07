@@ -24,9 +24,9 @@ export function WinRow({ win, pathName, goalName }: { win: Win; pathName: string
         className="flex items-center gap-3 rounded-lg px-3 py-2.5 outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         {win.kind === 'goal' ? (
-          <Trophy className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          <Trophy className="size-4 shrink-0 text-win" aria-hidden="true" />
         ) : (
-          <CheckCircle2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <CheckCircle2 className="size-4 shrink-0 text-win" aria-hidden="true" />
         )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{win.name}</p>

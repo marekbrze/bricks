@@ -57,6 +57,9 @@ export function LogPage() {
   const filteredWins = useMemo(() => winsForPath(pathId), [winsForPath, pathId])
   const winDays = pathId ? winDaysForPath(pathId) : winDaysGlobal
   const scopeLabel = pathId ? `${getPathName(pathId)} wins` : 'All wins'
+  // The accumulation counter — the module's whole point, given the visual
+  // weight the type ramp reserves for it (docs/DESIGN.md Typography, 3xl).
+  const totalWins = useMemo(() => Object.values(winDays).reduce((s, n) => s + n, 0), [winDays])
 
   // Un-paginated history would already run to hundreds of rows with a few
   // months of daily use — see docs/modules/winlog-edgecases.md #7.
@@ -112,7 +115,15 @@ export function LogPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Log</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-semibold">Log</h1>
+        <p className="flex items-baseline gap-2">
+          <span className="text-3xl font-semibold tabular-nums">{totalWins}</span>
+          <span className="text-sm text-muted-foreground">
+            {totalWins === 1 ? 'win' : 'wins'} so far
+          </span>
+        </p>
+      </div>
 
       <PathFilterChips paths={filterablePaths} value={pathId} onChange={setPathId} />
 

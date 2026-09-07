@@ -58,11 +58,13 @@ export function ContributionGraph({
   function tone(count: number, future: boolean): string {
     if (future) return 'bg-transparent'
     if (count === 0) return 'bg-muted'
-    if (count === 1) return 'bg-primary/20'
-    if (count === 2) return 'bg-primary/40'
-    if (count === 3) return 'bg-primary/60'
-    if (count === 4) return 'bg-primary/80'
-    return 'bg-primary'
+    // Win-green intensity ramp (docs/DESIGN.md Color) — accumulation is the
+    // one surface allowed hue at full strength. Six tiers, ceiling bg-win.
+    if (count === 1) return 'bg-chart-1'
+    if (count === 2) return 'bg-chart-2'
+    if (count === 3) return 'bg-chart-3'
+    if (count === 4) return 'bg-chart-4'
+    return 'bg-win'
   }
 
   return (
