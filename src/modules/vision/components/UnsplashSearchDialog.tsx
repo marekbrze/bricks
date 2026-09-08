@@ -144,7 +144,7 @@ export function UnsplashSearchDialog({
     })
   }, [client, debouncedQuery, loadingMore, page])
 
-  const resetToClosed = () => {
+  const resetToClosed = useCallback(() => {
     setQuery('')
     setPhotos([])
     setPage(1)
@@ -153,7 +153,23 @@ export function UnsplashSearchDialog({
     setEditingKey(false)
     setKeyDraft('')
     setKeyError(null)
-  }
+  }, [])
+
+  // This dialog is fully controlled by the parent (opened / closed through the
+  // `open` prop, no DialogTrigger), so Radix's `onOpenChange` never fires on
+  // open and only fires for the dialog's own close affordances. Drive the
+  // per-open reset off the prop instead: clear the pick lock and pick up any
+  // Access Key saved elsewhere on open, wipe transient state on close. Without
+  // this the pick lock set on the first pick is never released and every later
+  // pick no-ops.
+  useEffect(() => {
+    if (open) {
+      pickLock.current = false
+      setApiKey(getUnsplashKey())
+    } else {
+      resetToClosed()
+    }
+  }, [open, resetToClosed])
 
   const handleSaveKey = () => {
     const invalid = validateUnsplashKey(keyDraft)
@@ -204,14 +220,7 @@ export function UnsplashSearchDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o)
-        if (!o) resetToClosed()
-        else {
-          pickLock.current = false
-          setApiKey(getUnsplashKey())
-        }
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent className="max-w-2xl">
         <DialogHeader>

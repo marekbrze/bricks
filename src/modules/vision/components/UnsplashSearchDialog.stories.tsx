@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite'
+import { expect, screen, userEvent, waitFor } from 'storybook/test'
+import { Button } from '@/components/ui/button'
 import { UnsplashSearchDialog } from './UnsplashSearchDialog'
 import { SAMPLE_UNSPLASH_PHOTOS } from '../data/unsplash-samples'
 import type { UnsplashClient, UnsplashErrorKind, UnsplashPhoto } from '../lib/unsplash-api'
@@ -105,4 +108,48 @@ export const RejectedKey: Story = {
 /** No key yet: connect Unsplash, or fall back to the bundled sample photos. */
 export const NotConnected: Story = {
   decorators: [withoutKey],
+}
+
+/**
+ * Regression (docs/changes/vision-unsplash-second-pick-locked.md): the parent
+ * controls `open` — it opens the dialog and closes it again after a pick, never
+ * through the dialog's own affordances — so the per-open reset must not hang off
+ * Radix's `onOpenChange`. Picking twice across a close/reopen cycle must add two
+ * photos, not one.
+ */
+export const PicksRepeatedlyWhenParentControlsOpen: Story = {
+  decorators: [withKey],
+  render: (args) => {
+    const [open, setOpen] = useState(false)
+    const [picks, setPicks] = useState(0)
+    return (
+      <div className="flex flex-col gap-2">
+        <Button onClick={() => setOpen(true)}>Search Unsplash</Button>
+        <p data-testid="pick-count">Picks: {picks}</p>
+        <UnsplashSearchDialog
+          {...args}
+          open={open}
+          onOpenChange={setOpen}
+          onPick={() => {
+            setPicks((n) => n + 1)
+            setOpen(false)
+          }}
+        />
+      </div>
+    )
+  },
+  args: { client: resultsClient },
+  play: async ({ canvas }) => {
+    const openButton = canvas.getByRole('button', { name: 'Search Unsplash' })
+
+    await userEvent.click(openButton)
+    const firstPhoto = (await screen.findAllByRole('button', { name: /^Add photo:/ }))[0]
+    await userEvent.click(firstPhoto)
+    await waitFor(() => expect(canvas.getByTestId('pick-count')).toHaveTextContent('Picks: 1'))
+
+    await userEvent.click(openButton)
+    const nextPhoto = (await screen.findAllByRole('button', { name: /^Add photo:/ }))[0]
+    await userEvent.click(nextPhoto)
+    await waitFor(() => expect(canvas.getByTestId('pick-count')).toHaveTextContent('Picks: 2'))
+  },
 }
