@@ -13,9 +13,9 @@ The Path overview (`/paths/:pathId`) renders three stacked sections, top to
 bottom:
 
 1. **Vision** — the existing `VisionSummaryCard` (unchanged).
-2. **Stats** — the Path's numbers: Goal count, achieved-Goal count, Action
-   count, and the per-Path `WinBalance` (small / big wins). Replaces the old
-   "Goals and Actions" stub blurb + standalone "Wins" section.
+2. **Wins** — the per-Path `WinBalance` (small / big wins). Replaces the old
+   "Goals and Actions" stub blurb. (A short Goal / achieved / Action counts
+   row was tried here and cut — read as noise above the balance.)
 3. **Goals** — the full Goal tree that used to live on `/paths/:pathId/goals`:
    `GoalRow` list in manual priority order, drag-and-drop + keyboard reorder,
    per-row lifecycle menu (edit / add sub-Goal / move / achieve / abandon /
@@ -37,7 +37,7 @@ Deferred: nothing. This is a self-contained IA move.
     (`PathGoalsSection`), mirroring how `vision` owns `VisionSummaryCard`.
     `GoalTreePage` is deleted; `GoalProgressPage` + `GoalNotFound` back-links
     repoint to the Path overview.
-  - `paths` — `PathOverviewPage` re-composed into Vision / Stats / Goals;
+  - `paths` — `PathOverviewPage` re-composed into Vision / Wins / Goals;
     `PathTabs` loses the Goals entry; `paths/index.tsx` route doc updated.
 - **Cross-module integration**: `paths` overview embeds a `goals`-owned
   section (new component `PathGoalsSection`). Same pattern already used for
@@ -89,14 +89,13 @@ Deferred: nothing. This is a self-contained IA move.
 - **Data**: none.
 - **Actions**: "Open a Path tab" now lists Overview · Actions · Vision.
 - **Screens & flows**:
-  - `PathOverviewPage.tsx` — section order becomes **Vision → Stats → Goals**:
+  - `PathOverviewPage.tsx` — section order becomes **Vision → Wins → Goals**:
     - keep `<VisionSummaryCard pathId={path.id} />`.
-    - **Stats section** (new, inline): `<h2>` "Stats"; a small figure row —
-      Goals (`goalCountForPath`), Achieved (count of this Path's Goals in
-      `state === 'achieved'`), Actions (`actionCountForPath`) — then
+    - **Wins section**: `<h2>` "Wins" +
       `<WinBalance size="sm" counts={winKindCounts(winsForPath(path.id))} />`.
-      Removes the `ModuleStubSection` "Goals and Actions" blurb and the old
-      standalone "Wins" `<section>`.
+      Removes the `ModuleStubSection` "Goals and Actions" blurb; keeps the
+      existing "Wins" `<section>` in its new middle slot. (A Goal / achieved /
+      Action counts row was built above the balance, then cut as noise.)
     - `<PathGoalsSection pathId={path.id} readOnly={readOnly} />`.
     - Add the Goals + Actions data-unreadable recovery screens (via `useGoals`
       / `useActions` `dataUnreadable`), matching the existing Paths / Vision
@@ -107,18 +106,18 @@ Deferred: nothing. This is a self-contained IA move.
     `/paths/:pathId/goals`).
   - `PathActionsPage.tsx` — no logic change; it still renders `PathTabs`, which
     now has one fewer tab.
-- **States**: Stats section always renders (honest zeros, like `WinBalance`).
+- **States**: Wins section always renders (honest zeros, like `WinBalance`).
 - **Edge cases**: archived Path — the Goals section renders read-only via the
   `readOnly` prop; the restore banner stays at the top of the overview.
 - **Design**: three sections share one heading rhythm. `DESIGN.md` bordered-
   surface rule (bg-card) already satisfied by `GoalRow` / `WinBalance` /
-  `VisionSummaryCard`; the Stats figure tiles sit on `bg-card`.
+  `VisionSummaryCard`.
 
 ## Routing — which proto skill builds what
 | Step | Skill | Target | What it does |
 |------|-------|--------|--------------|
 | 1 | (direct edit) | goals | extract `PathGoalsSection` from `GoalTreePage`; delete the page; repoint `GoalProgressPage` / `GoalNotFound` back-links; trim `goals/index.tsx` |
-| 2 | (direct edit) | paths | re-compose `PathOverviewPage` (Vision / Stats / Goals); drop the Goals tab from `PathTabs`; add Goals + Actions recovery guards |
+| 2 | (direct edit) | paths | re-compose `PathOverviewPage` (Vision / Wins / Goals); drop the Goals tab from `PathTabs`; add Goals + Actions recovery guards |
 | 3 | (direct edit) | stories | delete `GoalTreePage.stories`; add `PathGoalsSection.stories`; extend `PathOverviewPage.stories` to seed `goals` + `actions` |
 | 4 | (direct edit) | docs | `paths.md`, `goals.md`, `UI-STRATEGY.md`, `MODULES.md`, ADR 0043 |
 
@@ -145,7 +144,7 @@ already-hardened components.
 - **`src/modules/paths/components/PathTabs.tsx:18`** — remove the Goals tab
   entry; drop the now-unused `Target` import; update the doc comment.
 - **`src/modules/paths/components/PathOverviewPage.tsx`** — re-compose as
-  Vision / Stats / Goals; add `useGoals` + `useActions` `dataUnreadable`
+  Vision / Wins / Goals; add `useGoals` + `useActions` `dataUnreadable`
   guards; remove `ModuleStubSection` usage (and the file if nothing else uses
   it — `PathActionsPage` does not; check `git grep`).
 - **`src/modules/paths/index.tsx:12-18`** — update the routing comment.

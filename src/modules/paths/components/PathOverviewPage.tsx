@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArchiveRestore } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { GoalsDataUnreadable } from '@/modules/goals/components/GoalsDataUnreadable'
@@ -38,7 +37,6 @@ export function PathOverviewPage() {
     cascadeCounts,
   } = usePaths()
   const {
-    goals,
     goalCountForPath,
     dataUnreadable: goalsUnreadable,
     resetGoals,
@@ -72,9 +70,6 @@ export function PathOverviewPage() {
   const readOnly = path.archived
 
   const goalCount = goalCountForPath(path.id)
-  const achievedGoalCount = goals.filter(
-    (g) => g.pathId === path.id && g.state === 'achieved',
-  ).length
   const actionCount = actionCountForPath(path.id)
 
   return (
@@ -116,18 +111,13 @@ export function PathOverviewPage() {
         </div>
       )}
 
-      {/* Vision → Stats → Goals, one screen (ADR 0043). */}
+      {/* Vision → Wins → Goals, one screen (ADR 0043). */}
       <VisionSummaryCard pathId={path.id} />
 
-      <section aria-labelledby="stats-heading" className="flex flex-col gap-3">
-        <h2 id="stats-heading" className="text-sm font-semibold">
-          Stats
+      <section aria-labelledby="wins-heading" className="flex flex-col gap-3">
+        <h2 id="wins-heading" className="text-sm font-semibold">
+          Wins
         </h2>
-        <div className="grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-card p-3">
-          <StatFigure label="Goals" value={goalCount} />
-          <StatFigure label="Achieved" value={achievedGoalCount} />
-          <StatFigure label="Actions" value={actionCount} />
-        </div>
         <WinBalance counts={winKindCounts(winsForPath(path.id))} size="sm" />
       </section>
 
@@ -156,23 +146,6 @@ export function PathOverviewPage() {
           navigate('/paths', { state: { deletedName: name } })
         }}
       />
-    </div>
-  )
-}
-
-/** One figure in the Stats row. Honest zeros — a muted value, never hidden. */
-function StatFigure({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="px-3 first:pl-0 last:pr-0">
-      <p
-        className={cn(
-          'text-2xl font-semibold tabular-nums tracking-tight',
-          value === 0 && 'text-muted-foreground',
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }

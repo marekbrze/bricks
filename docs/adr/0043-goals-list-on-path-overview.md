@@ -15,9 +15,9 @@ tab bar; in practice the Goals tab was pure indirection.
 ## Decision
 
 Planned in `docs/changes/goals-onto-path-overview.md`. The Path overview becomes
-three stacked sections: **Vision** (`VisionSummaryCard`, unchanged) → **Stats**
-(Goal / achieved / Action counts + per-Path `WinBalance`) → **Goals** (the full
-tree, inline).
+three stacked sections: **Vision** (`VisionSummaryCard`, unchanged) → **Wins**
+(per-Path `WinBalance`) → **Goals** (the full tree, inline). A short counts row
+(Goal / achieved / Action) was tried above the balance and cut as noise.
 
 - The Goal tree moves out of `GoalTreePage` into a `goals`-owned embeddable
   component, `PathGoalsSection` — the same pattern `vision` uses for
@@ -42,4 +42,4 @@ deleted) and `goals` (new `PathGoalsSection`, `GoalTreePage` deleted,
 actions, or states — every moved surface was already hardened. Docs updated:
 `docs/modules/paths.md`, `docs/modules/goals.md`, `docs/UI-STRATEGY.md`,
 `docs/MODULES.md`. All work is direct edits; no `proto-lofi` / `harden` pass
-needed. Re-run `proto-feature` if the Stats section grows its own scope.
+needed. Re-run `proto-feature` if the overview grows a real stats surface.
