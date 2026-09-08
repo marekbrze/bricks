@@ -34,6 +34,13 @@ export const LeafNoSubGoals: Story = {
   decorators: [withGoals(MOCK_GOALS, '/paths/path-earnings/goals/goal-side-product', '/paths/:pathId/goals/:goalId')],
 }
 
+/** No Actions and no sub-Goals yet — both empty sections still invite input:
+ * the quick-add row is mounted under the Actions message, and the Sub-Goals
+ * header keeps its Add button. */
+export const EmptyLeaf: Story = {
+  decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-pullup-assisted', '/paths/:pathId/goals/:goalId')],
+}
+
 export const Achieved: Story = {
   decorators: [withGoals(MOCK_GOALS, '/paths/path-sport/goals/goal-mobility', '/paths/:pathId/goals/:goalId')],
 }

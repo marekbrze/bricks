@@ -236,13 +236,15 @@ export function GoalProgressPage() {
             </div>
           )}
         </div>
-        {ownActions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No Actions yet — add the first one below, or triage one in from the Inbox.
-          </p>
-        ) : !readOnly ? (
+        {!readOnly ? (
           <>
-            {visibleActions.length === 0 ? (
+            {ownActions.length === 0 ? (
+              // Empty, but not a dead end — the quick-add row below is always
+              // mounted, so the first Action can be typed straight in.
+              <p className="text-sm text-muted-foreground">
+                No Actions yet — add the first one below, or triage one in from the Inbox.
+              </p>
+            ) : visibleActions.length === 0 ? (
               <p className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
                 All clear
               </p>
@@ -275,7 +277,8 @@ export function GoalProgressPage() {
             )}
             {/* The Actions view's quick-add row, reused verbatim (ADR 0041) —
                 an Action typed here is created straight under this Goal,
-                skipping the Inbox, and appends to the manual sequence. */}
+                skipping the Inbox, and appends to the manual sequence. Always
+                mounted so an empty Goal still invites the first Action. */}
             <QuickAddActionRow
               label={`Add action to “${goal.name}”`}
               onCreate={(name, scheduledDate) =>
@@ -283,6 +286,10 @@ export function GoalProgressPage() {
               }
             />
           </>
+        ) : ownActions.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border bg-card p-3 text-sm text-muted-foreground">
+            No Actions.
+          </p>
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card">
             {ownActions.map((a) => (
