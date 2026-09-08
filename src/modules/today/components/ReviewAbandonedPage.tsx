@@ -54,7 +54,7 @@ export function ReviewAbandonedPage() {
       </div>
 
       {abandonedActions.length === 0 ? (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <Ban className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">Nothing abandoned</h2>
@@ -68,7 +68,7 @@ export function ReviewAbandonedPage() {
           {abandonedActions.map((a) => (
             <li
               key={a.id}
-              className="flex items-center gap-3 rounded-lg border border-border bg-background p-2"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card p-2"
             >
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium break-words">{a.name}</span>

@@ -28,12 +28,12 @@ export function VisionSummaryCard({ pathId }: { pathId: string }) {
         </Link>
       </div>
       {tileCount === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border bg-card p-3 text-sm text-muted-foreground">
           No Vision yet — sketch out where this Path is going: a few notes, a few photos, the things
           you want to be able to do one day.
         </p>
       ) : (
-        <div className="rounded-lg border border-border p-3">
+        <div className="rounded-lg border border-border bg-card p-3">
           {snippet && <p className="line-clamp-2 text-sm text-muted-foreground">{snippet}</p>}
           {achievementTotal > 0 && (
             <p

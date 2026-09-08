@@ -426,7 +426,7 @@ export function DataSyncPage() {
             )}
 
             {genericInteraction && (
-              <div className="flex flex-col gap-2 rounded-md border p-3">
+              <div className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
                 <p className="text-sm font-medium">{genericInteraction.title}</p>
                 {genericInteraction.alerts.map((alert, i) => (
                   <div key={i} className="flex flex-col gap-1">
@@ -501,7 +501,7 @@ function DirectionChoice({
           type="button"
           onClick={onPush}
           disabled={busy}
-          className="flex flex-col gap-1 rounded-md border p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+          className="flex flex-col gap-1 rounded-md border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
         >
           <span className="flex items-center gap-2 text-sm font-semibold">
             <CloudUpload className="size-4" aria-hidden="true" /> Upload this device&apos;s data
@@ -514,7 +514,7 @@ function DirectionChoice({
           type="button"
           onClick={onPull}
           disabled={busy}
-          className="flex flex-col gap-1 rounded-md border p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+          className="flex flex-col gap-1 rounded-md border border-border bg-card p-4 text-left transition-colors hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
         >
           <span className="flex items-center gap-2 text-sm font-semibold">
             <CloudDownload className="size-4" aria-hidden="true" /> Use the cloud&apos;s data

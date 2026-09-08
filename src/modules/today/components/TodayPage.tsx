@@ -115,7 +115,7 @@ export function TodayPage() {
       </div>
 
       {activePaths.length === 0 ? (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <Signpost className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">No Paths yet</h2>
@@ -129,7 +129,7 @@ export function TodayPage() {
           </Link>
         </section>
       ) : dayActions.length === 0 ? (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <CalendarDays className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">Nothing scheduled for {formatDayLabel(date).toLowerCase()}</h2>

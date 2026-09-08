@@ -137,7 +137,7 @@ export function TriagePage() {
           onSkip={handleSkip}
         />
       ) : (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           {/* No celebration tchotchkes (docs/DESIGN.md project bans) — a quiet
               "all clear" glyph, not confetti. */}
           {processedCount > 0 ? (

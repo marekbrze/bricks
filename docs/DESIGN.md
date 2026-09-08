@@ -83,7 +83,7 @@ the UI's visible color budget goes to semantics instead:
 |------|-------|-------|------|-------|
 | Canvas | `--background` | `oklch(0.985 0.004 260)` | `oklch(0.16 0.008 260)` | body bg, granite breath — NOT pure white / NOT pure black |
 | Ink (body) | `--foreground` | `oklch(0.225 0.012 260)` | `oklch(0.92 0.006 260)` | body text, tinted toward seed |
-| Card | `--card` | `oklch(1 0 0)` | `oklch(0.21 0.01 260)` | the one elevation step above canvas |
+| Card | `--card` | `oklch(1 0 0)` | `oklch(0.21 0.01 260)` | the one elevation step above canvas — every bordered box sits here (Surfaces) |
 | Popover | `--popover` | `oklch(1 0 0)` | `oklch(0.23 0.01 260)` | |
 | Muted fill | `--muted` | `oklch(0.955 0.006 260)` | `oklch(0.25 0.012 260)` | chips, day-group headers, secondary fills |
 | Muted text | `--muted-foreground` | `oklch(0.48 0.016 260)` | `oklch(0.68 0.012 260)` | secondary text & placeholders — ≥4.5:1, no lighter |
@@ -111,6 +111,13 @@ desaturated slightly (chroma −0.01); body text relies on lightness, never weig
 increases; `--border`/`--input` go translucent-white, not gray.
 **Radius**: single value `--radius: 0.5rem` (chiseled, down from the shadcn
 default 0.625rem); all variants computed from it (already wired in `@theme`).
+**Surfaces** (designer directive, 2026-09-08): **a drawn box is a card.** Any
+element that draws its own border — rows, group frames, list containers,
+empty-state frames (dashed included), inputs, checkboxes, outline buttons —
+sits on `bg-card`, never `bg-background` (which equals the canvas and swallows
+the box: the hairline alone can't carry the separation). Exceptions: full-width
+chrome bars (header, tab bar stay canvas-toned) and semantic tints (the win
+wash, muted notice banners, destructive error boxes, `Kbd`).
 **Focus ring**: granite (`--ring`), 2px, visible on every interactive element —
 never suppressed.
 

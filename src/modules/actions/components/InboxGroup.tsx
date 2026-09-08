@@ -15,7 +15,7 @@ export function InboxGroup({ actions }: { actions: Action[] }) {
   return (
     <section
       aria-label={`Inbox — ${actions.length} item${actions.length === 1 ? '' : 's'} waiting for triage`}
-      className="flex flex-col gap-2 rounded-xl border border-dashed border-border p-4"
+      className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-card p-4"
     >
       <div className="flex items-center gap-2">
         <Inbox className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -28,7 +28,7 @@ export function InboxGroup({ actions }: { actions: Action[] }) {
         {actions.map((a) => (
           <li
             key={a.id}
-            className="flex items-center gap-3 rounded-lg border border-border bg-background p-2"
+            className="flex items-center gap-3 rounded-lg border border-border bg-card p-2"
           >
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm">{a.name}</span>

@@ -52,7 +52,7 @@ export function SchedulePage() {
       </div>
 
       {dates.length === 0 ? (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <CalendarRange className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">Nothing scheduled ahead</h2>

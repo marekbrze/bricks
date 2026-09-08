@@ -38,11 +38,11 @@ export function ArchivedPathsPage() {
       </div>
 
       {archivedPaths.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border bg-card py-16 text-center text-sm text-muted-foreground">
           Nothing archived. Archived Paths keep all their contents and can be restored anytime.
         </p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border">
+        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {archivedPaths.map((path) => {
             const { achieved, total: achievementTotal } = achievementCountsForPath(path.id)
             return (

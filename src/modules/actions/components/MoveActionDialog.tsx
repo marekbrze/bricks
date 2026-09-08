@@ -151,7 +151,7 @@ export function MoveActionDialog({
             id="move-action-listbox"
             role="listbox"
             aria-label="Destination"
-            className="flex max-h-72 flex-col overflow-y-auto rounded-lg border border-border"
+            className="flex max-h-72 flex-col overflow-y-auto rounded-lg border border-border bg-card"
           >
             {rows.length === 0 && (
               <p className="px-2.5 py-2 text-sm text-muted-foreground">No matching Goal or Path.</p>

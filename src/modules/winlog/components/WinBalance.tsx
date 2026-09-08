@@ -24,7 +24,7 @@ export function WinBalance({
     <section
       aria-label="Win balance"
       className={cn(
-        'grid grid-cols-2 divide-x divide-border rounded-lg border border-border',
+        'grid grid-cols-2 divide-x divide-border rounded-lg border border-border bg-card',
         size === 'lg' ? 'p-4' : 'p-3',
         className,
       )}

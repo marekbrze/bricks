@@ -224,7 +224,7 @@ export function VisionBoardPage() {
         </div>
 
         {boardEmpty ? (
-          <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+          <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
             <ImageIcon className="size-8 text-muted-foreground" aria-hidden="true" />
             <div className="max-w-sm">
               <h2 className="text-sm font-semibold">No Vision yet for “{path.name}”</h2>
@@ -274,7 +274,7 @@ export function VisionBoardPage() {
                     rows={3}
                     // eslint-disable-next-line jsx-a11y/no-autofocus -- focus follows the user into the new tile
                     autoFocus
-                    className="w-full resize-none rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="w-full resize-none rounded-lg border border-border bg-card p-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   />
                   <div className="flex justify-end gap-2">
                     <Button

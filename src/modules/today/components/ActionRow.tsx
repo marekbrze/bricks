@@ -26,7 +26,7 @@ export function ActionRow({
   return (
     <li
       className={cn(
-        'group flex items-center gap-3 rounded-lg border border-border bg-background p-2 transition-colors',
+        'group flex items-center gap-3 rounded-lg border border-border bg-card p-2 transition-colors',
         done && 'border-win/25 bg-win-soft',
       )}
     >

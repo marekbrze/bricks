@@ -54,7 +54,7 @@ export function QuickAddActionRow({
     <form
       role="group"
       aria-label={label}
-      className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-2"
+      className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border bg-card p-2"
       onSubmit={(e) => {
         e.preventDefault()
         submit()

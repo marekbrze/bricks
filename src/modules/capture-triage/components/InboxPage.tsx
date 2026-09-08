@@ -26,7 +26,7 @@ export function InboxPage() {
       <QuickCaptureInput />
 
       {inboxActions.length === 0 ? (
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <InboxIcon className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">Inbox is empty</h2>
@@ -37,7 +37,7 @@ export function InboxPage() {
           </div>
         </section>
       ) : (
-        <ul className="flex flex-col divide-y divide-border rounded-xl border border-border">
+        <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-card">
           {inboxActions.map((action) => (
             <li key={action.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
               <span className="min-w-0 flex-1 break-words">{action.name}</span>

@@ -36,7 +36,7 @@ export function PathSection({
         </Button>
       </div>
       {actions.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border px-3 py-2.5 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border bg-card px-3 py-2.5 text-sm text-muted-foreground">
           Nothing scheduled today.
         </p>
       ) : (

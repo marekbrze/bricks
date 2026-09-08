@@ -174,7 +174,7 @@ export function AssignPicker({
         id="assign-goal-listbox"
         role="listbox"
         aria-label="Goal"
-        className="flex max-h-48 flex-col overflow-y-auto rounded-lg border border-border"
+        className="flex max-h-48 flex-col overflow-y-auto rounded-lg border border-border bg-card"
       >
         {rows.length === 0 && <p className="px-2.5 py-2 text-sm text-muted-foreground">No matches.</p>}
         {rows.map((row, i) => (

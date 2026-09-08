@@ -284,7 +284,7 @@ export function GoalProgressPage() {
             />
           </>
         ) : (
-          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card">
             {ownActions.map((a) => (
               <li key={a.id} className="flex items-center gap-2 px-3 py-2 text-sm">
                 {a.frog && (
@@ -311,7 +311,7 @@ export function GoalProgressPage() {
           )}
         </div>
         {children.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-dashed border-border bg-card p-3 text-sm text-muted-foreground">
             {readOnly
               ? 'No sub-Goals.'
               : 'No sub-Goals — break this down if it turns out to need more than one thread of work.'}

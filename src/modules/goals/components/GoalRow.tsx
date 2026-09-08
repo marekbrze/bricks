@@ -101,7 +101,7 @@ export function GoalRow({
         onDragEnd={onDragEnd}
         style={{ paddingLeft: Math.min(depth, MAX_INDENT_DEPTH) * INDENT_PX }}
         className={cn(
-          'group flex items-center gap-2 rounded-lg border border-border bg-background p-2',
+          'group flex items-center gap-2 rounded-lg border border-border bg-card p-2',
           dragId === goal.id && 'opacity-50',
         )}
       >

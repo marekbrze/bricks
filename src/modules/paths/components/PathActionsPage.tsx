@@ -116,7 +116,7 @@ export function PathActionsPage() {
       </div>
 
       {empty && (
-        <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
           {readOnly
             ? 'This Path holds no Goals or Actions.'
             : 'Nothing here yet — add a Goal, or type an Action straight into the Standalone row below.'}
@@ -142,7 +142,7 @@ export function PathActionsPage() {
       {orphanedVisible.length > 0 && (
         <section
           aria-label="Unassigned actions"
-          className="flex flex-col gap-1.5 rounded-xl border border-dashed border-border p-4 opacity-60"
+          className="flex flex-col gap-1.5 rounded-xl border border-dashed border-border bg-card p-4 opacity-60"
         >
           <h2 className="text-sm font-medium text-muted-foreground">Unassigned</h2>
           <ul className="flex flex-col gap-1">

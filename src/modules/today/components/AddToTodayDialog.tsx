@@ -72,7 +72,7 @@ export function AddToTodayDialog({
                 <button
                   type="button"
                   onClick={() => onPick(a)}
-                  className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-border bg-background p-2 text-left outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-border bg-card p-2 text-left outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <span className="text-sm font-medium break-words">{a.name}</span>
                   <span className="text-xs text-muted-foreground">{getPathName(a.pathId)}</span>

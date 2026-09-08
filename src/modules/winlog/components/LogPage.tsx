@@ -100,7 +100,7 @@ export function LogPage() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-xl font-semibold">Log</h1>
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <Signpost className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">No Paths yet</h2>
@@ -121,7 +121,7 @@ export function LogPage() {
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-xl font-semibold">Log</h1>
-        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+        <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <Trophy className="size-8 text-muted-foreground" aria-hidden="true" />
           <div className="max-w-sm">
             <h2 className="text-sm font-semibold">No wins yet</h2>
@@ -151,7 +151,7 @@ export function LogPage() {
           <p className="text-sm text-muted-foreground">No wins on this Path yet.</p>
         ) : (
           <>
-            <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+            <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card">
               {shownDays.map((day) => (
                 <li key={day.date} className="flex flex-col">
                   <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-3 py-1.5">

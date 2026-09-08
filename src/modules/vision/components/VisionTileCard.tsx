@@ -171,7 +171,7 @@ export function VisionTileCard({
                   autoFocus
                   aria-label="Edit note"
                   rows={3}
-                  className="w-full resize-none rounded-lg border border-border bg-background p-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="w-full resize-none rounded-lg border border-border bg-card p-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
               ) : (
                 <button

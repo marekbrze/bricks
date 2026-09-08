@@ -92,7 +92,7 @@ export function ActionsPage() {
         {orphanedVisible.length > 0 && (
           <section
             aria-label="Unassigned actions"
-            className="flex flex-col gap-1.5 rounded-xl border border-dashed border-border p-4 opacity-60"
+            className="flex flex-col gap-1.5 rounded-xl border border-dashed border-border bg-card p-4 opacity-60"
           >
             <h2 className="text-sm font-medium text-muted-foreground">Unassigned</h2>
             <ul className="flex flex-col gap-1">
@@ -104,7 +104,7 @@ export function ActionsPage() {
         )}
 
         {activePaths.length === 0 ? (
-          <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
+          <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
             <Signpost className="size-8 text-muted-foreground" aria-hidden="true" />
             <div className="max-w-sm">
               <p className="font-medium">No Paths yet</p>
