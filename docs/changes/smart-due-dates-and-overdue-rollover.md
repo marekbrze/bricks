@@ -268,3 +268,28 @@ of rescheduling them one at a time.
 ## Hand-off
 Run the routing steps in order. This doc is the base each skill reads. Re-run
 `proto-feature` if the scope changes (e.g. per-Path overdue moves into MVP).
+
+## Implemented (direct, following this plan)
+Built in one pass rather than routed skill-by-skill (matching the repo's
+`plan → implement` two-commit rhythm for a self-contained feature):
+
+- `src/components/ui/popover.tsx` — base-ui Popover wrapper (new primitive).
+- `src/shared/components/SchedulePopover.tsx` — `SchedulePopover` (trigger +
+  popover) and `SchedulePopoverPanel` (bare, for the dialog). Quick rows +
+  `react-day-picker` calendar, themed via `.rdp-schedule` in `index.css`.
+- `src/shared/lib/date.ts` — `weekdayIndex`, `comingSaturdayIso`,
+  `comingMondayIso`, `quickDayHint`.
+- `src/modules/capture-triage/hooks/use-actions.ts` — `overdueActions` selector
+  + `rescheduleOverdueToday(): UndoFn`.
+- `src/modules/today/components/OverdueSection.tsx` + `TodayPage` wiring
+  (gated on `date === today` and a non-empty bucket).
+- `QuickAddActionRow`, `ScheduleActionDialog` (+ all its callers), the
+  `actions` row-menu schedule flow — all now go through the shared popover.
+- `.storybook/preview.tsx` — `beforeEach` drops the `LocalStorageStore` cache
+  (`__resetLocalStorageStores`) so per-story `localStorage` seeds actually
+  take; fixes a latent cross-story bug the new play tests surfaced.
+- Stories + interaction tests: `SchedulePopover.stories`, `OverdueSection.stories`,
+  `TodayPage` (`WithOverdue`, `OverdueHiddenOnOtherDays`, `MoveAllOverdueToToday`
+  with a play). `pnpm build`, `pnpm lint`, and 115 storybook tests green.
+
+Deferred items in **Later** are untouched.

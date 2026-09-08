@@ -129,7 +129,6 @@ export function useActionRowActions(): {
           initialDate={schedule.action.scheduledDate}
           title={`Schedule “${schedule.action.name}”`}
           description="Pick the day it should show up on in Today."
-          submitLabel="Schedule"
           onSchedule={(date) => {
             // Symmetric safety with Unschedule: an Undo restores whatever the
             // row had before, including "nothing scheduled" (edgecases #5).
@@ -141,6 +140,15 @@ export function useActionRowActions(): {
                 previous
                   ? scheduleAction(schedule.action.id, previous)
                   : unscheduleAction(schedule.action.id),
+            })
+          }}
+          onClear={() => {
+            const previous = schedule.action.scheduledDate
+            if (!previous) return
+            unscheduleAction(schedule.action.id)
+            showToast(`“${schedule.action.name}” unscheduled`, {
+              label: 'Undo',
+              onClick: () => scheduleAction(schedule.action.id, previous),
             })
           }}
         />

@@ -1,25 +1,17 @@
 import { useRef, useState } from 'react'
 import { CalendarPlus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
-import { addDaysIso, formatDayLabel, todayLocalIso } from '@/shared/lib/date'
+import { SchedulePopover } from '@/shared/components/SchedulePopover'
+import { formatDayLabel } from '@/shared/lib/date'
 
 /**
  * Inline quick-add row closing a Goal group or a Path's standalone group —
  * the Actions view's primary entry point, also reused on the Goal progress
- * page (ADR 0041). Type a name, optionally pick a due date from the calendar
- * menu (Today / Tomorrow / In a week / any date), press Enter. Default is no
- * date. The input deliberately keeps focus after creating, so several Actions
- * can be typed in a row (Todoist-style).
+ * page (ADR 0041). Type a name, optionally pick a due date from the schedule
+ * popover (Today / Tomorrow / This weekend / Next week / In a week / any
+ * date), press Enter. Default is no date. The input deliberately keeps focus
+ * after creating, so several Actions can be typed in a row (Todoist-style).
  */
 export function QuickAddActionRow({
   label,
@@ -31,8 +23,6 @@ export function QuickAddActionRow({
 }) {
   const [name, setName] = useState('')
   const [scheduledDate, setScheduledDate] = useState<string | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerDate, setPickerDate] = useState(todayLocalIso())
   const inputRef = useRef<HTMLInputElement>(null)
 
   const submit = () => {
@@ -41,11 +31,6 @@ export function QuickAddActionRow({
     setName('')
     setScheduledDate(null)
     inputRef.current?.focus()
-  }
-
-  const openPicker = () => {
-    setPickerDate(scheduledDate ?? todayLocalIso())
-    setPickerOpen(true)
   }
 
   return (
@@ -60,34 +45,22 @@ export function QuickAddActionRow({
         submit()
       }}
     >
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={`Pick a due date for a new action in ${label}`}
-              className={scheduledDate ? 'text-foreground' : 'text-muted-foreground'}
-            >
-              <CalendarPlus aria-hidden="true" />
-            </Button>
-          }
-        />
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => setScheduledDate(todayLocalIso())}>
-            Today
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setScheduledDate(addDaysIso(todayLocalIso(), 1))}>
-            Tomorrow
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setScheduledDate(addDaysIso(todayLocalIso(), 7))}>
-            In a week
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={openPicker}>Pick a date…</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <SchedulePopover
+        value={scheduledDate}
+        onChange={setScheduledDate}
+        align="start"
+        trigger={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Pick a due date for a new action in ${label}`}
+            className={scheduledDate ? 'text-foreground' : 'text-muted-foreground'}
+          >
+            <CalendarPlus aria-hidden="true" />
+          </Button>
+        }
+      />
       <Input
         ref={inputRef}
         value={name}
@@ -112,50 +85,6 @@ export function QuickAddActionRow({
       <Button type="submit" size="sm" variant="ghost" disabled={!name.trim()} className="shrink-0">
         Add
       </Button>
-
-      {pickerOpen && (
-        <Dialog open onOpenChange={(open) => !open && setPickerOpen(false)}>
-          <DialogContent>
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!pickerDate) return
-                setScheduledDate(pickerDate)
-                setPickerOpen(false)
-                inputRef.current?.focus()
-              }}
-            >
-              <DialogHeader>
-                <DialogTitle>Pick a due date</DialogTitle>
-                <DialogDescription>
-                  The new action in {label} will show up in Today on that day.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="quick-add-date">Date</Label>
-                <Input
-                  id="quick-add-date"
-                  type="date"
-                  value={pickerDate}
-                  onChange={(e) => setPickerDate(e.target.value)}
-                  className="w-fit"
-                  // eslint-disable-next-line jsx-a11y/no-autofocus -- dialog opens directly onto its one field
-                  autoFocus
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setPickerOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={!pickerDate}>
-                  Set date
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
     </form>
   )
 }

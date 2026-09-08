@@ -130,7 +130,7 @@ export const RescheduleAbandoned: Story = {
           open={open}
           onOpenChange={setOpen}
           actionName="Repaint the hallway"
-          submitLabel="Reschedule"
+          title="Reschedule “Repaint the hallway”"
           onSchedule={(date) => console.log('rescheduled to', date)}
         />
       </>

@@ -11,6 +11,7 @@ import type { Action } from '@/modules/capture-triage/types/action'
 import { addDaysIso, formatDayLabel, isValidIso, todayLocalIso } from '@/shared/lib/date'
 import { PathSection } from './PathSection'
 import { AddToTodayDialog } from './AddToTodayDialog'
+import { OverdueSection } from './OverdueSection'
 import { ScheduleActionDialog } from './ScheduleActionDialog'
 
 type DialogState = { type: 'add'; pathId: string | null } | { type: 'move'; action: Action } | null
@@ -34,6 +35,8 @@ export function TodayPage() {
   const {
     scheduledActionsForDate,
     unscheduledActions,
+    overdueActions,
+    rescheduleOverdueToday,
     abandonedActions,
     scheduleAction,
     unscheduleAction,
@@ -45,6 +48,8 @@ export function TodayPage() {
   } = useActions()
 
   const dayActions = useMemo(() => scheduledActionsForDate(date), [scheduledActionsForDate, date])
+  const isToday = date === todayLocalIso()
+  const showOverdue = isToday && overdueActions.length > 0
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
   if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
@@ -66,6 +71,32 @@ export function TodayPage() {
   const handleAbandon = (action: Action) => {
     const undo = abandonAction(action.id)
     showToast(`“${action.name}” abandoned`, { label: 'Undo', onClick: undo })
+  }
+
+  const handleRescheduleOverdue = (action: Action, iso: string | null) => {
+    const previous = action.scheduledDate
+    if (iso) {
+      scheduleAction(action.id, iso)
+      showToast(`“${action.name}” moved to ${formatDayLabel(iso).toLowerCase()}`, {
+        label: 'Undo',
+        onClick: () => previous && scheduleAction(action.id, previous),
+      })
+    } else {
+      unscheduleAction(action.id)
+      showToast(`“${action.name}” unscheduled`, {
+        label: 'Undo',
+        onClick: () => previous && scheduleAction(action.id, previous),
+      })
+    }
+  }
+
+  const handleMoveAllOverdue = () => {
+    const count = overdueActions.length
+    const undo = rescheduleOverdueToday()
+    showToast(`${count} ${count === 1 ? 'Action' : 'Actions'} moved to today`, {
+      label: 'Undo',
+      onClick: undo,
+    })
   }
 
   const getPathName = (pathId: string | null) => (pathId ? (getPath(pathId)?.name ?? 'Unknown Path') : 'Standalone')
@@ -113,6 +144,16 @@ export function TodayPage() {
           </div>
         </div>
       </div>
+
+      {showOverdue && (
+        <OverdueSection
+          actions={overdueActions}
+          getPathName={getPathName}
+          onToggleDone={handleToggleDone}
+          onReschedule={handleRescheduleOverdue}
+          onMoveAllToToday={handleMoveAllOverdue}
+        />
+      )}
 
       {activePaths.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">

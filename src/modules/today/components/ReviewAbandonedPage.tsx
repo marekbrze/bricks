@@ -100,7 +100,8 @@ export function ReviewAbandonedPage() {
           open
           onOpenChange={(o) => !o && setRescheduling(null)}
           actionName={rescheduling.name}
-          submitLabel="Reschedule"
+          title={`Reschedule “${rescheduling.name}”`}
+          description="Pick the day it should come back onto."
           onSchedule={(dateIso) => {
             scheduleAction(rescheduling.id, dateIso)
             showToast(`“${rescheduling.name}” rescheduled to ${formatDayLabel(dateIso).toLowerCase()}`)

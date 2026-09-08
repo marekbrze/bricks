@@ -1,5 +1,5 @@
 import type { Action } from '@/modules/capture-triage/types/action'
-import { addDaysIso, formatDayLabel, todayLocalIso } from '@/shared/lib/date'
+import { formatDayLabel, todayLocalIso } from '@/shared/lib/date'
 
 /**
  * List-model helpers for the Actions view — pure functions over the shared
@@ -29,9 +29,4 @@ export function isSettled(action: Action): boolean {
 export function scheduledDateChip(iso: string): { label: string; overdue: boolean } {
   const today = todayLocalIso()
   return { label: formatDayLabel(iso), overdue: iso < today }
-}
-
-/** Tomorrow as a local ISO date — one of the quick-add popover's shortcuts. */
-export function tomorrowIso(): string {
-  return addDaysIso(todayLocalIso(), 1)
 }

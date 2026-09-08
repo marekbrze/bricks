@@ -1,6 +1,39 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, userEvent, waitFor } from 'storybook/test'
+import type { Action } from '@/modules/capture-triage/types/action'
+import { addDaysIso, todayLocalIso } from '@/shared/lib/date'
 import { TodayPage } from './TodayPage'
 import { withTodayData, seedCorruptActions, seedCorruptPaths, MOCK_ACTIONS } from './story-helpers'
+
+const today = todayLocalIso()
+
+/** Two Actions whose scheduled day has already passed — the Overdue bucket. */
+const OVERDUE_ACTIONS: Action[] = [
+  {
+    id: 'overdue-1',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    name: 'Send the overdue invoice',
+    state: 'assigned',
+    pathId: 'path-earnings',
+    goalId: null,
+    frog: true,
+    scheduledDate: addDaysIso(today, -3),
+    completedAt: null,
+  },
+  {
+    id: 'overdue-2',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    name: 'Book the physio appointment',
+    state: 'assigned',
+    pathId: 'path-sport',
+    goalId: null,
+    frog: false,
+    scheduledDate: addDaysIso(today, -1),
+    completedAt: null,
+  },
+]
 
 const meta: Meta<typeof TodayPage> = {
   title: 'Today/TodayPage',
@@ -35,6 +68,33 @@ export const DeepLinkedDate: Story = {
 /** A malformed `:date` in the URL falls back to today instead of erroring. */
 export const InvalidDeepLinkedDate: Story = {
   decorators: [withTodayData(MOCK_ACTIONS, undefined, '/today/not-a-date')],
+}
+
+/**
+ * Overdue Actions surface in a dedicated section above the Path sections —
+ * only when the viewed day is today. Each row reschedules on its own; the
+ * header's "Move all to today" clears the whole bucket in one undoable step.
+ */
+export const WithOverdue: Story = {
+  decorators: [withTodayData([...MOCK_ACTIONS, ...OVERDUE_ACTIONS])],
+}
+
+/** The Overdue section is hidden on any day that isn't today. */
+export const OverdueHiddenOnOtherDays: Story = {
+  decorators: [withTodayData([...MOCK_ACTIONS, ...OVERDUE_ACTIONS], undefined, '/today/2026-12-25')],
+}
+
+/** "Move all to today" empties the Overdue section and shows an Undo toast. */
+export const MoveAllOverdueToToday: Story = {
+  decorators: [withTodayData([...MOCK_ACTIONS, ...OVERDUE_ACTIONS])],
+  play: async ({ canvas }) => {
+    expect(await canvas.findByRole('heading', { name: /overdue/i })).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: /move all to today/i }))
+    await waitFor(() =>
+      expect(canvas.queryByRole('heading', { name: /overdue/i })).not.toBeInTheDocument(),
+    )
+    expect(await canvas.findByText(/moved to today/i)).toBeInTheDocument()
+  },
 }
 
 /** Stored `actions` value is present but unparseable — recovery screen, not a silently-empty day. */

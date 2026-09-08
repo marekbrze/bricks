@@ -88,7 +88,7 @@ Relationship notes:
 **Instances per user**: Many.
 **Ownership**: Owner.
 **Lifecycle**: Captured (often into the Inbox), triaged (assigned to a Path/Goal, or promoted into a `Goal` if it turns out to need many actions), optionally scheduled to a day, completed or abandoned. Abandoned Actions are reviewed later and then finally deleted.
-**States**: `inbox` → `assigned` → `done` (with `completedAt`) | `abandoned`. "Scheduled" is not a state — it is the presence of `scheduledDate`.
+**States**: `inbox` → `assigned` → `done` (with `completedAt`) | `abandoned`. "Scheduled" is not a state — it is the presence of `scheduledDate`. "Overdue" is likewise derived, not stored — an `assigned` Action whose `scheduledDate` is before today; the Today view buckets these above its Path sections and offers a one-tap "move all to today" (ADR 0045).
 **Contains**: —
 **Belongs to**: exactly one of — nothing (`inbox`), a `Path` (standalone), or a `Goal` (max one). Movable between Paths and Goals.
 **Flags**: `frog`; `scheduledDate`; `completedAt`; `order` — optional manual position among its Goal's own Actions, read only on the Goal progress page (ADR 0042); aggregate views keep their automatic sort, and rows without it (legacy) sort after sequenced siblings by creation order.

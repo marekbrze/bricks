@@ -93,9 +93,19 @@ turning into a full calendar module.
 ## Screens (rough)
 
 - **Today (day view)**: date header + day-navigation controls + **Today**
-  shortcut, sections per active `Path` (Path name, then its scheduled
-  Actions as checkable rows with a frog indicator), link to **Schedule
-  view**, link to **Review abandoned**.
+  shortcut, an **Overdue** section (when the viewed day is today and
+  anything is overdue), then sections per active `Path` (Path name, then
+  its scheduled Actions as checkable rows with a frog indicator), link to
+  **Schedule view**, link to **Review abandoned**.
+- **Overdue section** (ADR 0045): sits above the Path sections, only on
+  today. Heading + count, a **Move all to today** button (one undoable
+  step), and one row per overdue Action — its original date as a red chip,
+  a checkbox, and a per-row reschedule opening the shared `SchedulePopover`.
+  Derived bucket: `assigned` Actions with `scheduledDate` before today.
+- **SchedulePopover** (shared, ADR 0045): the one date-setter used
+  everywhere `scheduledDate` is chosen — quick rows (Today, Tomorrow, This
+  weekend, Next week, In a week, No date) over an inline month calendar.
+  `ScheduleActionDialog` is now a thin dialog shell around its panel.
 - **Action row**: checkbox (complete/un-complete), name, frog badge when
   flagged, overflow menu (move to another day; Abandon and Unschedule too,
   except on an already-completed row — see Edge Cases).
@@ -155,6 +165,15 @@ or ADR needed for this pass.
   `docs/modules/capture-triage.md`). The self-heal also clears
   `scheduledDate`/`completedAt` so a re-triaged Action can't resurface on a
   stale day it was never scheduled to this time around.
+- **Overdue bucket across local midnight**: `overdueActions` reads
+  `todayLocalIso()` inside a memo keyed on the Action list, so a page left
+  open past midnight shows a one-day-stale bucket until the next render or
+  day-nav — consistent with "no special past mode" above (ADR 0045).
+- **Overdue section on a past/future day**: hidden — it only renders when
+  the viewed day is today.
+- **"Move all to today" then Undo**: restores the whole Action list to its
+  pre-move snapshot (same pattern as every other list Undo), including
+  un-doing an in-between completion of one of the moved rows.
 - **Large number of Actions scheduled on one day**: no pagination planned
   for v1 — personal-scale data — but rows should stay compact enough that
   a busy day doesn't force excessive scrolling before the frog is visible.

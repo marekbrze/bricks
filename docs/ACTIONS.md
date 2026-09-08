@@ -86,8 +86,8 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Triage Action → create Goal and assign | During triage, create a new Goal from the typed search and assign the Action to it | Owner | The Action survives, now a child of the new Goal — distinct from Promote below |
 | Promote Action to Goal | During triage, convert an Action that needs many actions into a Goal | Owner | Originating Inbox Action is discarded once the Goal is created — its idea now lives as the Goal, not as a leftover Inbox item or a stray child Action. A deliberate, separate choice from "create Goal and assign" — see ADR 0025 |
 | Move Action between Goals/Paths | Re-assign | Owner | Core differentiator vs Griply. Built: drag a row onto a Goal group or a Path's Standalone block, or row menu → "Move to…" (keyboard). Keeps `state`/`scheduledDate`; undoable — ADR 0026 |
-| Schedule Action | Set `scheduledDate` (today, tomorrow, any day) | Owner | Drives Today / day-navigation views |
-| Unschedule Action | Clear `scheduledDate` | Owner | |
+| Schedule Action | Set `scheduledDate` via the shared `SchedulePopover` — quick rows (Today, Tomorrow, This weekend, Next week, In a week, No date) + inline calendar | Owner | Drives Today / day-navigation views. One component everywhere the day is chosen — Actions quick-add, every row's Schedule/Reschedule, Today's move-day, the Overdue section (ADR 0045) |
+| Unschedule Action | Clear `scheduledDate` (the popover's "No date" row, or the row menu) | Owner | |
 | Toggle frog | Mark/unmark as a frog (star-like toggle) | Owner | |
 | Complete Action | Set `done` + `completedAt` | Owner | Appears in WinLog as a small win |
 | Un-complete Action | Back to previous state | Owner | Removes the win from the log |
@@ -115,6 +115,8 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 |--------|------------|------|-------|
 | Open Today view | Sections per Path, each with that day's scheduled Actions — the daily focus | Owner | Distinct from any list view |
 | Navigate days | Step to tomorrow / day-after / back | Owner | |
+| Reschedule an overdue Action | Per-row `SchedulePopover` in the Overdue section — Actions whose `scheduledDate` slipped into the past | Owner | Overdue is derived (`scheduledDate < today` while `assigned`), shown only when the viewed day is today (ADR 0045) |
+| Move all overdue to today | One button on the Overdue section header — bumps every overdue Action's `scheduledDate` to today | Owner | Single undoable step; `state` stays `assigned` (ADR 0045) |
 | Open Schedule view | Day-header + tasks, day-header + tasks — agenda layout | Owner | Likely its own module later (calendar) |
 
 ### WinLog (derived view)

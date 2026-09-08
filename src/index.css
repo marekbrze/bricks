@@ -218,3 +218,52 @@
     font-size: 16px;
   }
 }
+
+/* react-day-picker, themed to the granite tokens for SchedulePopover — the
+   library ships its own style.css (imported by the component); this only
+   remaps its custom properties and tightens the grid for a compact popover.
+   Granite interactive accent = --primary; today marker = --ring. */
+.rdp-schedule {
+  --rdp-accent-color: var(--primary);
+  --rdp-accent-background-color: var(--muted);
+  --rdp-today-color: var(--ring);
+  --rdp-day-width: 2rem;
+  --rdp-day-height: 2rem;
+  --rdp-day_button-width: 2rem;
+  --rdp-day_button-height: 2rem;
+  --rdp-day_button-border-radius: var(--radius-md);
+  --rdp-selected-border: none;
+  --rdp-outside-opacity: 0.4;
+  --rdp-disabled-opacity: 0.35;
+  --rdp-nav-height: 2rem;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.rdp-schedule .rdp-month_caption {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding-inline: 0.25rem;
+}
+.rdp-schedule .rdp-weekday {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+.rdp-schedule .rdp-day_button {
+  border: none;
+}
+.rdp-schedule .rdp-selected .rdp-day_button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.rdp-schedule .rdp-chevron {
+  fill: var(--muted-foreground);
+}
+.rdp-schedule .rdp-button_next,
+.rdp-schedule .rdp-button_previous {
+  border-radius: var(--radius-md);
+}
+.rdp-schedule .rdp-button_next:hover,
+.rdp-schedule .rdp-button_previous:hover {
+  background: var(--muted);
+}

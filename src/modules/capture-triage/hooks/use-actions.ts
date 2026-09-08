@@ -3,6 +3,7 @@ import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { useToast } from '@/shared/components/toast/toast-context'
+import { todayLocalIso } from '@/shared/lib/date'
 import type { Action } from '../types/action'
 import { nextOrderFor } from '../lib/action-order'
 
@@ -289,6 +290,48 @@ export function useActions() {
     [actions],
   )
 
+  /**
+   * Active Actions whose `scheduledDate` is a past day — the Overdue bucket
+   * the Today view surfaces above its Path sections. Kept deliberately
+   * separate from `scheduledActionsForDate` (an exact-date match), so an
+   * overdue Action never silently counts as "today". Sorted frog-first, then
+   * oldest slip first, then creation order — matching the list convention.
+   *
+   * `todayLocalIso()` is read here, so the memo only re-derives when
+   * `actions` changes; a page left open across local midnight shows a
+   * one-day-stale bucket until the next render (matches `today`'s existing
+   * "no special past mode" stance).
+   */
+  const overdueActions = useMemo(() => {
+    const today = todayLocalIso()
+    return actions
+      .filter((a) => a.state === 'assigned' && a.scheduledDate != null && a.scheduledDate < today)
+      .sort((a, b) => {
+        if (a.frog !== b.frog) return a.frog ? -1 : 1
+        if (a.scheduledDate !== b.scheduledDate)
+          return (a.scheduledDate as string).localeCompare(b.scheduledDate as string)
+        return a.createdAt.localeCompare(b.createdAt)
+      })
+  }, [actions])
+
+  /**
+   * Bulk-move every currently-overdue Action to today — the Overdue section's
+   * "Move all to today" button. One snapshot, one write, one Undo restoring
+   * every moved row's previous `scheduledDate`. State stays `assigned`.
+   */
+  const rescheduleOverdueToday = useCallback((): UndoFn => {
+    const today = todayLocalIso()
+    const snapshot = actions
+    setActions(
+      actions.map((a) =>
+        a.state === 'assigned' && a.scheduledDate != null && a.scheduledDate < today
+          ? touch({ ...a, scheduledDate: today })
+          : a,
+      ),
+    )
+    return restoreSnapshot(snapshot)
+  }, [actions, setActions, restoreSnapshot])
+
   /** Assigned but not yet scheduled — the pool the "Add to today" picker draws from. */
   const unscheduledActions = useMemo(
     () =>
@@ -459,6 +502,8 @@ export function useActions() {
     deleteAction,
     scheduledActionsForDate,
     unscheduledActions,
+    overdueActions,
+    rescheduleOverdueToday,
     abandonedActions,
     upcomingScheduledDates,
     /** The stored `actions` value exists but is unreadable — show a recovery screen. */

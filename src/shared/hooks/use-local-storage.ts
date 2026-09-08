@@ -121,6 +121,17 @@ class LocalStorageStore<T> {
 
 const stores = new Map<string, LocalStorageStore<unknown>>();
 
+/**
+ * Test-only: drop the cached stores so the next `useLocalStorageState` re-reads
+ * `localStorage` from scratch. Story decorators seed `localStorage` fresh per
+ * story, but a store's snapshot is taken once in its constructor — without this
+ * reset, story 2 onward would render story 1's seeded data. Pairs with
+ * `__resetStorageHealth`. Never call it in app code.
+ */
+export function __resetLocalStorageStores(): void {
+  stores.clear();
+}
+
 function getStore<T>(key: string, initialValue: T): LocalStorageStore<T> {
   let store = stores.get(key);
   if (!store) {

@@ -4,6 +4,8 @@ import { addDaysIso, todayLocalIso } from '@/shared/lib/date'
 const nowIso = new Date().toISOString()
 const today = todayLocalIso()
 const tomorrow = addDaysIso(today, 1)
+const threeDaysAgo = addDaysIso(today, -3)
+const lastWeek = addDaysIso(today, -8)
 
 function inboxAction(id: string, name: string): Action {
   return {
@@ -79,6 +81,15 @@ export const MOCK_ASSIGNED_ACTIONS: Action[] = [
   }),
   // Assigned but not yet scheduled — shows up in the "Add to today" picker.
   assignedAction('action-outreach-list', 'Draft a list of 10 cold-outreach targets', 'path-earnings', 'goal-cold-outreach'),
+  // Scheduled for a day that has already passed — the Today view's Overdue
+  // bucket. One is a frog, so the "frog first" sort inside the section shows.
+  assignedAction('action-overdue-invoice', 'Send the overdue invoice to the client', 'path-earnings', 'goal-cold-outreach', {
+    frog: true,
+    scheduledDate: threeDaysAgo,
+  }),
+  assignedAction('action-overdue-stretch', 'Do the prescribed hip-mobility routine', 'path-sport', 'goal-5k-block', {
+    scheduledDate: lastWeek,
+  }),
   // Scheduled today, then decided against — lives in Review abandoned instead of cluttering the day view.
   assignedAction('action-old-idea', 'Repaint the hallway', 'path-home', null, {
     state: 'abandoned',
