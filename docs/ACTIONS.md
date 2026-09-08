@@ -95,7 +95,8 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Review abandoned Actions | Periodically look through abandoned items | Owner | |
 | Delete Action | Remove permanently | Owner | Final step after abandoning; also removes it from history |
 | Quick-add Action (Actions view) | Inline-add an Action from the flat list: under a Goal, or standalone under a Path, with an optional due date (Today / Tomorrow / pick-date popover) | Owner | Planned (proto-feature, actions-page); `scheduledDate` shared with Today |
-| Quick-add Action (Goal progress) | Add an Action to the Goal directly from the Goal's own page, with the same optional due date | Owner | Reuses the Actions view's quick-add row verbatim — ADR 0041; skips the Inbox; hidden while the Path is archived |
+| Quick-add Action (Goal progress) | Add an Action to the Goal directly from the Goal's own page, with the same optional due date | Owner | Reuses the Actions view's quick-add row verbatim — ADR 0041; skips the Inbox; appends to the Goal's manual sequence; hidden while the Path is archived |
+| Reorder Actions (within a Goal) | Drag a row onto a sibling, or Move up / Move down in the row menu, on the Goal's own page | Owner | Manual `order` on Action, Undo-backed — ADR 0042; read only on the Goal page (aggregate views keep their automatic sort); keyboard Move up/down mirrors the Goal tree |
 | Quick-create Goal (Actions view) | Create a top-level Goal (name + optional deadline) from a Path section header | Owner | Planned (proto-feature, actions-page); last in priority order |
 | Open Actions view | Flat whole-app task list grouped Path → Goal → Actions, Inbox group on top | Owner | Planned (proto-feature, actions-page); 5th nav entry |
 | Show completed | Toggle visibility of done/abandoned Actions in the Actions view | Owner | Planned (proto-feature, actions-page); hidden by default, rendered in place when shown |

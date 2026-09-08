@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArchiveRestore, Flame, Plus } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { PathsDataUnreadable } from '@/modules/paths/components/PathsDataUnreadable'
@@ -11,6 +13,11 @@ import { winKindCounts } from '@/modules/winlog/lib/win-counts'
 import { WinBalance } from '@/modules/winlog/components/WinBalance'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
+import type { Action } from '@/modules/capture-triage/types/action'
+import { ActionRowItem } from '@/modules/actions/components/ActionRowItem'
+import { actionRowProps } from '@/modules/actions/components/GoalGroup'
+import { useActionRowActions } from '@/modules/actions/hooks/use-action-row-actions'
+import { isSettled } from '@/modules/actions/lib/group-actions'
 import { QuickAddActionRow } from '@/modules/actions/components/QuickAddActionRow'
 import { useGoals } from '../hooks/use-goals'
 import type { Goal } from '../types/goal'
@@ -41,7 +48,13 @@ export function GoalProgressPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
-  const { createAction, dataUnreadable: actionsUnreadable, resetActions } = useActions()
+  const {
+    createAction,
+    reorderAction,
+    dataUnreadable: actionsUnreadable,
+    resetActions,
+  } = useActions()
+  const { rowCallbacks, dialogs: rowDialogs } = useActionRowActions()
   const { winsForGoal } = useWinLog()
   const {
     getGoal,
@@ -61,6 +74,8 @@ export function GoalProgressPage() {
   } = useGoals()
 
   const [dragId, setDragId] = useState<string | null>(null)
+  const [actionDragId, setActionDragId] = useState<string | null>(null)
+  const [showCompleted, setShowCompleted] = useState(false)
   const [dialog, setDialog] = useState<DialogState>(null)
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
@@ -76,9 +91,22 @@ export function GoalProgressPage() {
   const readOnly = path.archived
   const children = childGoals(goal.id)
   const ownActions = actionsFor(goal.id)
+  const visibleActions = ownActions.filter((a) => (showCompleted ? true : !isSettled(a)))
   const counts = cascadeCounts(goal.id)
   const siblings = siblingGoals(goal)
   const ownIndex = siblings.findIndex((g) => g.id === goal.id)
+
+  // Reorder targets arrive as rows of the visible list, but `reorderAction`
+  // indexes the Goal's FULL sibling group (settled rows included, hidden or
+  // not) — so every drop resolves through the sorted own-list first.
+  const handleReorderAction = (draggedId: string, target: Action | undefined) => {
+    setActionDragId(null)
+    if (!target || target.id === draggedId) return
+    const targetIndex = ownActions.indexOf(target)
+    const name = ownActions.find((a) => a.id === draggedId)?.name
+    const undo = reorderAction(draggedId, targetIndex)
+    if (name) showToast(`Moved “${name}”`, { label: 'Undo', onClick: undo })
+  }
 
   const handleDropOn = (target: Goal, targetIndex: number) => {
     const draggedId = dragId
@@ -188,13 +216,73 @@ export function GoalProgressPage() {
       </section>
 
       <section aria-labelledby="own-actions-heading" className="flex flex-col gap-2">
-        <h2 id="own-actions-heading" className="text-sm font-semibold">
-          Actions ({ownActions.length})
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="own-actions-heading" className="text-sm font-semibold">
+            Actions ({ownActions.length})
+          </h2>
+          {!readOnly && ownActions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="goal-actions-show-completed"
+                checked={showCompleted}
+                onCheckedChange={(v) => setShowCompleted(Boolean(v))}
+              />
+              <Label
+                htmlFor="goal-actions-show-completed"
+                className="text-sm text-muted-foreground"
+              >
+                Show completed
+              </Label>
+            </div>
+          )}
+        </div>
         {ownActions.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No Actions yet — add the first one below, or triage one in from the Inbox.
           </p>
+        ) : !readOnly ? (
+          <>
+            {visibleActions.length === 0 ? (
+              <p className="px-2 py-1 text-xs text-muted-foreground" aria-live="polite">
+                All clear
+              </p>
+            ) : (
+              // The Goal's own sequence, manually ordered (ADR 0042) — rows
+              // are the same ActionRowItem stack the Actions view uses.
+              <ul className="flex flex-col gap-1">
+                {visibleActions.map((a, i) => (
+                  <ActionRowItem
+                    key={a.id}
+                    {...actionRowProps(a, rowCallbacks)}
+                    reorder={{
+                      dragInProgress: actionDragId !== null,
+                      dragging: actionDragId === a.id,
+                      index: i,
+                      siblingCount: visibleActions.length,
+                      onDragStart: () => setActionDragId(a.id),
+                      // The drop lands on the TARGET row — the dragged row is
+                      // the one tracked in state, not `a`.
+                      onDropOn: (targetIndex) => {
+                        if (actionDragId) handleReorderAction(actionDragId, visibleActions[targetIndex])
+                      },
+                      onDragEnd: () => setActionDragId(null),
+                      onMoveUp: () => handleReorderAction(a.id, visibleActions[i - 1]),
+                      onMoveDown: () => handleReorderAction(a.id, visibleActions[i + 1]),
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+            {/* The Actions view's quick-add row, reused verbatim (ADR 0041) —
+                an Action typed here is created straight under this Goal,
+                skipping the Inbox, and appends to the manual sequence. */}
+            <QuickAddActionRow
+              label={`Add action to “${goal.name}”`}
+              onCreate={(name, scheduledDate) =>
+                createAction({ name, pathId: goal.pathId, goalId: goal.id, scheduledDate })
+              }
+            />
+          </>
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
             {ownActions.map((a) => (
@@ -208,17 +296,6 @@ export function GoalProgressPage() {
               </li>
             ))}
           </ul>
-        )}
-        {/* The Actions view's quick-add row, reused verbatim (ADR 0041) — an
-            Action typed here is created straight under this Goal, skipping
-            the Inbox. */}
-        {!readOnly && (
-          <QuickAddActionRow
-            label={`Add action to “${goal.name}”`}
-            onCreate={(name, scheduledDate) =>
-              createAction({ name, pathId: goal.pathId, goalId: goal.id, scheduledDate })
-            }
-          />
         )}
       </section>
 
@@ -326,6 +403,10 @@ export function GoalProgressPage() {
           }}
         />
       )}
+
+      {/* Schedule / rename / move / delete dialogs behind the Action rows'
+          menus — mounted by the shared row hook (ADR 0042). */}
+      {rowDialogs}
     </div>
   )
 }

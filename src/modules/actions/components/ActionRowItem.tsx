@@ -1,4 +1,5 @@
-import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, FolderInput, GripVertical, Pencil, Star, StarOff, RotateCcw, Trash2 } from 'lucide-react'
+import type { DragEvent } from 'react'
+import { Flame, MoreVertical, CalendarClock, CalendarPlus, CalendarX, FolderInput, GripVertical, Pencil, Star, StarOff, RotateCcw, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +16,28 @@ import { todayLocalIso } from '@/shared/lib/date'
 import { useActionDragSource } from './action-dnd'
 
 /**
+ * Manual-positioning affordances for one row of a sibling list — passed only
+ * where a Goal's own sequence is the content (the Goal progress page,
+ * ADR 0042). Mirrors the Goal tree's reorder: whole-row drag with a grip,
+ * Move up / Move down in the menu as the keyboard-accessible twin. Ignored
+ * under an `ActionDndProvider` — there the row's drag already means
+ * re-filing to another Goal, and one row can't mean two drags.
+ */
+export interface ActionRowReorder {
+  /** True while any row of this list is being dragged — gates the drop cue. */
+  dragInProgress: boolean
+  /** True while THIS row is the dragged one — dims it, like `GoalRow`. */
+  dragging: boolean
+  index: number
+  siblingCount: number
+  onDragStart: () => void
+  onDropOn: (targetIndex: number) => void
+  onDragEnd: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+}
+
+/**
  * One Action row in the Actions view: checkbox, name, frog flame, due-date
  * chip, one-click "add to today" (the view's most frequent action — hover-
  * revealed on desktop, always visible on touch), overflow menu. `done` rows
@@ -26,7 +49,9 @@ import { useActionDragSource } from './action-dnd'
  * Inside an `ActionDndProvider` the row also becomes a drag source: grab it
  * (a grip appears) and drop it on another Goal group or a Path's Standalone
  * block to re-file it. The keyboard-accessible twin is the menu's "Move to…",
- * which is why `onMoveTo` and the drag affordance appear together.
+ * which is why `onMoveTo` and the drag affordance appear together. With a
+ * `reorder` prop (and no provider) the drag repositions the row among its
+ * siblings instead.
  */
 export function ActionRowItem({
   action,
@@ -38,6 +63,7 @@ export function ActionRowItem({
   onToggleFrog,
   onMoveTo,
   onDelete,
+  reorder,
 }: {
   action: Action
   onToggleDone: (done: boolean) => void
@@ -49,26 +75,75 @@ export function ActionRowItem({
   /** Opens the move picker. Omitted where re-filing isn't offered (e.g. the Path overview's standalone list). */
   onMoveTo?: () => void
   onDelete: () => void
+  reorder?: ActionRowReorder
 }) {
   const done = action.state === 'done'
   const abandoned = action.state === 'abandoned'
   const chip = action.scheduledDate ? scheduledDateChip(action.scheduledDate) : null
   const { draggable, isDragging, dragProps } = useActionDragSource(action)
 
+  // Under a provider the row's drag means re-filing, so reorder keeps only
+  // its keyboard path. One row, one pointer drag.
+  const reorderDrag = reorder != null && !draggable && reorder.siblingCount > 1
+  const rowDragProps = draggable
+    ? dragProps
+    : reorderDrag && reorder
+      ? {
+          draggable: true,
+          onDragStart: (e: DragEvent<HTMLLIElement>) => {
+            // Some browsers refuse to start a drag without any payload —
+            // same lesson `useActionDragSource` already learned.
+            e.dataTransfer.effectAllowed = 'move'
+            e.dataTransfer.setData('text/plain', action.name)
+            reorder.onDragStart()
+          },
+          onDragOver: (e: DragEvent<HTMLLIElement>) => {
+            if (reorder.dragInProgress) {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+            }
+          },
+          onDrop: (e: DragEvent<HTMLLIElement>) => {
+            if (!reorder.dragInProgress) return
+            e.preventDefault()
+            reorder.onDropOn(reorder.index)
+          },
+          onDragEnd: () => reorder.onDragEnd(),
+        }
+      : {}
+  const dragging = isDragging || (reorderDrag && reorder?.dragging === true)
+
+  // Keyboard twin of the reorder drag, mirrored from GoalOverflowMenu's
+  // Move up / Move down (WCAG 2.2 AAA fallback for pointer drag).
+  const moveItems =
+    reorderDrag && reorder ? (
+      <>
+        <DropdownMenuItem onClick={reorder.onMoveUp} disabled={reorder.index === 0}>
+          <ArrowUp aria-hidden="true" /> Move up
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={reorder.onMoveDown}
+          disabled={reorder.index === reorder.siblingCount - 1}
+        >
+          <ArrowDown aria-hidden="true" /> Move down
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+      </>
+    ) : null
+
   return (
     // Pointer drag to re-file the row; the keyboard-accessible path is the
     // overflow menu's "Move to…".
     <li
-      draggable={draggable}
-      {...dragProps}
+      {...rowDragProps}
       className={cn(
         'group flex items-center gap-3 rounded-lg border border-border bg-background p-2 transition-colors',
         done && 'border-win/25 bg-win-soft',
         abandoned && 'opacity-60',
-        isDragging && 'opacity-50',
+        dragging && 'opacity-50',
       )}
     >
-      {draggable && (
+      {(draggable || reorderDrag) && (
         <GripVertical
           className="-ml-1 size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
           aria-hidden="true"
@@ -135,6 +210,7 @@ export function ActionRowItem({
           }
         />
         <DropdownMenuContent align="end">
+          {moveItems}
           {done ? (
             <>
               <DropdownMenuItem onClick={() => onToggleDone(false)}>

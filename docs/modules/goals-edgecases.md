@@ -22,6 +22,7 @@ in `src/modules/goals/`.
   - Path deleted elsewhere → Goals (and their Actions) under it are cascade-removed on the next mount that calls `useGoals()`, mirroring `useActions`' own Path self-heal — `src/modules/goals/hooks/use-goals.ts:43`
   - No way to create a cycle in the tree: the only path-change operation (Move to another Path) always lands top-level on a different Path — reparenting within the same Path isn't exposed at all, so nothing can become its own ancestor.
   - Quick-add Action on Goal progress (ADR 0041): empty names are a no-op (guarded in `createAction`, plus the disabled Add button), the row is hidden on an archived Path's read-only page, and adding to a frog Goal leaves the new Action unflagged (one-time propagation, per goals.md).
+  - Managed + ordered Action rows on Goal progress (ADR 0042): unsequenced/legacy rows and post-delete order gaps sort by creation order after sequenced siblings (no migration; first reorder renumbers the group), reorder clamps out-of-range indexes and stays silent on no-ops, settled rows hide behind "Show completed" with an "All clear" line, and an archived Path keeps the plain read-only list (no rows, no quick-add, no toggle).
 - **New gaps found**: 11
 - **By severity**: 🔴 0 · 🟡 6 · 🟢 5
 - **Hardened (proto-harden, 2026-09-04)**: 8 closed, 3 deferred/decided — see "Hardening status" below.

@@ -3,6 +3,7 @@ import { useLocalStorageState } from '@/shared/hooks/use-local-storage'
 import { generateId } from '@/shared/types'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { compareActionsByOrder } from '@/modules/capture-triage/lib/action-order'
 import type { Goal, GoalCascadeCounts, GoalState } from '../types/goal'
 
 const STORAGE_KEY = 'goals'
@@ -266,7 +267,9 @@ export function useGoals() {
   )
 
   const actionsFor = useCallback(
-    (id: string) => actions.filter((a) => a.goalId === id),
+    // Manual sequence first (ADR 0042); unsequenced legacy rows trail in
+    // creation order. Only the Goal progress page reads this list.
+    (id: string) => actions.filter((a) => a.goalId === id).sort(compareActionsByOrder),
     [actions],
   )
 

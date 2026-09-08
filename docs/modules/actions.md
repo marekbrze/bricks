@@ -55,6 +55,11 @@ the section it belongs to.
 2. Un-checking (via "Show completed") reverts to the previous state and removes the Win.
 3. Overflow menu per row: Schedule… (reuses the schedule dialog), Unschedule, Rename, Toggle
    frog, Delete. Completed rows offer only Un-complete and Delete.
+4. The row component (`ActionRowItem`) is shared: the Goal progress page mounts the same
+   rows via `useActionRowActions`, and passes an optional `reorder` prop there only
+   (ADR 0042) — grip + drag become *reposition among siblings* and the menu gains Move up /
+   Move down. Under this view's `ActionDndProvider` the drag means re-filing, so that prop
+   is deliberately ignored and nothing changes here.
 
 ### Re-file an Action (drag, or "Move to…")
 

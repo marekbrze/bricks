@@ -4,6 +4,7 @@ import { generateId } from '@/shared/types'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { useToast } from '@/shared/components/toast/toast-context'
 import type { Action } from '../types/action'
+import { nextOrderFor } from '../lib/action-order'
 
 const STORAGE_KEY = 'actions'
 
@@ -343,6 +344,10 @@ export function useActions() {
         frog: false,
         scheduledDate: data.scheduledDate || null,
         completedAt: null,
+        // Append to the group's manual sequence — undefined until the group
+        // is fully sequenced, because creation order already lands the new
+        // row last there (lib/action-order.ts).
+        order: nextOrderFor(actions, data.pathId, data.goalId ?? null),
       }
       setActions([...actions, newAction])
     },
@@ -381,7 +386,44 @@ export function useActions() {
       if (!current) return null
       if (current.pathId === pathId && current.goalId === goalId) return null
       const snapshot = actions
-      setActions(actions.map((a) => (a.id === id ? touch({ ...a, pathId, goalId }) : a)))
+      // Land at the end of the destination group's manual sequence (ADR 0042)
+      // — a moved-in Action appends, it doesn't keep a stale position.
+      setActions(
+        actions.map((a) =>
+          a.id === id ? touch({ ...a, pathId, goalId, order: nextOrderFor(actions, pathId, goalId) }) : a,
+        ),
+      )
+      return restoreSnapshot(snapshot)
+    },
+    [actions, setActions, restoreSnapshot],
+  )
+
+  /**
+   * Reorder within one group's own Actions (Goal progress page, ADR 0042) —
+   * the Action twin of `useGoals`' `reorderGoal`: snapshot, clamp, splice
+   * within the (pathId, goalId) sibling group, renumber 0..n-1, return an
+   * Undo. Only the Goal page reads `order`, so aggregate views are unaffected.
+   */
+  const reorderAction = useCallback(
+    (id: string, toIndex: number): UndoFn => {
+      const current = actions.find((a) => a.id === id)
+      if (!current) return () => {}
+      const siblings = actions.filter(
+        (a) => a.pathId === current.pathId && a.goalId === current.goalId,
+      )
+      const from = siblings.findIndex((a) => a.id === id)
+      if (from === -1) return () => {}
+      const clamped = Math.max(0, Math.min(toIndex, siblings.length - 1))
+      if (from === clamped) return () => {}
+      const snapshot = actions
+      const [moved] = siblings.splice(from, 1)
+      siblings.splice(clamped, 0, moved)
+      const orderById = new Map(siblings.map((a, i) => [a.id, i]))
+      setActions(
+        actions.map((a) =>
+          orderById.has(a.id) ? touch({ ...a, order: orderById.get(a.id)! }) : a,
+        ),
+      )
       return restoreSnapshot(snapshot)
     },
     [actions, setActions, restoreSnapshot],
@@ -407,6 +449,7 @@ export function useActions() {
     createAction,
     renameAction,
     moveActionToGoal,
+    reorderAction,
     toggleActionFrog,
     scheduleAction,
     unscheduleAction,

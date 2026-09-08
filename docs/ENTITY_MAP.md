@@ -91,7 +91,7 @@ Relationship notes:
 **States**: `inbox` → `assigned` → `done` (with `completedAt`) | `abandoned`. "Scheduled" is not a state — it is the presence of `scheduledDate`.
 **Contains**: —
 **Belongs to**: exactly one of — nothing (`inbox`), a `Path` (standalone), or a `Goal` (max one). Movable between Paths and Goals.
-**Flags**: `frog`; `scheduledDate`; `completedAt`.
+**Flags**: `frog`; `scheduledDate`; `completedAt`; `order` — optional manual position among its Goal's own Actions, read only on the Goal progress page (ADR 0042); aggregate views keep their automatic sort, and rows without it (legacy) sort after sequenced siblings by creation order.
 
 ## Derived views
 

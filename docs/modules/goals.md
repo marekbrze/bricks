@@ -121,11 +121,18 @@ per-Goal progress rollup.
    the per-Goal win balance (`WinBalance`, owned by `winlog`, embedded here,
    subtree-inclusive like the count), and the list of this Goal's own Actions
    plus its sub-Goals (each linking further in).
-2. The Actions section closes with the Actions view's quick-add row, reused
-   verbatim (ADR 0041): type a name, optionally pick a due date, Enter / Add
-   — the Action is created straight under this Goal, skipping the Inbox, and
-   the input keeps focus for several adds in a row. Hidden while the Path is
-   archived.
+2. The Actions section is the shared Action-row stack (ADR 0042): complete /
+   un-complete, add-to-today, schedule, rename, frog, move-to and delete on
+   each row (via `useActionRowActions`, exactly as the Actions view and a
+   Path's Actions tab mount it), a "Show completed" toggle hiding settled
+   rows in place, and an "All clear" line when everything is settled and
+   hidden. Rows reorder manually — drag onto a sibling or Move up / Move
+   down in the row menu, Undo-backed — via the optional `order` on `Action`,
+   read only here; aggregate views keep their automatic sort. The quick-add
+   row (ADR 0041) closes the section: type a name, optionally pick a due
+   date, Enter / Add — created straight under this Goal, skipping the Inbox,
+   appending to the manual sequence, focus kept for several adds in a row.
+   Hidden while the Path is archived.
 3. From here the Owner can jump into `today` for any schedulable Action, or
    drill into a sub-Goal's own progress view.
 
@@ -143,8 +150,9 @@ per-Goal progress rollup.
   pattern), warns that the whole subtree + its Actions move together.
 - **Goal progress** (`/paths/:pathId/goals/:goalId`): header with
   badges/countdown, Action count, embedded `WinBalance` (small/big), this
-  Goal's own Actions with a quick-add row beneath them (ADR 0041), its
-  sub-Goals (linking further in).
+  Goal's own Actions as fully managed, manually orderable rows with
+  "Show completed" and a quick-add row beneath them (ADR 0041, ADR 0042),
+  its sub-Goals (linking further in).
 - **Delete confirmation** (`AlertDialog`): cascade summary (sub-Goal +
   Action counts), Cancel / Delete Goal — same component as Path delete.
 - **Data-unreadable recovery** (all `goals` routes): shown instead of
@@ -171,7 +179,8 @@ per-Goal progress rollup.
 | Reactivate Goal | Overflow → back to `active` | `Goal` | Reversible from either achieved or abandoned |
 | Delete Goal | Overflow → `AlertDialog` cascade summary | `Goal` | Cascades to sub-Goals and all their Actions — resolves PROJECT.md Open Question; no undo |
 | View Goal progress | Action count + `WinBalance` + own Actions/sub-Goals | `Goal` | Balance rendered by `winlog` |
-| Quick-add Action (Goal progress) | The Actions view's quick-add row, reused verbatim, under this Goal's own Actions | `Action` | Created straight under the Goal (ADR 0041); hidden while the Path is archived; adding to a frog Goal does not flag the new Action |
+| Quick-add Action (Goal progress) | The Actions view's quick-add row, reused verbatim, under this Goal's own Actions | `Action` | Created straight under the Goal (ADR 0041), appending to its manual sequence; hidden while the Path is archived; adding to a frog Goal does not flag the new Action |
+| Reorder Actions (Goal progress) | Drag onto a sibling or Move up / Move down in the row menu; Undo toast | `Action` | Manual `order`, read only here (ADR 0042); aggregated views unaffected; archived Path keeps the plain read-only list |
 
 `docs/ACTIONS.md` already listed every one of these; this interview resolved
 the two behaviors it flagged as open (manual achieve, cascade delete) rather
@@ -188,6 +197,12 @@ Systematically audited in `docs/modules/goals-edgecases.md` and hardened
   honest `0 · 0` win balance, not an error; the quick-add row sits under the
   empty state as the primary way in (triage stays the second path, per the
   empty-state copy).
+- **Actions stored before manual `order` existed (ADR 0042), and order gaps
+  after deletes**: the comparator sends unsequenced rows after sequenced
+  siblings, in creation order — no migration; the first reorder renumbers
+  the whole group, and quick-add/move-in append numerically from then on.
+- **Every Action on the page settled**: rows hide behind "Show completed"
+  and an "All clear" line takes their place, matching the Actions view.
 - **Goal with an overdue deadline**: the countdown badge flips to an overdue
   treatment (still shows, doesn't block achieving/abandoning/editing it
   away).

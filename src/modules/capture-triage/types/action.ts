@@ -23,4 +23,11 @@ export interface Action extends BaseEntity {
   scheduledDate: string | null
   /** Owned by `today` once built. */
   completedAt: string | null
+  /**
+   * Manual position among its Goal's own Actions, read ONLY on the Goal
+   * progress page (ADR 0042) — aggregate views keep their automatic sort.
+   * Optional on purpose: rows stored before it existed (and mocks) stay
+   * valid and sort after sequenced ones by creation order — no migration.
+   */
+  order?: number
 }
