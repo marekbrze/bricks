@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PathOverviewPage } from './PathOverviewPage'
-import { withPaths, withPathsAndVisions, MOCK_PATHS } from './story-helpers'
-import { MOCK_VISIONS } from '@/modules/vision/data/mock'
+import {
+  withPaths,
+  withPathsAndVisions,
+  withPathHub,
+  withPathHubCorrupt,
+  MOCK_PATHS,
+  MOCK_VISIONS,
+} from './story-helpers'
 
 const meta: Meta<typeof PathOverviewPage> = {
   title: 'Paths/PathOverviewPage',
@@ -11,8 +17,14 @@ export default meta
 
 type Story = StoryObj<typeof PathOverviewPage>
 
+/** The full hub: Vision summary, Stats row, and the inline Goal tree. */
 export const WithData: Story = {
-  decorators: [withPathsAndVisions(MOCK_PATHS, MOCK_VISIONS, '/paths/path-sport', '/paths/:pathId')],
+  decorators: [withPathHub(MOCK_PATHS, MOCK_VISIONS, undefined, undefined, '/paths/path-sport')],
+}
+
+/** No Goals under this Path — the Goals section shows its own empty state. */
+export const NoGoals: Story = {
+  decorators: [withPathHub(MOCK_PATHS, MOCK_VISIONS, [], undefined, '/paths/path-sport')],
 }
 
 /** The summary card shows no achievements line while the board holds none. */
@@ -62,10 +74,21 @@ export const AllAchieved: Story = {
   ],
 }
 
+/** Archived Path — restore banner on top, the Goal section read-only. */
 export const ArchivedPath: Story = {
-  decorators: [withPathsAndVisions(MOCK_PATHS, MOCK_VISIONS, '/paths/path-home', '/paths/:pathId')],
+  decorators: [withPathHub(MOCK_PATHS, MOCK_VISIONS, undefined, undefined, '/paths/path-home')],
 }
 
 export const NotFound: Story = {
   decorators: [withPaths(MOCK_PATHS, '/paths/does-not-exist')],
+}
+
+/** Corrupt `goals` value — the overview shows the Goals recovery screen, not a wrong zero. */
+export const GoalsDataUnreadable: Story = {
+  decorators: [withPathHubCorrupt('goals')],
+}
+
+/** Corrupt `actions` value — the overview shows the Actions recovery screen. */
+export const ActionsDataUnreadable: Story = {
+  decorators: [withPathHubCorrupt('actions')],
 }

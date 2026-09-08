@@ -9,13 +9,13 @@ import { PathActionsPage } from './components/PathActionsPage'
  *
  *   /paths                     — card grid of active Paths
  *   /paths/archived            — archived Paths
- *   /paths/:pathId             — Path overview (the hub)
+ *   /paths/:pathId             — Path overview (the hub): Vision, Stats, Goals (ADR 0043)
  *   /paths/:pathId/actions     — this Path's Goals + Actions, drag-and-drop
  *
- * All four sit on one tab bar (`PathTabs`) together with
- * `/paths/:pathId/goals` (owned by the `goals` module) and
- * `/paths/:pathId/vision` (owned by `vision`) — see their own `index.tsx`;
- * those two are registered separately in App.tsx.
+ * These sit on one tab bar (`PathTabs`) together with `/paths/:pathId/vision`
+ * (owned by `vision`, registered separately in App.tsx). The Path's Goal tree
+ * is no longer its own route — `PathGoalsSection` renders it on the overview.
+ * `/paths/:pathId/goals/:goalId` (Goal progress) is still owned by `goals`.
  */
 export const pathsRoutes = [
   <Route key="paths" path="/paths" element={<PathsPage />} />,

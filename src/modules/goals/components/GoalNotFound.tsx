@@ -12,8 +12,8 @@ export function GoalNotFound({ pathId }: { pathId: string }) {
           It may have been deleted, or moved to another Path.
         </p>
       </div>
-      <Link to={`/paths/${pathId}/goals`} className={buttonVariants()}>
-        Back to Goals
+      <Link to={`/paths/${pathId}`} className={buttonVariants()}>
+        Back to Path
       </Link>
     </section>
   )

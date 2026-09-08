@@ -140,10 +140,10 @@ export function GoalProgressPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Link
-          to={`/paths/${path.id}/goals`}
+          to={`/paths/${path.id}`}
           className={buttonVariants({ variant: 'ghost', size: 'sm', className: 'self-start' })}
         >
-          <ArrowLeft aria-hidden="true" /> Goals
+          <ArrowLeft aria-hidden="true" /> {path.name}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -399,7 +399,7 @@ export function GoalProgressPage() {
             const wasSelf = dialog.goal.id === goal.id
             deleteGoal(dialog.goal.id)
             showToast(`“${name}” deleted`)
-            if (wasSelf) navigate(`/paths/${pathId}/goals`)
+            if (wasSelf) navigate(`/paths/${pathId}`)
           }}
         />
       )}

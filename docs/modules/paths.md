@@ -52,22 +52,25 @@ active directions.
 
 1. User opens `/paths/:pathId` → contextual header with the Path name and a
    **back to Paths** affordance, plus an overflow menu (Rename, Archive, Delete).
-2. Under the header sits the Path's **tab bar** — Overview · Actions · Goals ·
-   Vision — carried by every one of those four screens (ADR 0026). They are
+2. Under the header sits the Path's **tab bar** — Overview · Actions · Vision —
+   carried by those screens (ADR 0026; Goals tab removed, ADR 0043). They are
    separate routes, so back/forward and "open in a new tab" keep working.
-3. Overview sections, top to bottom:
+3. Overview sections, top to bottom (ADR 0043):
    - **Vision summary** — a condensed read-only view of the Vision board (a few
      notes / thumbnails, an `X/Y achievements` progress line) + **Open Vision
      board** → `/paths/:pathId/vision` (owned by the `vision` module).
      Achievements live on that board (ADR 0037) — the summary reports them.
-   - **Goals and Actions** — counts plus **Open Actions** →
-     `/paths/:pathId/actions`. The overview stays a summary; the work itself
-     lives on that tab.
-   - **Wins** — the per-Path win balance (`WinBalance`, owned by the `winlog`
-     module, embedded here) — small wins and big wins with counts (ADR 0039).
-4. From here the user branches into `actions`, `vision`, `goals`, or `winlog`;
-   `paths` itself fully owns only the Path-level actions (rename, archive,
-   delete, reorder).
+   - **Stats** — the Path's numbers: Goal count, achieved-Goal count, Action
+     count, and the per-Path win balance (`WinBalance`, owned by `winlog`,
+     embedded here — small wins and big wins with counts, ADR 0039).
+   - **Goals** — the full Goal tree, inline (`PathGoalsSection`, owned by
+     `goals`): `GoalRow` list in manual priority order, drag-and-drop +
+     keyboard reorder, per-row lifecycle menu, **New Goal**, empty state.
+     Clicking a Goal row opens Goal progress
+     (`/paths/:pathId/goals/:goalId`).
+4. From here the user branches into `actions`, `vision`, Goal progress, or
+   `winlog`; `paths` itself fully owns only the Path-level actions (rename,
+   archive, delete, reorder).
 
 ### Path Actions tab
 
@@ -137,19 +140,20 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
   required (inline error). A dirty form asks to confirm before discarding on
   Cancel / Escape / backdrop.
 - **Path overview** (`/paths/:pathId`): contextual header (name, back, overflow:
-  Rename / Archive / Delete); the Path tab bar; stacked sections — Vision summary
-  (+ open board; snippet, `X/Y achievements` line, thumbnails), **Goals and
-  Actions** summary (+ open Actions), per-Path win balance. Achievements
-  live on the Vision board (ADR 0037) — the summary reports their progress.
-  **Archived Paths render read-only**: a restore banner at the top until
-  unarchived.
+  Rename / Archive / Delete); the Path tab bar; stacked sections (ADR 0043) —
+  Vision summary (+ open board; snippet, `X/Y achievements` line, thumbnails),
+  **Stats** (Goal / achieved / Action counts + per-Path win balance), **Goals**
+  (the inline Goal tree, `PathGoalsSection`). Achievements live on the Vision
+  board (ADR 0037) — the summary reports their progress. **Archived Paths render
+  read-only**: a restore banner at the top; the Goals section drops its
+  create / reorder / row-menu controls until unarchived.
 - **Path Actions tab** (`/paths/:pathId/actions`): header (name, back, tab bar) →
   Show completed + New goal → this Path's Goal groups, standalone Actions, and
   closed Goals with open work, all draggable. An "Unassigned" fallback catches
   this Path's orphaned Actions. Read-only while archived.
-- **Path tab bar** (`PathTabs`, on all four Path screens): Overview · Actions ·
-  Goals · Vision as plain links with `aria-current`; scrolls horizontally on
-  narrow widths.
+- **Path tab bar** (`PathTabs`, on the Path screens): Overview · Actions ·
+  Vision as plain links with `aria-current`; scrolls horizontally on narrow
+  widths. (Goals tab removed — ADR 0043.)
 - **Archived Paths** (`/paths/archived`): muted list of archived Paths with
   Unarchive / Delete per row; back to `/paths`. Empty state when nothing archived.
 - **Delete confirmation** (`AlertDialog`): destructive cascade summary (real
@@ -172,8 +176,8 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
 | Archive Path | Overflow menu → immediate + Undo toast (restores exact prior state); contents kept | `Path` | Reversible; from the overview it also navigates back to `/paths` |
 | Unarchive Path | From `/paths/archived` or the archived overview’s restore banner; returns to end of active order; confirmation toast | `Path` | |
 | Delete Path | Overflow menu / archived list → `AlertDialog` with a cascade summary | `Path` | Cascades to the Vision (tiles and achievements included), Goals, Actions; confirmation toast, no undo |
-| View Path overview | The hub screen: Vision summary (with achievement progress) + Goals/Actions summary + win balance | `Path` | Vision / balance rendered by other modules |
-| Open a Path tab | Overview / Actions / Goals / Vision from the Path tab bar | `Path` | Separate routes, `aria-current` marks the active one |
+| View Path overview | The hub screen: Vision summary (with achievement progress) + Stats (counts + win balance) + the inline Goal tree | `Path` | Vision / balance / Goal tree rendered by other modules (ADR 0043) |
+| Open a Path tab | Overview / Actions / Vision from the Path tab bar | `Path` | Separate routes, `aria-current` marks the active one |
 | View Path Actions | This Path's Goal groups + standalone Actions, in the Actions view's shape | `Action` | `/paths/:pathId/actions`; components shared with `actions` |
 | Manage a Path's Actions | Schedule, complete, rename, move, delete, toggle frog, quick-add | `Action` | Rows/dialogs reused from `actions`; quick-add and dragging disabled while archived |
 
@@ -233,10 +237,11 @@ harmless while creation is synchronous), and an app-wide date-format convention
   onto the new Vision through `useVision` (ADR 0037) — the `paths` hook never
   writes the `visions` key itself, and achievement counts on cards, the
   archived list and the delete dialog read back through `useVision`.
-- **goals**: every `Goal` belongs to exactly one Path. The overview lists the
-  Path's Goals (priority order, deadline countdowns) and links to
-  `/paths/:pathId/goals`. Goals are created under a Path; deleting the Path
-  cascades its Goals and their Actions.
+- **goals**: every `Goal` belongs to exactly one Path. The overview embeds the
+  Path's Goal tree inline via `PathGoalsSection` (owned by `goals`, ADR 0043) —
+  priority order, deadline countdowns, reorder, lifecycle menu, New Goal. A
+  Goal row opens `/paths/:pathId/goals/:goalId` (Goal progress). Goals are
+  created under a Path; deleting the Path cascades its Goals and their Actions.
 - **winlog**: the per-Path `WinBalance` is embedded on the overview; the
   card grid shows the win line. Goal/Action completions under the Path feed
   it. (Achievement ticks never fed it despite earlier claims to the contrary —
@@ -251,5 +256,5 @@ harmless while creation is synchronous), and an app-wide date-format convention
   `ActionRowItem`, `QuickAddActionRow`, and `ScheduleActionDialog` from the
   `actions`/`today` modules rather than re-implementing row behavior.
 - **app-shell**: `/paths` is nav item #2; the overview's nested routes
-  (`/paths/:pathId/vision`, `/paths/:pathId/goals`) are registered by those
-  modules under the shell's router.
+  (`/paths/:pathId/vision`, `/paths/:pathId/goals/:goalId`) are registered by
+  those modules under the shell's router.

@@ -37,13 +37,13 @@ function Providers({
 }
 
 /** Seed `paths` + `actions` + `goals`, then render at the given route.
- * `route` defaults to the goals tree pattern so `useParams` populates;
- * pass a deeper pattern (e.g. `/paths/:pathId/goals/:goalId`) for pages
- * that read the goal param too. */
+ * `route` defaults to the Path overview pattern so `useParams` populates
+ * (the Goal tree lives inline there now — ADR 0043); pass a deeper pattern
+ * (e.g. `/paths/:pathId/goals/:goalId`) for pages that read the goal param. */
 export function withGoals(
   goals: Goal[],
-  initialPath = '/paths/path-sport/goals',
-  route: string | undefined = '/paths/:pathId/goals',
+  initialPath = '/paths/path-sport',
+  route: string | undefined = '/paths/:pathId',
 ): Decorator {
   return (Story) => {
     __resetStorageHealth()
@@ -62,27 +62,8 @@ export function withGoals(
   }
 }
 
-/** Write an unparseable value to the `goals` key, to exercise the recovery screen. */
-export function seedCorruptGoals(initialPath = '/paths/path-sport/goals'): Decorator {
-  return (Story) => {
-    __resetStorageHealth()
-    try {
-      window.localStorage.setItem('paths', JSON.stringify(MOCK_PATHS.filter((p) => !p.archived)))
-      window.localStorage.setItem('actions', JSON.stringify(MOCK_ACTIONS))
-      window.localStorage.setItem('goals', '{ this is not valid json ]')
-    } catch {
-      /* ignore */
-    }
-    return (
-      <Providers initialPath={initialPath}>
-        <Story />
-      </Providers>
-    )
-  }
-}
-
 /** Write an unparseable value to the `actions` key — Goals routes should recover, not show `0 Actions` silently. */
-export function seedCorruptActions(initialPath = '/paths/path-sport/goals'): Decorator {
+export function seedCorruptActions(initialPath = '/paths/path-sport'): Decorator {
   return (Story) => {
     __resetStorageHealth()
     try {
@@ -101,7 +82,7 @@ export function seedCorruptActions(initialPath = '/paths/path-sport/goals'): Dec
 }
 
 /** Seed with `paths` including the archived one, so an archived Path's Goals render read-only. */
-export function withArchivedPathGoals(goals: Goal[], initialPath = '/paths/path-home/goals'): Decorator {
+export function withArchivedPathGoals(goals: Goal[], initialPath = '/paths/path-home'): Decorator {
   return (Story) => {
     __resetStorageHealth()
     try {

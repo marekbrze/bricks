@@ -18,7 +18,7 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Archive Path | Move out of active set, keep all contents | Owner | Reversible |
 | Unarchive Path | Return to active | Owner | |
 | Delete Path | Cascade-deletes the Vision (its tiles and achievements included), Goals, Actions | Owner | Confirmation dialog ("na pewno?") |
-| View Path overview | Vision summary (with achievement progress) + Goals + win balance | Owner | |
+| View Path overview | Vision summary (with achievement progress) + Stats (counts + win balance) + the inline Goal tree | Owner | Goal tree embedded via `PathGoalsSection`; no separate Goals tab — ADR 0043 |
 
 ### Vision
 

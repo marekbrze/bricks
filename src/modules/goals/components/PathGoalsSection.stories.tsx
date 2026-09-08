@@ -1,13 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Goal } from '../types/goal'
-import { GoalTreePage } from './GoalTreePage'
-import {
-  withGoals,
-  withArchivedPathGoals,
-  seedCorruptGoals,
-  seedCorruptActions,
-  MOCK_GOALS,
-} from './story-helpers'
+import { PathGoalsSection } from './PathGoalsSection'
+import { withGoals, withArchivedPathGoals, MOCK_GOALS } from './story-helpers'
 
 const ARCHIVED_PATH_GOALS: Goal[] = [
   {
@@ -26,14 +20,16 @@ const ARCHIVED_PATH_GOALS: Goal[] = [
   },
 ]
 
-const meta: Meta<typeof GoalTreePage> = {
-  title: 'Goals/GoalTreePage',
-  component: GoalTreePage,
+const meta: Meta<typeof PathGoalsSection> = {
+  title: 'Goals/PathGoalsSection',
+  component: PathGoalsSection,
+  args: { pathId: 'path-sport', readOnly: false },
 }
 export default meta
 
-type Story = StoryObj<typeof GoalTreePage>
+type Story = StoryObj<typeof PathGoalsSection>
 
+/** The Goal tree as it renders inside the Path overview. */
 export const WithData: Story = {
   decorators: [withGoals(MOCK_GOALS)],
 }
@@ -46,17 +42,8 @@ export const SingleTopLevelGoal: Story = {
   decorators: [withGoals([{ ...MOCK_GOALS[0], parentGoalId: null }])],
 }
 
-/** Stored value is present but unparseable — recovery screen, not the empty state. */
-export const DataUnreadable: Story = {
-  decorators: [seedCorruptGoals()],
-}
-
-/** Corrupt `actions` shouldn't silently show `0 Actions` everywhere — same recovery screen as `paths`/`capture-triage`. */
-export const ActionsDataUnreadable: Story = {
-  decorators: [seedCorruptActions()],
-}
-
-/** An archived Path's Goals render read-only — restore banner, no create/edit/reorder/delete controls. */
+/** An archived Path's Goals render read-only — no New Goal, reorder, or row menu. */
 export const ArchivedPathReadOnly: Story = {
+  args: { pathId: 'path-home', readOnly: true },
   decorators: [withArchivedPathGoals(ARCHIVED_PATH_GOALS)],
 }

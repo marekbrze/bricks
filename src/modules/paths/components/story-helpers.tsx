@@ -6,10 +6,14 @@ import { Toaster } from '@/shared/components/toast/Toaster'
 import { __resetStorageHealth } from '@/shared/lib/storage-health'
 import type { Vision } from '@/modules/vision/types/vision'
 import { MOCK_VISIONS } from '@/modules/vision/data/mock'
+import type { Goal } from '@/modules/goals/types/goal'
+import { MOCK_GOALS } from '@/modules/goals/data/mock'
+import type { Action } from '@/modules/capture-triage/types/action'
+import { MOCK_ACTIONS } from '@/modules/capture-triage/data/mock'
 import type { Path } from '../types/path'
 import { MOCK_PATHS } from '../data/mock'
 
-export { MOCK_PATHS }
+export { MOCK_PATHS, MOCK_VISIONS, MOCK_GOALS, MOCK_ACTIONS }
 
 function Providers({
   initialPath,
@@ -104,6 +108,61 @@ export function withPathsAndVisions(
     }
     return (
       <Providers initialPath={initialPath} route={route}>
+        <Story />
+      </Providers>
+    )
+  }
+}
+
+/**
+ * The full Path overview data set — `paths` + `visions` + `goals` + `actions`.
+ * The overview renders the Vision summary, the Stats row, and the inline Goal
+ * tree (ADR 0043), so a faithful story needs every key seeded.
+ */
+export function withPathHub(
+  paths: Path[] = MOCK_PATHS,
+  visions: Vision[] = MOCK_VISIONS,
+  goals: Goal[] = MOCK_GOALS,
+  actions: Action[] = MOCK_ACTIONS,
+  initialPath = '/paths/path-sport',
+  route: string | undefined = '/paths/:pathId',
+): Decorator {
+  return (Story) => {
+    __resetStorageHealth()
+    seedPaths(paths)
+    try {
+      window.localStorage.setItem('visions', JSON.stringify(visions))
+      window.localStorage.setItem('goals', JSON.stringify(goals))
+      window.localStorage.setItem('actions', JSON.stringify(actions))
+    } catch {
+      /* ignore — sections fall back to their empty / recovery states */
+    }
+    return (
+      <Providers initialPath={initialPath} route={route}>
+        <Story />
+      </Providers>
+    )
+  }
+}
+
+/** Seed a valid hub, then corrupt one collection to exercise its recovery screen. */
+export function withPathHubCorrupt(
+  key: 'goals' | 'actions' | 'visions',
+  initialPath = '/paths/path-sport',
+): Decorator {
+  return (Story) => {
+    __resetStorageHealth()
+    seedPaths(MOCK_PATHS)
+    try {
+      window.localStorage.setItem('visions', JSON.stringify(MOCK_VISIONS))
+      window.localStorage.setItem('goals', JSON.stringify(MOCK_GOALS))
+      window.localStorage.setItem('actions', JSON.stringify(MOCK_ACTIONS))
+      window.localStorage.setItem(key, '{ this is not valid json ]')
+    } catch {
+      /* ignore */
+    }
+    return (
+      <Providers initialPath={initialPath} route="/paths/:pathId">
         <Story />
       </Providers>
     )

@@ -26,8 +26,8 @@ per-Goal progress rollup.
 
 ### View the Goal tree for a Path
 
-1. Owner arrives at `/paths/:pathId/goals`, usually via **Open Goals** from
-   the Path overview.
+1. The Goal tree is the **Goals section on the Path overview** (`/paths/:pathId`),
+   rendered inline by `PathGoalsSection` (ADR 0043) — no separate route or tab.
 2. Sees a flat-looking list where sub-Goals render indented under their
    parent, each row in manual priority order within its level: name, frog
    flag (if set), deadline badge with days-remaining countdown (if set),
@@ -36,7 +36,7 @@ per-Goal progress rollup.
 3. Clicking a row's name opens **Goal progress** for that Goal
    (`/paths/:pathId/goals/:goalId`); an overflow menu per row holds Edit /
    Add sub-Goal / Move / Achieve / Abandon / Delete.
-4. A **New Goal** primary action at the top adds a top-level Goal under this
+4. A **New Goal** action in the section header adds a top-level Goal under this
    Path.
 
 ### Create a Goal / sub-Goal
@@ -138,11 +138,12 @@ per-Goal progress rollup.
 
 ## Screens (rough)
 
-- **Goal tree** (`/paths/:pathId/goals`): **New Goal** primary action;
-  indented tree list (name, frog flag, deadline countdown badge, lifecycle
-  badge for achieved/abandoned, Action count, drag handle, overflow menu:
-  Edit / Add sub-Goal / Move to Path / toggle Frog / Achieve / Abandon /
-  Reactivate / Delete). Empty state when the Path has no Goals yet.
+- **Goals section** (`PathGoalsSection`, inline on `/paths/:pathId` — ADR 0043):
+  section header with **New Goal**; indented tree list (name, frog flag,
+  deadline countdown badge, lifecycle badge for achieved/abandoned, Action
+  count, drag handle, overflow menu: Edit / Add sub-Goal / Move to Path /
+  toggle Frog / Achieve / Abandon / Reactivate / Delete). Empty state when the
+  Path has no Goals yet.
 - **New/Edit Goal dialog**: name (required) + description + deadline date
   picker, Cancel / Save. A dirty form confirms before discarding, same
   pattern as `NewPathDialog`.
@@ -155,14 +156,13 @@ per-Goal progress rollup.
   its sub-Goals (linking further in).
 - **Delete confirmation** (`AlertDialog`): cascade summary (sub-Goal +
   Action counts), Cancel / Delete Goal — same component as Path delete.
-- **Data-unreadable recovery** (all `goals` routes): shown instead of
-  content when the stored `goals` **or** `actions` value is corrupt —
-  matches the `paths` pattern (distinct from the empty-tree state), offers
-  a confirmed reset.
-- **Archived-Path read-only** (both `goals` routes): a restore banner plus
-  every mutation control (create/edit/reorder/move/frog/achieve/abandon/
-  delete/quick-add Action) hidden while the owning Path is archived — matches
-  `PathOverviewPage`'s Achievements section exactly.
+- **Data-unreadable recovery**: on Goal progress its own screen; for the
+  inline Goal tree the **Path overview** shows the recovery screen when the
+  stored `goals` **or** `actions` value is corrupt (ADR 0043) — matches the
+  `paths` pattern, distinct from the empty-tree state, offers a confirmed reset.
+- **Archived-Path read-only** (the Goals section + Goal progress): a restore
+  banner plus every mutation control (create/edit/reorder/move/frog/achieve/
+  abandon/delete/quick-add Action) hidden while the owning Path is archived.
 
 ## Actions
 
@@ -191,8 +191,8 @@ than adding anything new — no new entities or glossary terms.
 Systematically audited in `docs/modules/goals-edgecases.md` and hardened
 (proto-harden, 2026-09-04). Decided behaviors:
 
-- **Path has no Goals yet**: tree screen shows an empty state explaining
-  Goals live under Paths, with **New Goal** front and center.
+- **Path has no Goals yet**: the Goals section shows an empty state explaining
+  the execution layer, with **New Goal** front and center.
 - **Goal with no Actions**: progress view shows `0` cumulative count and an
   honest `0 · 0` win balance, not an error; the quick-add row sits under the
   empty state as the primary way in (triage stays the second path, per the
@@ -226,16 +226,17 @@ Systematically audited in `docs/modules/goals-edgecases.md` and hardened
   own self-heal (mirrors `useActions`' Path self-heal) — Goals and their
   Actions under a vanished Path are removed on the next mount that reads
   them, not orphaned.
-- **A Path is archived while it has Goals**: both `goals` routes go
-  read-only — restore banner, every mutation control hidden — until the
-  Path is unarchived, matching `paths`' own Achievements section.
+- **A Path is archived while it has Goals**: the overview's Goals section and
+  Goal progress go read-only — restore banner, every mutation control hidden —
+  until the Path is unarchived.
 - **Achieving/abandoning a Goal that still has Actions assigned to it**: the
   Actions are left untouched — no per-Action flag exists yet since Actions
   don't render anywhere outside this Goal's own page (the Goal's state
   badge, already visible wherever the Goal appears, is the signal for now).
   Revisit once `today` reads `goalId` off Actions.
-- **Corrupt `goals` or `actions` storage on a Goals route**: a dedicated
-  recovery screen distinct from the empty-tree state, matching `paths`.
+- **Corrupt `goals` or `actions` storage**: a dedicated recovery screen
+  distinct from the empty-tree state — on the Path overview for the inline
+  tree (ADR 0043), on its own screen for Goal progress. Matches `paths`.
 
 Deferred (see `goals-edgecases.md` → Hardening status): no virtualization
 on a very large Goal tree, no double-submit guard on Create/Edit (harmless
@@ -246,9 +247,10 @@ achieve/abandon).
 
 ## Integration Points
 
-- **paths**: every Goal belongs to exactly one Path; the Path overview lists
-  Goals in priority order with deadline countdowns and links to
-  `/paths/:pathId/goals`. Deleting the Path cascades its Goals.
+- **paths**: every Goal belongs to exactly one Path; the Path overview embeds
+  the Goal tree inline via `PathGoalsSection` (priority order, deadline
+  countdowns, reorder, lifecycle menu, New Goal — ADR 0043). A Goal row opens
+  `/paths/:pathId/goals/:goalId`. Deleting the Path cascades its Goals.
 - **capture-triage**: an Inbox Action is assigned into an existing Goal, or
   promotes into a brand-new top-level Goal (the originating Action is
   discarded, per `capture-triage`'s ADR 0004).

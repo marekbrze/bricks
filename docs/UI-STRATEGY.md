@@ -10,7 +10,7 @@ The application shell — the frame every module screen renders inside. Structur
 
 - **Desktop**: **top bar** — brand on the left, 5 module links inline in the header. Hidden below the `md` breakpoint.
 - **Mobile**: **bottom tabs** — 5 fixed icons + labels at the viewport bottom (tightened spacing at ~360 px). Hidden at `md` and up.
-- Only **5 of the 7 design modules** are top-level destinations. `vision` and `goals` are sub-navigation reached from inside a Path (Path overview → its Vision board / its Goals), not the main nav.
+- Only **5 of the 7 design modules** are top-level destinations. `vision` is sub-navigation reached from inside a Path (Path overview → its Vision board). `goals` has no navigation entry at all — the Goal tree renders inline on the Path overview (ADR 0043); Goal progress (`/paths/:pathId/goals/:goalId`) is a nested route opened from a Goal row.
 
 ## Home page
 
@@ -26,7 +26,7 @@ The application shell — the frame every module screen renders inside. Structur
 | `capture-triage` | Inbox | `/capture-triage` | 4 |
 | `winlog` | Log | `/winlog` | 5 |
 
-Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` and `goals` get nested routes under `/paths/:pathId/...` when `proto-lofi` reaches them. `actions` (order 2) sits next to Today — the two daily surfaces. Settings-level modules are **not** nav destinations: `data-sync` lives at `/data-sync`, reached from the footer's secondary nav.
+Route segment == module code name, so `proto-lofi` maps each route to its module folder directly. `vision` gets a nested route under `/paths/:pathId/vision`; `goals` only keeps the nested `/paths/:pathId/goals/:goalId` progress route (its tree is inline on the Path overview — ADR 0043). `actions` (order 2) sits next to Today — the two daily surfaces. Settings-level modules are **not** nav destinations: `data-sync` lives at `/data-sync`, reached from the footer's secondary nav.
 
 ## Content layout
 

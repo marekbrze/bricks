@@ -2,9 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArchiveRestore } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
+import { GoalsDataUnreadable } from '@/modules/goals/components/GoalsDataUnreadable'
+import { PathGoalsSection } from '@/modules/goals/components/PathGoalsSection'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
+import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
 import { useWinLog } from '@/modules/winlog/hooks/use-win-log'
 import { winKindCounts } from '@/modules/winlog/lib/win-counts'
 import { WinBalance } from '@/modules/winlog/components/WinBalance'
@@ -12,7 +16,6 @@ import { useVision } from '@/modules/vision/hooks/use-vision'
 import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
 import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnreadable'
 import { usePaths } from '../hooks/use-paths'
-import { ModuleStubSection } from './ModuleStubSection'
 import { PathTabs } from './PathTabs'
 import { PathOverflowMenu } from './PathOverflowMenu'
 import { RenamePathDialog } from './RenamePathDialog'
@@ -34,8 +37,17 @@ export function PathOverviewPage() {
     deletePath,
     cascadeCounts,
   } = usePaths()
-  const { goalCountForPath } = useGoals()
-  const { actionCountForPath } = useActions()
+  const {
+    goals,
+    goalCountForPath,
+    dataUnreadable: goalsUnreadable,
+    resetGoals,
+  } = useGoals()
+  const {
+    actionCountForPath,
+    dataUnreadable: actionsUnreadable,
+    resetActions,
+  } = useActions()
   const { winsForPath } = useWinLog()
   const {
     visionTileCountForPath,
@@ -48,14 +60,22 @@ export function PathOverviewPage() {
   const [deleting, setDeleting] = useState(false)
 
   if (dataUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
-  // The summary card reads `visions` too — a corrupt value must surface the
-  // same recovery screen the board shows, not an inviting empty state.
+  // Every collection the overview reads must surface its own recovery screen
+  // rather than silently rendering a wrong zero.
   if (visionUnreadable) return <VisionDataUnreadable onReset={resetVisions} />
+  if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
+  if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
   const path = getPath(pathId)
   if (!path) return <PathNotFound />
 
   const readOnly = path.archived
+
+  const goalCount = goalCountForPath(path.id)
+  const achievedGoalCount = goals.filter(
+    (g) => g.pathId === path.id && g.state === 'achieved',
+  ).length
+  const actionCount = actionCountForPath(path.id)
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,31 +116,22 @@ export function PathOverviewPage() {
         </div>
       )}
 
+      {/* Vision → Stats → Goals, one screen (ADR 0043). */}
       <VisionSummaryCard pathId={path.id} />
 
-      {/* The overview stays a summary: the work itself lives one tab over, where
-          Goals and Actions are one draggable list (docs/adr/0026-path-actions-tab-and-drag-and-drop.md). */}
-      <ModuleStubSection
-        id="work-heading"
-        heading="Goals and Actions"
-        blurb={`${goalCountForPath(path.id)} ${
-          goalCountForPath(path.id) === 1 ? 'Goal' : 'Goals'
-        } and ${actionCountForPath(path.id)} ${
-          actionCountForPath(path.id) === 1 ? 'Action' : 'Actions'
-        } under this Path — the execution layer, in priority order.`}
-        linkTo={`/paths/${path.id}/actions`}
-        linkLabel="Open Actions"
-      />
-
-      {/* Achievements live on the Vision board now (ADR 0037) — the summary
-          card reports their progress and links one tab over. */}
-
-      <section aria-labelledby="wins-heading" className="flex flex-col gap-2">
-        <h2 id="wins-heading" className="text-sm font-semibold">
-          Wins
+      <section aria-labelledby="stats-heading" className="flex flex-col gap-3">
+        <h2 id="stats-heading" className="text-sm font-semibold">
+          Stats
         </h2>
+        <div className="grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-card p-3">
+          <StatFigure label="Goals" value={goalCount} />
+          <StatFigure label="Achieved" value={achievedGoalCount} />
+          <StatFigure label="Actions" value={actionCount} />
+        </div>
         <WinBalance counts={winKindCounts(winsForPath(path.id))} size="sm" />
       </section>
+
+      <PathGoalsSection pathId={path.id} readOnly={readOnly} />
 
       <RenamePathDialog
         open={renaming}
@@ -134,8 +145,8 @@ export function PathOverviewPage() {
         pathName={path.name}
         counts={{
           ...cascadeCounts(path.id),
-          goals: goalCountForPath(path.id),
-          actions: actionCountForPath(path.id),
+          goals: goalCount,
+          actions: actionCount,
           visionTiles: visionTileCountForPath(path.id),
           achievements: achievementCountsForPath(path.id).total,
         }}
@@ -145,6 +156,23 @@ export function PathOverviewPage() {
           navigate('/paths', { state: { deletedName: name } })
         }}
       />
+    </div>
+  )
+}
+
+/** One figure in the Stats row. Honest zeros — a muted value, never hidden. */
+function StatFigure({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="px-3 first:pl-0 last:pr-0">
+      <p
+        className={cn(
+          'text-2xl font-semibold tabular-nums tracking-tight',
+          value === 0 && 'text-muted-foreground',
+        )}
+      >
+        {value}
+      </p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   )
 }

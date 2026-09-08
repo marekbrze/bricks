@@ -1,9 +1,10 @@
 import { CalendarDays, ListTodo, Signpost, Inbox, Trophy, type LucideIcon } from 'lucide-react'
 
 /**
- * Top-level navigation. Only 5 of the 7 design modules are nav destinations —
- * `vision` and `goals` are reached from inside a Path, not the main nav.
- * See docs/UI-STRATEGY.md.
+ * Top-level navigation. Only 5 of the 7 design modules are nav destinations.
+ * `vision` is reached from inside a Path; `goals` renders inline on the Path
+ * overview (ADR 0043), with Goal progress as a nested route. See
+ * docs/UI-STRATEGY.md.
  *
  * Route segment == module code name from docs/MODULES.md, so proto-lofi can
  * map each route straight to its module folder.

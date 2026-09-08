@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Image, ListTodo, Signpost, Target } from 'lucide-react'
+import { Image, ListTodo, Signpost } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * The Path's own tab bar. A Path used to be one overview page that linked out
- * to its Goals and Vision; those screens are siblings, not destinations you
- * leave the Path for, so they sit on one bar instead — Overview, Actions,
- * Goals, Vision (docs/adr/0026-path-actions-tab-and-drag-and-drop.md).
+ * The Path's own tab bar — Overview, Actions, Vision. The Goal tree used to
+ * be a fourth tab; it now renders inline on the Overview instead (ADR 0043).
+ * The Actions tab and its drag-and-drop are unchanged
+ * (docs/adr/0026-path-actions-tab-and-drag-and-drop.md).
  *
  * Plain links, not an ARIA tablist: each tab is its own route, so browser
  * back/forward and "open in new tab" have to keep working. `aria-current`
@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils'
 const TABS = [
   { to: '', label: 'Overview', icon: Signpost, end: true },
   { to: '/actions', label: 'Actions', icon: ListTodo, end: false },
-  { to: '/goals', label: 'Goals', icon: Target, end: false },
   { to: '/vision', label: 'Vision', icon: Image, end: false },
 ]
 
