@@ -31,7 +31,7 @@ export const NoGoals: Story = {
 export const NoAchievements: Story = {
   decorators: [
     withPathsAndVisions(
-      [{ ...MOCK_PATHS[0], mockGoalCount: 0, visionSnippet: '' }],
+      [{ ...MOCK_PATHS[0], mockGoalCount: 0 }],
       [
         {
           id: 'vision-no-achievements',

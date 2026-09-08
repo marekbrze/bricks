@@ -34,8 +34,6 @@ export interface Path extends BaseEntity {
   archived: boolean
   /** ISO timestamp when archived; null while active. */
   archivedAt: string | null
-  /** First Vision note, truncated — shown as the card / overview snippet. */
-  visionSnippet: string
 
   // --- mock stand-ins until the owning modules exist ---
   /** Mock: number of Goals under this Path (owned by `goals`). */

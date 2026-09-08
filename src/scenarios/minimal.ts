@@ -16,7 +16,6 @@ export function minimalScenario(): AppData {
       order: 0,
       archived: false,
       archivedAt: null,
-      visionSnippet: '',
       mockGoalCount: 0,
       mockActionCount: 0,
       mockVisionTileCount: 2,

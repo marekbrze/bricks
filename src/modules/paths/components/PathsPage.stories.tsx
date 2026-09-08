@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PathsPage } from './PathsPage'
-import { withPaths, seedCorruptPaths, MOCK_PATHS } from './story-helpers'
+import { withPaths, withPathsAndVisions, seedCorruptPaths, MOCK_PATHS } from './story-helpers'
 
 const meta: Meta<typeof PathsPage> = {
   title: 'Paths/PathsPage',
@@ -11,11 +11,11 @@ export default meta
 type Story = StoryObj<typeof PathsPage>
 
 export const WithData: Story = {
-  decorators: [withPaths(MOCK_PATHS)],
+  decorators: [withPathsAndVisions(MOCK_PATHS)],
 }
 
 export const SinglePath: Story = {
-  decorators: [withPaths([{ ...MOCK_PATHS[0], order: 0 }])],
+  decorators: [withPathsAndVisions([{ ...MOCK_PATHS[0], order: 0 }])],
 }
 
 export const EmptyState: Story = {
@@ -23,7 +23,7 @@ export const EmptyState: Story = {
 }
 
 export const OnlyArchived: Story = {
-  decorators: [withPaths(MOCK_PATHS.filter((p) => p.archived))],
+  decorators: [withPathsAndVisions(MOCK_PATHS.filter((p) => p.archived))],
 }
 
 /** Stored value is present but unparseable — recovery screen, not the empty state. */

@@ -35,8 +35,14 @@ export function PathCard({
   const { winsForPath } = useWinLog()
   // Achievements are Vision tiles (ADR 0037) — the card reads their progress
   // from the board, same as it reads the Vision snippet.
-  const { achievementCountsForPath } = useVision()
+  const { achievementCountsForPath, visionSnippetForPath, imageTilesForPath, visionTileCountForPath } =
+    useVision()
   const { achieved: achievedCount, total: achievementTotal } = achievementCountsForPath(path.id)
+  // The card's Vision peek reads the live board (ADR 0016), not a denormalised
+  // copy on the Path — first photo, then the first note's text.
+  const visionSnippet = visionSnippetForPath(path.id)
+  const firstImage = imageTilesForPath(path.id, 1)[0]
+  const hasVision = visionTileCountForPath(path.id) > 0
 
   return (
     <Card className="gap-3">
@@ -71,8 +77,20 @@ export function PathCard({
         />
       </div>
 
-      {path.visionSnippet ? (
-        <p className="line-clamp-2 text-sm text-muted-foreground">{path.visionSnippet}</p>
+      {hasVision ? (
+        <div className="flex flex-col gap-2">
+          {firstImage && (
+            <img
+              src={firstImage.src}
+              alt={firstImage.alt}
+              loading="lazy"
+              className="aspect-[16/9] w-full rounded-md object-cover"
+            />
+          )}
+          {visionSnippet && (
+            <p className="line-clamp-2 text-sm text-muted-foreground">{visionSnippet}</p>
+          )}
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground italic">No Vision yet</p>
       )}

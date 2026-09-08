@@ -18,7 +18,7 @@ the future. Everything else in the app surfaces *through* the Path overview.
 
 The list is a **card grid** — each card is a rich at-a-glance summary (name,
 Goal and achievement counts, the Path's win line — small/big wins with counts,
-a Vision snippet) so opening `/paths` already tells the Owner where their
+a Vision peek — first board photo + first note) so opening `/paths` already tells the Owner where their
 energy is going.
 Archived Paths are out of the way on their own screen; the main list is only
 active directions.
@@ -42,10 +42,12 @@ active directions.
 ### Browse Paths and open one
 
 1. User opens `/paths` → sees the card grid of active Paths in manual order.
-2. Each card shows: name, `N goals · X/Y achievements` (read from the Path's
-   Vision achievement tiles), the Path's win line (`WinKindBadges` — small and
-   big wins with counts, owned by `winlog`), a short Vision snippet (first
-   note, truncated).
+2. Each card shows: name, a Vision peek read live from the Path's board —
+   the first image tile (16:9 thumbnail) and the first note, truncated —
+   `N goals · X/Y achievements` (read from the Path's Vision achievement
+   tiles), and the Path's win line (`WinKindBadges` — small and big wins
+   with counts, owned by `winlog`). A Path with no Vision tiles shows
+   "No Vision yet".
 3. User clicks a card → **Path overview** (`/paths/:pathId`).
 
 ### Path overview (the hub)
@@ -132,7 +134,8 @@ behaviors moved with it: reversible tick, inline edit, lightweight delete.)
 
 - **Paths list** (`/paths`): primary **New Path** button; responsive **card grid**
   of active Paths (name — clamped to 2 lines, `N goals · M achievements`, win
-  line with small/big counts, Vision snippet, drag handle, overflow menu);
+  line with small/big counts, Vision peek — first board photo + first note, or
+  "No Vision yet" — drag handle, overflow menu);
   **View archived** link at the end. Empty state when there are no Paths.
 - **New Path modal**: name input + repeatable achievement rows (+ add another / ✕;
   on Create they seed the new Vision's achievement tiles), Cancel / Create. Name

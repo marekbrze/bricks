@@ -76,7 +76,6 @@ export function usePaths() {
         order: maxOrder + 1,
         archived: false,
         archivedAt: null,
-        visionSnippet: '',
         mockGoalCount: 0,
         mockActionCount: 0,
         mockVisionTileCount: 0,
