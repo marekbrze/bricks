@@ -15,10 +15,11 @@ import { addDaysIso, formatDayLabel, todayLocalIso } from '@/shared/lib/date'
 
 /**
  * Inline quick-add row closing a Goal group or a Path's standalone group —
- * the Actions view's primary entry point. Type a name, optionally pick a due
- * date from the calendar menu (Today / Tomorrow / In a week / any date),
- * press Enter. Default is no date. The input deliberately keeps focus after
- * creating, so several Actions can be typed in a row (Todoist-style).
+ * the Actions view's primary entry point, also reused on the Goal progress
+ * page (ADR 0041). Type a name, optionally pick a due date from the calendar
+ * menu (Today / Tomorrow / In a week / any date), press Enter. Default is no
+ * date. The input deliberately keeps focus after creating, so several Actions
+ * can be typed in a row (Todoist-style).
  */
 export function QuickAddActionRow({
   label,

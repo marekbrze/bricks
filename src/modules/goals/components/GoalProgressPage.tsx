@@ -11,6 +11,7 @@ import { winKindCounts } from '@/modules/winlog/lib/win-counts'
 import { WinBalance } from '@/modules/winlog/components/WinBalance'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { ActionsDataUnreadable } from '@/modules/capture-triage/components/ActionsDataUnreadable'
+import { QuickAddActionRow } from '@/modules/actions/components/QuickAddActionRow'
 import { useGoals } from '../hooks/use-goals'
 import type { Goal } from '../types/goal'
 import { daysUntil, deadlineLabel } from '../lib/deadline'
@@ -40,7 +41,7 @@ export function GoalProgressPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { getPath, unarchivePath, dataUnreadable: pathsUnreadable, resetPaths } = usePaths()
-  const { dataUnreadable: actionsUnreadable, resetActions } = useActions()
+  const { createAction, dataUnreadable: actionsUnreadable, resetActions } = useActions()
   const { winsForGoal } = useWinLog()
   const {
     getGoal,
@@ -192,7 +193,7 @@ export function GoalProgressPage() {
         </h2>
         {ownActions.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No Actions assigned directly to this Goal yet — triage one in from the Inbox.
+            No Actions yet — add the first one below, or triage one in from the Inbox.
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
@@ -207,6 +208,17 @@ export function GoalProgressPage() {
               </li>
             ))}
           </ul>
+        )}
+        {/* The Actions view's quick-add row, reused verbatim (ADR 0041) — an
+            Action typed here is created straight under this Goal, skipping
+            the Inbox. */}
+        {!readOnly && (
+          <QuickAddActionRow
+            label={`Add action to “${goal.name}”`}
+            onCreate={(name, scheduledDate) =>
+              createAction({ name, pathId: goal.pathId, goalId: goal.id, scheduledDate })
+            }
+          />
         )}
       </section>
 

@@ -55,7 +55,7 @@ export const ActionsDataUnreadable: Story = {
   decorators: [seedCorruptActions('/paths/path-sport/goals/goal-pullup-program')],
 }
 
-/** An archived Path's Goal renders read-only — restore banner, no overflow menu, no Add sub-Goal. */
+/** An archived Path's Goal renders read-only — restore banner, no overflow menu, no Add sub-Goal, no quick-add row. */
 export const ArchivedPathReadOnly: Story = {
   decorators: [withArchivedPathGoals([ARCHIVED_PATH_GOAL], '/paths/path-home/goals/goal-declutter')],
 }

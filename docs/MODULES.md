@@ -32,8 +32,8 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 **Type**: Core
 **Description**: The execution layer under a Path. A tree of `Goal`s and sub-`Goal`s in manual priority order, each with an optional deadline and days-remaining countdown. Goals are marked achieved manually (or abandoned), can be flagged as a frog (which propagates to their Actions), and can be moved between Paths. A per-Goal progress view shows the cumulative action count and the win balance toward that Goal.
 **Entities**: `Goal`
-**Key Actions**: Create Goal / sub-Goal, edit, reorder by priority, move to another Path, toggle frog, mark achieved, abandon, reactivate, delete, view Goal progress.
-**Connects to**: `paths` (every Goal belongs to exactly one Path); `capture-triage` (Actions get assigned to Goals; an Action can be promoted into a Goal); `today` (a Goal's scheduled Actions show up in Today); `winlog` (achieving a Goal creates a Win).
+**Key Actions**: Create Goal / sub-Goal, edit, reorder by priority, move to another Path, toggle frog, mark achieved, abandon, reactivate, delete, view Goal progress, quick-add an Action from the Goal progress view.
+**Connects to**: `paths` (every Goal belongs to exactly one Path); `capture-triage` (Actions get assigned to Goals; an Action can be promoted into a Goal; the progress view's quick-add writes through `useActions().createAction`); `today` (a Goal's scheduled Actions show up in Today); `winlog` (achieving a Goal creates a Win); `actions` (the progress view reuses the Actions view's `QuickAddActionRow` verbatim — ADR 0041).
 **Design priority**: Medium-High — the tree + priority ordering + frog propagation + achieve/abandon lifecycle is structurally the richest entity, and it is the bridge between the container and the daily work.
 
 ---

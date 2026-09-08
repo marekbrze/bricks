@@ -121,7 +121,12 @@ per-Goal progress rollup.
    the per-Goal win balance (`WinBalance`, owned by `winlog`, embedded here,
    subtree-inclusive like the count), and the list of this Goal's own Actions
    plus its sub-Goals (each linking further in).
-2. From here the Owner can jump into `today` for any schedulable Action, or
+2. The Actions section closes with the Actions view's quick-add row, reused
+   verbatim (ADR 0041): type a name, optionally pick a due date, Enter / Add
+   — the Action is created straight under this Goal, skipping the Inbox, and
+   the input keeps focus for several adds in a row. Hidden while the Path is
+   archived.
+3. From here the Owner can jump into `today` for any schedulable Action, or
    drill into a sub-Goal's own progress view.
 
 ## Screens (rough)
@@ -138,7 +143,8 @@ per-Goal progress rollup.
   pattern), warns that the whole subtree + its Actions move together.
 - **Goal progress** (`/paths/:pathId/goals/:goalId`): header with
   badges/countdown, Action count, embedded `WinBalance` (small/big), this
-  Goal's own Actions, its sub-Goals (linking further in).
+  Goal's own Actions with a quick-add row beneath them (ADR 0041), its
+  sub-Goals (linking further in).
 - **Delete confirmation** (`AlertDialog`): cascade summary (sub-Goal +
   Action counts), Cancel / Delete Goal — same component as Path delete.
 - **Data-unreadable recovery** (all `goals` routes): shown instead of
@@ -147,7 +153,7 @@ per-Goal progress rollup.
   a confirmed reset.
 - **Archived-Path read-only** (both `goals` routes): a restore banner plus
   every mutation control (create/edit/reorder/move/frog/achieve/abandon/
-  delete) hidden while the owning Path is archived — matches
+  delete/quick-add Action) hidden while the owning Path is archived — matches
   `PathOverviewPage`'s Achievements section exactly.
 
 ## Actions
@@ -165,6 +171,7 @@ per-Goal progress rollup.
 | Reactivate Goal | Overflow → back to `active` | `Goal` | Reversible from either achieved or abandoned |
 | Delete Goal | Overflow → `AlertDialog` cascade summary | `Goal` | Cascades to sub-Goals and all their Actions — resolves PROJECT.md Open Question; no undo |
 | View Goal progress | Action count + `WinBalance` + own Actions/sub-Goals | `Goal` | Balance rendered by `winlog` |
+| Quick-add Action (Goal progress) | The Actions view's quick-add row, reused verbatim, under this Goal's own Actions | `Action` | Created straight under the Goal (ADR 0041); hidden while the Path is archived; adding to a frog Goal does not flag the new Action |
 
 `docs/ACTIONS.md` already listed every one of these; this interview resolved
 the two behaviors it flagged as open (manual achieve, cascade delete) rather
@@ -178,7 +185,9 @@ Systematically audited in `docs/modules/goals-edgecases.md` and hardened
 - **Path has no Goals yet**: tree screen shows an empty state explaining
   Goals live under Paths, with **New Goal** front and center.
 - **Goal with no Actions**: progress view shows `0` cumulative count and an
-  honest `0 · 0` win balance, not an error.
+  honest `0 · 0` win balance, not an error; the quick-add row sits under the
+  empty state as the primary way in (triage stays the second path, per the
+  empty-state copy).
 - **Goal with an overdue deadline**: the countdown badge flips to an overdue
   treatment (still shows, doesn't block achieving/abandoning/editing it
   away).

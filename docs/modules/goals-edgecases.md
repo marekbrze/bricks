@@ -21,6 +21,7 @@ in `src/modules/goals/`.
   - Frog toggle with zero current Actions just sets the flag; propagation is a no-op over an empty list, not an error — `src/modules/goals/hooks/use-goals.ts:208`
   - Path deleted elsewhere → Goals (and their Actions) under it are cascade-removed on the next mount that calls `useGoals()`, mirroring `useActions`' own Path self-heal — `src/modules/goals/hooks/use-goals.ts:43`
   - No way to create a cycle in the tree: the only path-change operation (Move to another Path) always lands top-level on a different Path — reparenting within the same Path isn't exposed at all, so nothing can become its own ancestor.
+  - Quick-add Action on Goal progress (ADR 0041): empty names are a no-op (guarded in `createAction`, plus the disabled Add button), the row is hidden on an archived Path's read-only page, and adding to a frog Goal leaves the new Action unflagged (one-time propagation, per goals.md).
 - **New gaps found**: 11
 - **By severity**: 🔴 0 · 🟡 6 · 🟢 5
 - **Hardened (proto-harden, 2026-09-04)**: 8 closed, 3 deferred/decided — see "Hardening status" below.
