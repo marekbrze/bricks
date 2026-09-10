@@ -3,6 +3,7 @@ import { MOCK_PATHS } from '@/modules/paths/data/mock';
 import { MOCK_ACTIONS } from '@/modules/capture-triage/data/mock';
 import { MOCK_GOALS } from '@/modules/goals/data/mock';
 import { MOCK_VISIONS } from '@/modules/vision/data/mock';
+import { MOCK_ESSENTIALS } from '@/modules/essentials/data/mock';
 
 /**
  * Several active Paths with achievements + win history, plus one archived
@@ -17,5 +18,6 @@ export function fullScenario(): AppData {
     actions: MOCK_ACTIONS,
     goals: MOCK_GOALS,
     visions: MOCK_VISIONS,
+    essentials: MOCK_ESSENTIALS,
   };
 }

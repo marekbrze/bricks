@@ -217,8 +217,54 @@ export const MOCK_HISTORICAL_ACTIONS: Action[] = [
   ),
 ]
 
+/**
+ * Logged `Essential` completions (`essentials` module) — already-`done`
+ * standalone Actions carrying an `essentialId`, some stamped today and some a
+ * few days back, so the Essentials tab's per-row counters and the Path
+ * overview's all-time count show real history out of the box. `essentialId`s
+ * line up with `essentials/data/mock.ts`.
+ */
+function loggedEssential(
+  id: string,
+  name: string,
+  pathId: string,
+  essentialId: string,
+  dayOffset: number,
+  note?: string,
+): Action {
+  const dateIso = addDaysIso(today, dayOffset)
+  const completedAt = new Date(`${dateIso}T12:00:00`).toISOString()
+  return {
+    id,
+    createdAt: completedAt,
+    updatedAt: completedAt,
+    name,
+    state: 'done',
+    pathId,
+    goalId: null,
+    frog: false,
+    scheduledDate: null,
+    completedAt,
+    essentialId,
+    ...(note ? { note } : {}),
+  }
+}
+
+export const MOCK_ESSENTIAL_LOG_ACTIONS: Action[] = [
+  loggedEssential('action-elog-hang-1', 'Hang from a bar — 60s total across the day', 'path-sport', 'essential-hang', 0, 'Full minute in one go today.'),
+  loggedEssential('action-elog-hang-2', 'Hang from a bar — 60s total across the day', 'path-sport', 'essential-hang', -1),
+  loggedEssential('action-elog-hang-3', 'Hang from a bar — 60s total across the day', 'path-sport', 'essential-hang', -2),
+  loggedEssential('action-elog-barefoot-1', 'Walk barefoot outside', 'path-sport', 'essential-barefoot', 0),
+  loggedEssential('action-elog-barefoot-2', 'Walk barefoot outside', 'path-sport', 'essential-barefoot', -3),
+  loggedEssential('action-elog-getup-1', 'Get down to the floor and back up, 20×, no hands', 'path-sport', 'essential-getup', -1),
+  loggedEssential('action-elog-calls-1', 'Call five prospective clients', 'path-earnings', 'essential-calls', 0, 'Two callbacks scheduled.'),
+  loggedEssential('action-elog-calls-2', 'Call five prospective clients', 'path-earnings', 'essential-calls', -1),
+  loggedEssential('action-elog-followup-1', 'Follow up on every open lead', 'path-earnings', 'essential-followup', -2),
+]
+
 export const MOCK_ACTIONS: Action[] = [
   ...MOCK_INBOX_ACTIONS,
   ...MOCK_ASSIGNED_ACTIONS,
   ...MOCK_HISTORICAL_ACTIONS,
+  ...MOCK_ESSENTIAL_LOG_ACTIONS,
 ]

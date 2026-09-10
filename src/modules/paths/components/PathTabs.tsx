@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { Image, ListTodo, Signpost } from 'lucide-react'
+import { Anchor, Image, ListTodo, Signpost } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * The Path's own tab bar — Overview, Actions, Vision. The Goal tree used to
- * be a fourth tab; it now renders inline on the Overview instead (ADR 0043).
- * The Actions tab and its drag-and-drop are unchanged
- * (docs/adr/0026-path-actions-tab-and-drag-and-drop.md).
+ * The Path's own tab bar — Overview, Actions, Vision, Essentials. The Goal
+ * tree used to be a tab; it now renders inline on the Overview instead
+ * (ADR 0043). Essentials is the per-Path Absolutely Necessary Deeds surface
+ * (ADR 0050/0051) — `Anchor` for "steadfast", not a streak flame.
  *
  * Plain links, not an ARIA tablist: each tab is its own route, so browser
  * back/forward and "open in new tab" have to keep working. `aria-current`
@@ -16,6 +16,7 @@ const TABS = [
   { to: '', label: 'Overview', icon: Signpost, end: true },
   { to: '/actions', label: 'Actions', icon: ListTodo, end: false },
   { to: '/vision', label: 'Vision', icon: Image, end: false },
+  { to: '/essentials', label: 'Essentials', icon: Anchor, end: false },
 ]
 
 export function PathTabs({ pathId }: { pathId: string }) {

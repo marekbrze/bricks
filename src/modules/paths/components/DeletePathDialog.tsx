@@ -14,7 +14,7 @@ import type { PathCascadeCounts } from '../types/path'
  * `achievements` comes from the Path's Vision (achievement tiles, ADR 0037) —
  * the caller reads it through `useVision`, the rest through `cascadeCounts`.
  */
-export type PathDeleteCounts = PathCascadeCounts & { achievements: number }
+export type PathDeleteCounts = PathCascadeCounts & { achievements: number; essentials: number }
 
 export function DeletePathDialog({
   open,
@@ -35,6 +35,8 @@ export function DeletePathDialog({
   lines.push(`${counts.achievements} ${counts.achievements === 1 ? 'Achievement' : 'Achievements'}`)
   lines.push(`${counts.goals} ${counts.goals === 1 ? 'Goal' : 'Goals'}`)
   lines.push(`${counts.actions} ${counts.actions === 1 ? 'Action' : 'Actions'}`)
+  if (counts.essentials > 0)
+    lines.push(`${counts.essentials} ${counts.essentials === 1 ? 'Essential' : 'Essentials'}`)
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

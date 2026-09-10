@@ -11,6 +11,7 @@ import { goalsRoutes } from './modules/goals'
 import { todayRoutes } from './modules/today'
 import { winlogRoutes } from './modules/winlog'
 import { visionRoutes } from './modules/vision'
+import { essentialsRoutes } from './modules/essentials'
 import { actionsRoutes } from './modules/actions'
 import { dataSyncRoutes } from './modules/data-sync'
 
@@ -34,6 +35,8 @@ function App() {
             {winlogRoutes}
             {/* vision — sixth and last module through proto-lofi. */}
             {visionRoutes}
+            {/* essentials — planned via proto-feature (docs/changes/essentials.md); nested Path tab. */}
+            {essentialsRoutes}
             {/* actions — planned via proto-feature (docs/changes/actions-page.md). */}
             {actionsRoutes}
             {/* data-sync — settings-level surface, reached from the footer. */}

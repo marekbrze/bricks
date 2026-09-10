@@ -42,7 +42,7 @@ export const DeletePathWithContents: Story = {
           open={open}
           onOpenChange={setOpen}
           pathName="Sport"
-          counts={{ visionTiles: 6, achievements: 5, goals: 3, actions: 24 }}
+          counts={{ visionTiles: 6, achievements: 5, goals: 3, actions: 24, essentials: 4 }}
           onConfirm={() => console.log('deleted')}
         />
       </>
@@ -62,7 +62,7 @@ export const DeleteEmptyPath: Story = {
           open={open}
           onOpenChange={setOpen}
           pathName="Draft Path"
-          counts={{ visionTiles: 0, achievements: 0, goals: 0, actions: 0 }}
+          counts={{ visionTiles: 0, achievements: 0, goals: 0, actions: 0, essentials: 0 }}
           onConfirm={() => console.log('deleted')}
         />
       </>

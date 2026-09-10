@@ -6,6 +6,7 @@ import { useToast } from '@/shared/components/toast/toast-context'
 import { useGoals } from '@/modules/goals/hooks/use-goals'
 import { useActions } from '@/modules/capture-triage/hooks/use-actions'
 import { useVision } from '@/modules/vision/hooks/use-vision'
+import { useEssentials } from '@/modules/essentials/hooks/use-essentials'
 import { usePaths } from '../hooks/use-paths'
 import type { Path } from '../types/path'
 import { PathCard } from './PathCard'
@@ -30,6 +31,7 @@ export function PathsPage() {
   const { goalCountForPath } = useGoals()
   const { actionCountForPath } = useActions()
   const { addAchievements, achievementCountsForPath } = useVision()
+  const { essentialCountForPath } = useEssentials()
   const navigate = useNavigate()
   const location = useLocation()
   const { showToast } = useToast()
@@ -165,6 +167,7 @@ export function PathsPage() {
             goals: goalCountForPath(deleting.id),
             actions: actionCountForPath(deleting.id),
             achievements: achievementCountsForPath(deleting.id).total,
+            essentials: essentialCountForPath(deleting.id),
           }}
           onConfirm={() => {
             const name = deleting.name

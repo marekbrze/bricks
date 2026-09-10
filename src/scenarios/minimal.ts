@@ -3,6 +3,7 @@ import type { Path } from '@/modules/paths/types/path';
 import type { Action } from '@/modules/capture-triage/types/action';
 import type { Goal } from '@/modules/goals/types/goal';
 import type { Vision } from '@/modules/vision/types/vision';
+import type { Essential } from '@/modules/essentials/types/essential';
 
 /** One young Path, a couple of open achievement tiles on its Vision, no wins yet, two ideas waiting in the Inbox. */
 export function minimalScenario(): AppData {
@@ -75,5 +76,25 @@ export function minimalScenario(): AppData {
       ],
     },
   ];
-  return { paths, actions, goals, visions };
+  const essentials: Essential[] = [
+    {
+      id: 'essential-hang',
+      createdAt: now,
+      updatedAt: now,
+      pathId: 'path-sport',
+      name: 'Hang from a bar — 60s total across the day',
+      detail: 'Grip + shoulders. Split it however you like.',
+      order: 0,
+    },
+    {
+      id: 'essential-barefoot',
+      createdAt: now,
+      updatedAt: now,
+      pathId: 'path-sport',
+      name: 'Walk barefoot outside',
+      detail: '',
+      order: 1,
+    },
+  ];
+  return { paths, actions, goals, visions, essentials };
 }

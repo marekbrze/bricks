@@ -14,6 +14,9 @@ import { WinBalance } from '@/modules/winlog/components/WinBalance'
 import { useVision } from '@/modules/vision/hooks/use-vision'
 import { VisionSummaryCard } from '@/modules/vision/components/VisionSummaryCard'
 import { VisionDataUnreadable } from '@/modules/vision/components/VisionDataUnreadable'
+import { useEssentials } from '@/modules/essentials/hooks/use-essentials'
+import { EssentialsSummary } from '@/modules/essentials/components/EssentialsSummary'
+import { EssentialsDataUnreadable } from '@/modules/essentials/components/EssentialsDataUnreadable'
 import { usePaths } from '../hooks/use-paths'
 import { PathTabs } from './PathTabs'
 import { PathOverflowMenu } from './PathOverflowMenu'
@@ -53,6 +56,11 @@ export function PathOverviewPage() {
     dataUnreadable: visionUnreadable,
     resetVisions,
   } = useVision()
+  const {
+    essentialCountForPath,
+    dataUnreadable: essentialsUnreadable,
+    resetEssentials,
+  } = useEssentials()
 
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -61,6 +69,7 @@ export function PathOverviewPage() {
   // Every collection the overview reads must surface its own recovery screen
   // rather than silently rendering a wrong zero.
   if (visionUnreadable) return <VisionDataUnreadable onReset={resetVisions} />
+  if (essentialsUnreadable) return <EssentialsDataUnreadable onReset={resetEssentials} />
   if (goalsUnreadable) return <GoalsDataUnreadable onReset={resetGoals} />
   if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
 
@@ -121,6 +130,8 @@ export function PathOverviewPage() {
         <WinBalance counts={winKindCounts(winsForPath(path.id))} size="sm" />
       </section>
 
+      <EssentialsSummary pathId={path.id} />
+
       <PathGoalsSection pathId={path.id} readOnly={readOnly} />
 
       <RenamePathDialog
@@ -139,6 +150,7 @@ export function PathOverviewPage() {
           actions: actionCount,
           visionTiles: visionTileCountForPath(path.id),
           achievements: achievementCountsForPath(path.id).total,
+          essentials: essentialCountForPath(path.id),
         }}
         onConfirm={() => {
           const name = path.name
