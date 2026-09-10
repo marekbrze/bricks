@@ -23,7 +23,16 @@ function todayLocalIso(): string {
   return new Date(d.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
-function byOrder(a: Goal, b: Goal): number {
+/**
+ * Sibling sort: achieved Goals always sink below the open ones (ADR 0046),
+ * regardless of their manual `order`. Within each group manual priority
+ * still rules. `abandoned` stays in place — it's a deliberate "not doing",
+ * not a finished item worth tucking away.
+ */
+function byPriority(a: Goal, b: Goal): number {
+  const aDone = a.state === 'achieved' ? 1 : 0
+  const bDone = b.state === 'achieved' ? 1 : 0
+  if (aDone !== bDone) return aDone - bDone
   return a.order - b.order
 }
 
@@ -69,7 +78,7 @@ export function useGoals() {
   /** One sibling group: Goals sharing a Path and a parent (top-level when `parentGoalId` is null). */
   const siblingsOf = useCallback(
     (pathId: string, parentGoalId: string | null) =>
-      goals.filter((g) => g.pathId === pathId && g.parentGoalId === parentGoalId).sort(byOrder),
+      goals.filter((g) => g.pathId === pathId && g.parentGoalId === parentGoalId).sort(byPriority),
     [goals],
   )
 
@@ -85,7 +94,7 @@ export function useGoals() {
   )
 
   const childGoals = useCallback(
-    (parentGoalId: string) => goals.filter((g) => g.parentGoalId === parentGoalId).sort(byOrder),
+    (parentGoalId: string) => goals.filter((g) => g.parentGoalId === parentGoalId).sort(byPriority),
     [goals],
   )
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, Target } from 'lucide-react'
+import { ChevronRight, Plus, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useToast } from '@/shared/components/toast/toast-context'
 import { usePaths } from '@/modules/paths/hooks/use-paths'
 import { useGoals } from '../hooks/use-goals'
@@ -43,9 +44,16 @@ export function PathGoalsSection({ pathId, readOnly }: { pathId: string; readOnl
 
   const [dragId, setDragId] = useState<string | null>(null)
   const [dialog, setDialog] = useState<DialogState>(null)
+  // Achieved Goals collapse away by default — a finished Goal is history, not
+  // something to scroll past every visit (ADR 0046). Session-only, per mount.
+  const [showAchieved, setShowAchieved] = useState(false)
 
   const pathName = getPath(pathId)?.name ?? ''
+  // `topLevelGoals` already sinks achieved Goals to the end (by priority sort);
+  // splitting here keeps the indices we hand each group contiguous.
   const goals = topLevelGoals(pathId)
+  const openGoals = goals.filter((g) => g.state !== 'achieved')
+  const achievedGoals = goals.filter((g) => g.state === 'achieved')
 
   const handleDropOn = (target: Goal, targetIndex: number) => {
     const draggedId = dragId
@@ -112,25 +120,75 @@ export function PathGoalsSection({ pathId, readOnly }: { pathId: string; readOnl
           )}
         </div>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {goals.map((g, i) => (
-            <GoalRow
-              key={g.id}
-              goal={g}
-              depth={0}
-              index={i}
-              siblingCount={goals.length}
-              dragId={dragId}
-              readOnly={readOnly}
-              onDragStart={setDragId}
-              onDropOn={handleDropOn}
-              onDragEnd={() => setDragId(null)}
-              onReorder={handleReorder}
-              onSetState={handleSetState}
-              onAction={handleAction}
-            />
-          ))}
-        </ul>
+        <>
+          {openGoals.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {openGoals.map((g, i) => (
+                <GoalRow
+                  key={g.id}
+                  goal={g}
+                  depth={0}
+                  index={i}
+                  siblingCount={openGoals.length}
+                  dragId={dragId}
+                  readOnly={readOnly}
+                  onDragStart={setDragId}
+                  onDropOn={handleDropOn}
+                  onDragEnd={() => setDragId(null)}
+                  onReorder={handleReorder}
+                  onSetState={handleSetState}
+                  onAction={handleAction}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-lg border border-dashed border-border bg-card px-3 py-4 text-sm text-muted-foreground">
+              Every Goal on this Path is achieved.
+            </p>
+          )}
+
+          {achievedGoals.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setShowAchieved((v) => !v)}
+                aria-expanded={showAchieved}
+                aria-controls="achieved-goals"
+                className="flex items-center gap-1.5 self-start rounded-sm py-1 text-xs font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <ChevronRight
+                  className={cn('size-3.5 transition-transform', showAchieved && 'rotate-90')}
+                  aria-hidden="true"
+                />
+                Achieved
+                <span className="rounded-full bg-muted px-1.5 tabular-nums">
+                  {achievedGoals.length}
+                </span>
+              </button>
+              {showAchieved && (
+                <ul id="achieved-goals" className="flex flex-col gap-1">
+                  {achievedGoals.map((g, j) => (
+                    <GoalRow
+                      key={g.id}
+                      goal={g}
+                      depth={0}
+                      index={openGoals.length + j}
+                      siblingCount={goals.length}
+                      dragId={dragId}
+                      readOnly={readOnly}
+                      onDragStart={setDragId}
+                      onDropOn={handleDropOn}
+                      onDragEnd={() => setDragId(null)}
+                      onReorder={handleReorder}
+                      onSetState={handleSetState}
+                      onAction={handleAction}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {dialog?.type === 'create' && (

@@ -33,6 +33,15 @@ per-Goal progress rollup.
    flag (if set), deadline badge with days-remaining countdown (if set),
    lifecycle badge (only shown for `achieved`/`abandoned` — `active` is the
    unmarked default), and an Action count.
+   - **Achieved Goals sink to the end and collapse** (ADR 0046). Within any
+     sibling group `achieved` Goals sort below every `active`/`abandoned`
+     one (manual `order` still orders each group). On the Path overview the
+     top-level achieved Goals move into an **"Achieved" disclosure** at the
+     bottom of the list — a chevron toggle with a count, collapsed by
+     default. `abandoned` stays inline (a deliberate "not doing", still live
+     context). If every top-level Goal on the Path is achieved, the open
+     list shows a one-line note and the "No Goals yet" empty state is
+     reserved for a Path with zero Goals.
 3. Clicking a row's name opens **Goal progress** for that Goal
    (`/paths/:pathId/goals/:goalId`); an overflow menu per row holds Edit /
    Add sub-Goal / Move / Achieve / Abandon / Delete.
@@ -142,8 +151,10 @@ per-Goal progress rollup.
   section header with **New Goal**; indented tree list (name, frog flag,
   deadline countdown badge, lifecycle badge for achieved/abandoned, Action
   count, drag handle, overflow menu: Edit / Add sub-Goal / Move to Path /
-  toggle Frog / Achieve / Abandon / Reactivate / Delete). Empty state when the
-  Path has no Goals yet.
+  toggle Frog / Achieve / Abandon / Reactivate / Delete). Top-level achieved
+  Goals are tucked into a collapsed **"Achieved" disclosure** at the end of the
+  list (ADR 0046). Empty state when the Path has no Goals yet; a one-line note
+  when the Path has Goals but all are achieved.
 - **New/Edit Goal dialog**: name (required) + description + deadline date
   picker, Cancel / Save. A dirty form confirms before discarding, same
   pattern as `NewPathDialog`.
@@ -234,6 +245,14 @@ Systematically audited in `docs/modules/goals-edgecases.md` and hardened
   don't render anywhere outside this Goal's own page (the Goal's state
   badge, already visible wherever the Goal appears, is the signal for now).
   Revisit once `today` reads `goalId` off Actions.
+- **Top-level Goal achieved on the Path overview** (ADR 0046): drops out of
+  the open list into the collapsed "Achieved" disclosure. Its sub-Goals —
+  active ones included — collapse with it; they stay reachable one expand
+  away, and an achieved parent implies the branch is done. Reactivating the
+  Goal returns it to the open list in its manual-order slot.
+- **Every top-level Goal on a Path achieved**: the open list shows a
+  one-line note ("Every Goal on this Path is achieved."); the "No Goals yet"
+  empty state is reserved for a Path with zero Goals.
 - **Corrupt `goals` or `actions` storage**: a dedicated recovery screen
   distinct from the empty-tree state — on the Path overview for the inline
   tree (ADR 0043), on its own screen for Goal progress. Matches `paths`.
