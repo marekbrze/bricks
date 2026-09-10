@@ -36,7 +36,7 @@ export const NewEssential: Story = {
         <EssentialDialog
           open={open}
           onOpenChange={setOpen}
-          title="New essential"
+          title="New Essential"
           description="A necessary deed for “Sport”."
           submitLabel="Create"
           onSubmit={(data) => console.log('create', data)}
@@ -55,7 +55,7 @@ export const EditEssential: Story = {
         <EssentialDialog
           open={open}
           onOpenChange={setOpen}
-          title="Edit essential"
+          title="Edit Essential"
           description="Name and the one-line reminder."
           submitLabel="Save"
           initial={{

@@ -85,7 +85,7 @@ An **Absolutely Necessary Deed** for a Path — see `docs/modules/essentials.md`
 | Reorder Essentials | Drag handle + keyboard Move up / Move down; manual `order` within the Path | Owner | Undo toast per move; inert with a single Essential |
 | Delete Essential | Row overflow → `AlertDialog`; the logged completion Actions are **kept** | Owner | Undo toast; a dangling `Action.essentialId` is inert |
 | Log Essential completion | Primary **Log** on the row → `LogEssentialDialog` with an optional comment → creates an already-`done` `Action` (`name` = Essential name, `note` = comment, `essentialId` set, `scheduledDate` = null) | Owner | Undo toast; feeds `WinLog` as a small win (ADR 0051); many per day allowed |
-| View Essentials progress | Path overview **Essentials** section: `N essentials · M logs on this Path · K today` | Owner | Counts derived from `Action`s carrying this Path's `essentialId`s |
+| View Essentials progress | Path overview **Essentials** section: `N essentials · M logged · K today` | Owner | Counts derived from `Action`s carrying this Path's `essentialId`s |
 
 ### Action
 

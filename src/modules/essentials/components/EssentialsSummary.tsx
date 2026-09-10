@@ -28,7 +28,7 @@ export function EssentialsSummary({ pathId }: { pathId: string }) {
           to={`/paths/${pathId}/essentials`}
           className={buttonVariants({ variant: 'ghost', size: 'sm' })}
         >
-          {count === 0 ? 'Set them up' : 'Open Essentials'} <ArrowRight aria-hidden="true" />
+          Open Essentials <ArrowRight aria-hidden="true" />
         </Link>
       </div>
 
@@ -39,21 +39,16 @@ export function EssentialsSummary({ pathId }: { pathId: string }) {
         </p>
       ) : (
         <div className="rounded-lg border border-border bg-card p-3">
-          <p className="text-sm tabular-nums">
-            <span className="font-medium">{count}</span>{' '}
-            <span className="text-muted-foreground">
-              {count === 1 ? 'essential' : 'essentials'}
-            </span>
-            <span className="text-muted-foreground"> · </span>
-            <span className="font-medium">{total}</span>{' '}
-            <span className="text-muted-foreground">
-              {total === 1 ? 'log' : 'logs'} on this Path
-            </span>
+          <p className="text-sm text-muted-foreground tabular-nums">
+            <span className="font-medium text-foreground">{count}</span>{' '}
+            {count === 1 ? 'essential' : 'essentials'}
+            <span aria-hidden="true"> · </span>
+            <span className="font-medium text-foreground">{total}</span>{' '}
+            logged
             {today > 0 && (
               <>
-                <span className="text-muted-foreground"> · </span>
-                <span className="font-medium">{today}</span>{' '}
-                <span className="text-muted-foreground">today</span>
+                <span aria-hidden="true"> · </span>
+                <span className="font-medium text-foreground">{today}</span> today
               </>
             )}
           </p>

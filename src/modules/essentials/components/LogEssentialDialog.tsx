@@ -82,8 +82,8 @@ export function LogEssentialDialog({
             <DialogHeader>
               <DialogTitle>{essentialName}</DialogTitle>
               <DialogDescription>
-                Log this as done. It creates a completed action under this Path — add a note if you
-                want to.
+                Records one completion — it counts as a small win for this Path. Add a note if you
+                like.
               </DialogDescription>
             </DialogHeader>
 

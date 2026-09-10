@@ -36,8 +36,8 @@ export function DeleteEssentialDialog({
             {completionsTotal > 0
               ? `Its ${completionsTotal} logged ${
                   completionsTotal === 1 ? 'completion is' : 'completions are'
-                } kept as wins — this removes the essential from the list only.`
-              : 'This removes the essential from the list. It has no logged completions.'}
+                } kept as wins — this removes the Essential from the list only.`
+              : 'This removes the Essential from the list. It has no logged completions.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -45,7 +45,7 @@ export function DeleteEssentialDialog({
           <AlertDialogClose
             render={
               <Button variant="destructive" onClick={onConfirm}>
-                Delete essential
+                Delete Essential
               </Button>
             }
           />

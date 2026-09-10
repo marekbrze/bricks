@@ -108,7 +108,7 @@ export function EssentialDialog({
             </DialogHeader>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="essential-name">Deed</Label>
+              <Label htmlFor="essential-name">Name</Label>
               <Input
                 id="essential-name"
                 value={form.name}
@@ -124,7 +124,7 @@ export function EssentialDialog({
               />
               {showError && (
                 <p id="essential-name-error" className="text-xs text-destructive">
-                  Name the deed.
+                  Give the Essential a name.
                 </p>
               )}
             </div>

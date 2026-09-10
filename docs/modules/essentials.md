@@ -32,10 +32,10 @@ overview, not a decoration on the row.
 
 1. User opens a Path → **Essentials** tab (`/paths/:pathId/essentials`).
 2. First time: an **empty state** explains the concept ("The few things you must
-   keep doing for this Path") with a prominent **Add your first essential** and a
+   keep doing for this Path") with a prominent **Add your first Essential** and a
    few seed examples for inspiration (primal-movement set for a body Path; a
    sales set is mentioned in copy).
-3. User clicks **New essential** → **EssentialDialog**: a name field ("Hang from
+3. User clicks **New Essential** → **EssentialDialog**: a name field ("Hang from
    a bar — 60s total"), an optional one-line **detail** ("why / how — anytime
    across the day"). **Cancel / Create**.
 4. The new Essential appears at the **end** of the list (manual order).
@@ -68,7 +68,7 @@ overview, not a decoration on the row.
 
 1. User opens `/paths/:pathId` → below **Wins**, above **Goals**, an
    **Essentials** section.
-2. It shows `N essentials · M logs on this Path` and, when today's count is
+2. It shows `N essentials · M logged` and, when today's count is
    above zero, `· K today`.
 3. A Path with no Essentials shows a single line — "Define this Path's necessary
    deeds" — linking to the tab.
@@ -80,7 +80,7 @@ overview, not a decoration on the row.
    confirms before discarding.
 2. Row overflow → **Delete** → **DeleteEssentialDialog** (`AlertDialog`): "Delete
    “Hang from a bar”? Its 128 logged completions are kept as wins. This removes
-   the essential only." **Cancel / Delete essential**. Undo toast after.
+   the Essential only." **Cancel / Delete essential**. Undo toast after.
 3. Deleting an Essential leaves its completion Actions intact (their `name`
    preserves what was done; their `essentialId` simply points at nothing and
    stops being counted).
@@ -88,7 +88,7 @@ overview, not a decoration on the row.
 ### Archived Path
 
 1. The Essentials tab on an archived Path renders **read-only**: a restore
-   banner, no **Log**, no **New essential**, no reorder, no row menu.
+   banner, no **Log**, no **New Essential**, no reorder, no row menu.
 2. The overview's Essentials summary still shows its counts and the link still
    works — matching the Vision / Actions tab convention.
 
@@ -112,7 +112,7 @@ overview, not a decoration on the row.
 - **DeleteEssentialDialog** (`AlertDialog`): destructive confirm; states that
   logged completions are kept; Cancel / Delete essential.
 - **EssentialsSummary**: the component `paths` embeds on the overview —
-  `N essentials · M logs on this Path · K today`, or the "define this Path's
+  `N essentials · M logged · K today`, or the "define this Path's
   necessary deeds" one-liner when empty. Exported from this module the way
   `winlog` exports `WinBalance`. Same section rhythm as **Wins**
   (`text-sm font-semibold` heading).
@@ -128,12 +128,12 @@ overview, not a decoration on the row.
 
 | Action | Description in this module | Entity | Notes |
 |--------|---------------------------|--------|-------|
-| Create Essential | **New essential** → dialog: name (required) + optional one-line detail; lands at the end of the Path's manual order | `Essential` | Empty name blocked with an inline error |
+| Create Essential | **New Essential** → dialog: name (required) + optional one-line detail; lands at the end of the Path's manual order | `Essential` | Empty name blocked with an inline error |
 | Edit Essential | Row overflow → dialog prefilled (name, detail) | `Essential` | Dirty-form confirm before discarding |
 | Reorder Essentials | Drag handle + keyboard Move up / Move down; manual `order` within the Path | `Essential` | Undo toast per move; inert with a single Essential |
 | Delete Essential | Row overflow → `AlertDialog`; logged completions are **kept** | `Essential` | Undo toast; a dangling `Action.essentialId` is inert |
 | Log Essential completion | Primary **Log** on the row → dialog with an optional comment → creates an already-`done` `Action` | `Action` | `completedAt` = now, `scheduledDate` = null, `name` = Essential name, `note` = comment, `essentialId` set; Undo toast; feeds `WinLog` as a small win |
-| View Essentials progress | Path overview **Essentials** section: `N essentials · M logs on this Path · K today` | `Essential` / `Action` | Counts derived by counting `Action`s with this Path's `essentialId`s |
+| View Essentials progress | Path overview **Essentials** section: `N essentials · M logged · K today` | `Essential` / `Action` | Counts derived by counting `Action`s with this Path's `essentialId`s |
 
 `Action`-level effects of a log (owned by `capture-triage` / `today` /
 `winlog`, unchanged here): the new Action can be renamed, rescheduled,
@@ -146,7 +146,7 @@ Systematically audited in `docs/modules/essentials-edgecases.md` and hardened
 (proto-harden, 2026-09-10, ADR 0053 — 7 closed, 5 deferred). Decided behaviors:
 
 - **No Essentials for the Path**: the tab shows a concept empty state +
-  **Add your first essential** + seed examples; the overview shows the "define
+  **Add your first Essential** + seed examples; the overview shows the "define
   this Path's necessary deeds" one-liner. Never looks broken.
 - **Essential with zero completions ever**: `0 total`, no "today" line — a quiet
   not-started signal.

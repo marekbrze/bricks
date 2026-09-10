@@ -104,7 +104,7 @@ export function EssentialRow({
           )}
           {/* Narrow screens: the counter stacks under the name so the deed
               text keeps its width. `sm:` and up shows it inline on the right. */}
-          <div className="mt-0.5 sm:hidden">{counter}</div>
+          <div className="mt-1 sm:hidden">{counter}</div>
         </div>
 
         <span className="hidden shrink-0 text-right sm:block">{counter}</span>

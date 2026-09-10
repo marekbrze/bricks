@@ -113,7 +113,7 @@ export function EssentialsPage() {
           </h2>
           {!readOnly && (
             <Button variant="outline" size="sm" onClick={() => setDialog({ type: 'create' })}>
-              <Plus aria-hidden="true" /> New essential
+              <Plus aria-hidden="true" /> New Essential
             </Button>
           )}
         </div>
@@ -122,21 +122,23 @@ export function EssentialsPage() {
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
             <Anchor className="size-8 text-muted-foreground" aria-hidden="true" />
             <div className="max-w-md">
-              <h3 className="text-sm font-semibold">No essentials yet</h3>
+              <h3 className="text-sm font-semibold">No Essentials yet</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {readOnly
-                  ? 'No essentials were added to this Path.'
-                  : 'Essentials are the few non-negotiable things you must keep doing for this Path — a salesperson’s “call clients”, a body Path’s “hang from a bar”. Log each one every time you do it.'}
+                  ? 'No Essentials were added to this Path.'
+                  : 'The few non-negotiable things you must keep doing for this Path — a salesperson’s “call clients”, a body Path’s “hang from a bar”. Log each one every time you do it.'}
               </p>
             </div>
             {!readOnly && (
               <>
                 <Button onClick={() => setDialog({ type: 'create' })}>
-                  <Plus aria-hidden="true" /> Add your first essential
+                  <Plus aria-hidden="true" /> Add your first Essential
                 </Button>
                 <div className="max-w-md text-left">
-                  <p className="text-xs font-medium text-muted-foreground">For a body Path, e.g.:</p>
-                  <ul className="mt-1 list-disc pl-5 text-xs text-muted-foreground">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    A few examples to get you started:
+                  </p>
+                  <ul className="mt-1 space-y-0.5 list-disc pl-5 text-xs text-muted-foreground">
                     {SEED_ESSENTIALS.slice(0, 5).map((s) => (
                       <li key={s}>{s}</li>
                     ))}
@@ -172,7 +174,7 @@ export function EssentialsPage() {
         <EssentialDialog
           open
           onOpenChange={(o) => !o && setDialog(null)}
-          title="New essential"
+          title="New Essential"
           description={`A necessary deed for “${path.name}”.`}
           submitLabel="Create"
           onSubmit={(data) => {
@@ -186,7 +188,7 @@ export function EssentialsPage() {
         <EssentialDialog
           open
           onOpenChange={(o) => !o && setDialog(null)}
-          title="Edit essential"
+          title="Edit Essential"
           description="Name and the one-line reminder."
           submitLabel="Save"
           initial={{ name: dialog.essential.name, detail: dialog.essential.detail }}

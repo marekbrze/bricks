@@ -32,7 +32,7 @@ export default meta
 
 type Story = StoryObj<typeof EssentialRow>
 
-/** Logged today and before — the counter reads "N today · M total". */
+/** Logged today and before — the counter reads "N today · M logged". */
 export const LoggedToday: Story = {
   args: { essential: MOCK_ESSENTIALS[0] },
 }
