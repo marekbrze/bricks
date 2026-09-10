@@ -25,10 +25,13 @@ they track each other row by row.
 ### The mirror
 
 The app keeps reading and writing LocalStorage through the existing module
-hooks — nothing in `paths`/`goals`/`capture-triage`/`vision`/`today`
+hooks — nothing in `paths`/`goals`/`capture-triage`/`vision`/`essentials`/`today`
 changes, and every screen still renders its data on the first paint. A
-Dexie database (`bricks`, this module's `lib/db.ts`) holds the same four
-collections row-per-entity and is what `dexie-cloud-addon` syncs.
+Dexie database (`bricks`, this module's `lib/db.ts`) holds the same five
+collections (`paths`, `goals`, `actions`, `visions`, `essentials`)
+row-per-entity and is what `dexie-cloud-addon` syncs. `essentials` joined in
+DB `version(2)` — an existing `bricks` database adds the table on its next
+open.
 
 `lib/mirror.ts` keeps the two in step, continuously and both ways:
 

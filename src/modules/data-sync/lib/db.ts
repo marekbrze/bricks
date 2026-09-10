@@ -5,9 +5,10 @@ import type { Path } from '@/modules/paths/types/path'
 import type { Goal } from '@/modules/goals/types/goal'
 import type { Action } from '@/modules/capture-triage/types/action'
 import type { Vision } from '@/modules/vision/types/vision'
+import type { Essential } from '@/modules/essentials/types/essential'
 
 /**
- * The sync database — a Dexie mirror of the app's four entity collections.
+ * The sync database — a Dexie mirror of the app's five entity collections.
  * The app's source of truth stays in LocalStorage; this DB is the replica the
  * Dexie Cloud addon syncs against, kept in step both ways by `lib/mirror.ts`
  * (see docs/modules/data-sync.md).
@@ -22,6 +23,7 @@ export class BricksDB extends Dexie {
   goals!: EntityTable<Goal, 'id'>
   actions!: EntityTable<Action, 'id'>
   visions!: EntityTable<Vision, 'id'>
+  essentials!: EntityTable<Essential, 'id'>
 
   constructor() {
     super('bricks', { addons: [dexieCloud] })
@@ -31,6 +33,14 @@ export class BricksDB extends Dexie {
       goals: 'id, pathId, parentGoalId',
       actions: 'id, pathId, goalId, scheduledDate',
       visions: 'id, pathId',
+    })
+
+    // v2 — `essentials` (per-Path necessary deeds) joined the synced set. A
+    // version bump is required so browsers holding a v1 `bricks` DB add the
+    // table on the next open; only the delta is listed, the four v1 tables
+    // carry forward unchanged.
+    this.version(2).stores({
+      essentials: 'id, pathId',
     })
 
     // Without a URL the addon stays inert (every hook early-returns) and the
@@ -59,12 +69,13 @@ export function isCloudConfigured(): boolean {
   return getCloudUrl() !== null
 }
 
-/** The four synced tables, in the order a mirror pass walks them. */
+/** The five synced tables, in the order a mirror pass walks them. */
 export const SYNCED_TABLES = {
   paths: () => db.paths as unknown as Table<{ id: string }, string>,
   goals: () => db.goals as unknown as Table<{ id: string }, string>,
   actions: () => db.actions as unknown as Table<{ id: string }, string>,
   visions: () => db.visions as unknown as Table<{ id: string }, string>,
+  essentials: () => db.essentials as unknown as Table<{ id: string }, string>,
 } as const
 
 /**

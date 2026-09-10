@@ -26,7 +26,7 @@ import { isPullPending } from './sign-in-intent'
  * offline are pushed up, rows another device deleted are not resurrected.
  */
 
-export const SYNCED_KEYS = ['paths', 'goals', 'actions', 'visions'] as const
+export const SYNCED_KEYS = ['paths', 'goals', 'actions', 'visions', 'essentials'] as const
 export type SyncedKey = (typeof SYNCED_KEYS)[number]
 
 interface Row {
