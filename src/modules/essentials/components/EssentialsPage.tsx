@@ -119,7 +119,7 @@ export function EssentialsPage() {
         </div>
 
         {essentials.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-14 text-center">
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
             <Anchor className="size-8 text-muted-foreground" aria-hidden="true" />
             <div className="max-w-md">
               <h3 className="text-sm font-semibold">No essentials yet</h3>

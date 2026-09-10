@@ -79,13 +79,13 @@ export function EssentialRow({
         }}
         onDragEnd={onDragEnd}
         className={cn(
-          'group flex items-center gap-2 rounded-lg border border-border bg-card p-2',
+          'group flex items-center gap-3 rounded-lg border border-border bg-card p-2 transition-colors',
           dragId === essential.id && 'opacity-50',
         )}
       >
         {draggable && (
           <GripVertical
-            className="size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
+            className="-ml-1 size-4 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
             aria-hidden="true"
           />
         )}
