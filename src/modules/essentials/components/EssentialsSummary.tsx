@@ -46,7 +46,9 @@ export function EssentialsSummary({ pathId }: { pathId: string }) {
             </span>
             <span className="text-muted-foreground"> · </span>
             <span className="font-medium">{total}</span>{' '}
-            <span className="text-muted-foreground">completed all-time</span>
+            <span className="text-muted-foreground">
+              {total === 1 ? 'log' : 'logs'} on this Path
+            </span>
             {today > 0 && (
               <>
                 <span className="text-muted-foreground"> · </span>

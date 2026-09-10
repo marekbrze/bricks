@@ -17,6 +17,13 @@ const INITIAL_ESSENTIALS: Essential[] = []
 /** A function that reverts one mutation; wired to an Undo toast by the caller. */
 export type UndoFn = () => void
 
+/**
+ * A mutation returns `null` when nothing actually changed — the caller must
+ * not toast (or offer an Undo) for a no-op. Same contract as `vision`'s
+ * `reorderTile`.
+ */
+export type UndoFnOrNull = UndoFn | null
+
 export function useEssentials() {
   const {
     value: essentials,
@@ -104,20 +111,21 @@ export function useEssentials() {
 
   /**
    * Move an Essential to a new index within its Path's order-sorted list.
-   * Returns an Undo restoring the previous ordering; a no-op move returns a
-   * do-nothing Undo (the caller stays silent).
+   * Returns an Undo restoring the previous ordering, or `null` when the move
+   * is a no-op (unknown id, or it already sits at that index) so the caller
+   * can stay silent instead of showing a dead Undo toast.
    */
   const reorderEssential = useCallback(
-    (id: string, toIndex: number): UndoFn => {
+    (id: string, toIndex: number): UndoFnOrNull => {
       const current = essentials.find((e) => e.id === id)
-      if (!current) return () => {}
+      if (!current) return null
       const snapshot = essentials
       const ordered = essentials
         .filter((e) => e.pathId === current.pathId)
         .sort((a, b) => a.order - b.order)
       const from = ordered.findIndex((e) => e.id === id)
       const clamped = Math.max(0, Math.min(toIndex, ordered.length - 1))
-      if (from === -1 || from === clamped) return () => {}
+      if (from === -1 || from === clamped) return null
       const [moved] = ordered.splice(from, 1)
       ordered.splice(clamped, 0, moved)
       const orderById = new Map(ordered.map((e, i) => [e.id, i]))

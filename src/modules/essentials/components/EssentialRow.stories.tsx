@@ -6,9 +6,11 @@ const meta: Meta<typeof EssentialRow> = {
   title: 'Essentials/EssentialRow',
   component: EssentialRow,
   decorators: [
-    withEssentials(MOCK_ESSENTIALS, '/paths/path-sport', undefined),
-    (Story) => (
-      <ul className="flex max-w-2xl flex-col gap-1">
+    withEssentials(MOCK_ESSENTIALS, '/paths/path-sport', '/paths/:pathId'),
+    (Story, ctx) => (
+      <ul
+        className={ctx.parameters.narrow ? 'flex w-[340px] flex-col gap-1' : 'flex max-w-2xl flex-col gap-1'}
+      >
         <Story />
       </ul>
     ),
@@ -48,4 +50,13 @@ export const NeverLogged: Story = {
 /** Read-only (archived Path): no Log button, no menu, no drag handle. */
 export const ReadOnly: Story = {
   args: { essential: MOCK_ESSENTIALS[0], readOnly: true },
+}
+
+/**
+ * ~340 px (phone): the counter drops under the deed name so the name keeps
+ * its width and the Log button + menu stay reachable (edgecases #3).
+ */
+export const NarrowScreen: Story = {
+  args: { essential: MOCK_ESSENTIALS[0] },
+  parameters: { narrow: true },
 }

@@ -37,6 +37,29 @@ export function EssentialRow({
 
   const draggable = !readOnly && siblingCount > 1
 
+  const counter = (
+    <span
+      className="text-xs text-muted-foreground tabular-nums"
+      // A concise spoken form — the visible glyphs read fine, but this keeps
+      // the "today vs all-time" meaning explicit for a screen reader.
+      aria-label={
+        total === 0
+          ? 'Not logged yet'
+          : `Logged ${today} ${today === 1 ? 'time' : 'times'} today, ${total} in total`
+      }
+    >
+      {total === 0 ? (
+        'Not logged yet'
+      ) : (
+        <>
+          {today > 0 && <span className="font-medium text-foreground">{today} today</span>}
+          {today > 0 && <span aria-hidden="true"> · </span>}
+          {total} logged
+        </>
+      )}
+    </span>
+  )
+
   return (
     <li>
       {/* Pointer drag-to-reorder within the Path's Essentials; the
@@ -68,29 +91,23 @@ export function EssentialRow({
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-medium break-words">{essential.name}</p>
+          <p className="line-clamp-2 text-sm font-medium break-words" title={essential.name}>
+            {essential.name}
+          </p>
           {essential.detail && (
-            <p className="line-clamp-1 text-xs text-muted-foreground break-words">
+            <p
+              className="line-clamp-1 text-xs text-muted-foreground break-words"
+              title={essential.detail}
+            >
               {essential.detail}
             </p>
           )}
+          {/* Narrow screens: the counter stacks under the name so the deed
+              text keeps its width. `sm:` and up shows it inline on the right. */}
+          <div className="mt-0.5 sm:hidden">{counter}</div>
         </div>
 
-        <span className="shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-          {total === 0 ? (
-            'Not logged yet'
-          ) : (
-            <>
-              {today > 0 && (
-                <span className="font-medium text-foreground">
-                  {today} today
-                </span>
-              )}
-              {today > 0 && <span aria-hidden="true"> · </span>}
-              {total} total
-            </>
-          )}
-        </span>
+        <span className="hidden shrink-0 text-right sm:block">{counter}</span>
 
         {!readOnly && (
           <>

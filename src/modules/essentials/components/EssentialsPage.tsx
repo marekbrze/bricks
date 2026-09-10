@@ -69,13 +69,16 @@ export function EssentialsPage() {
     const draggedId = dragId
     setDragId(null)
     if (!draggedId || draggedId === target.id) return
+    const dragged = essentials.find((e) => e.id === draggedId)
     const undo = reorderEssential(draggedId, targetIndex)
-    showToast('Reordered', { label: 'Undo', onClick: undo })
+    // A drop that lands where it started returns null — stay silent, since the
+    // toast is also the screen-reader announcement that the list changed.
+    if (undo) showToast(`Moved “${dragged?.name ?? 'essential'}”`, { label: 'Undo', onClick: undo })
   }
 
   const handleReorder = (essential: Essential, toIndex: number) => {
     const undo = reorderEssential(essential.id, toIndex)
-    showToast(`Moved “${essential.name}”`, { label: 'Undo', onClick: undo })
+    if (undo) showToast(`Moved “${essential.name}”`, { label: 'Undo', onClick: undo })
   }
 
   return (
@@ -87,7 +90,7 @@ export function EssentialsPage() {
         >
           <ArrowLeft aria-hidden="true" /> Paths
         </Link>
-        <h1 className="text-xl font-semibold">{path.name}</h1>
+        <h1 className="text-xl font-semibold break-words">{path.name}</h1>
       </div>
 
       <PathTabs pathId={path.id} />

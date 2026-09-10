@@ -25,7 +25,7 @@ Derived views (not stored entities): **WinLog** (with its `WinBalance` / `WinKin
 Relationship notes:
 - An `Action` lives in exactly one of three places: the **Inbox** (no Path, no Goal), directly under a **Path** (standalone), or under a **Goal**. It never belongs to more than one `Goal`.
 - A `Goal` always belongs to exactly one `Path` and may nest into a tree of sub-`Goal`s.
-- An `Essential` always belongs to exactly one `Path`. Logging an Essential creates a standalone, already-`done` `Action` under that Path carrying `essentialId` — a **soft link**, not a hard FK: deleting the Essential leaves the Action (its `name` preserves what was done) and only stops the per-Essential count. Per-Essential completion progress is **derived** by counting these Actions; nothing is stored on the `Essential`.
+- An `Essential` always belongs to exactly one `Path`. Logging an Essential creates a standalone, already-`done` `Action` under that Path carrying `essentialId` — a **soft link**, not a hard FK: deleting the Essential leaves the Action (its `name` preserves what was done) and only stops the per-Essential count. Per-Essential completion progress is **derived** by counting these Actions; nothing is stored on the `Essential`. Deleting the **Path** removes its `Essential`s (self-heal) and its logged-completion Actions (`useActions` self-heal drops orphaned `done` + `essentialId` rows rather than returning them to the Inbox — ADR 0053).
 - A `Vision` is a 1:1 container for a `Path`; it holds an ordered mix of `VisionNote`, `VisionImage`, and `VisionAchievementTile` tiles.
 - Achievements are Vision tiles (ADR 0037) — they hang off the Path's Vision, not the Path record. Creating a Path can seed them through `useVision`.
 

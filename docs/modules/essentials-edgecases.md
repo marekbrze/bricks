@@ -60,3 +60,22 @@ If a category had no gaps: **State transitions** — no issues found (an `Essent
 
 ## Hand-off to proto-harden
 Implement, in order: #1 (`reorderEssential` returns `UndoFn | null`; guard the toast), #2 (cascade-delete `essentialId`-tagged `done` Actions on Path delete instead of Inbox-restoring them), #3 (stack the counter under the name on `< sm`), #4 (relabel the overview summary count). #5–#12 are polish / deferred-by-convention — fold into `proto-design` / `proto-polish` or the project-wide input-length pass.
+
+## Hardening status (proto-harden, 2026-09-10 — ADR 0053)
+
+**Closed (7):**
+- ✅ **#1** `reorderEssential` now returns `UndoFnOrNull` (null on any no-op); `EssentialsPage.handleDropOn` / `handleReorder` only toast on a real change — `src/modules/essentials/hooks/use-essentials.ts:118`, `src/modules/essentials/components/EssentialsPage.tsx:67`
+- ✅ **#2** `useActions` self-heal drops orphaned `done` + `essentialId` Actions entirely instead of Inbox-restoring them; the "moved back to the Inbox" toast now counts only genuinely restored items — `src/modules/capture-triage/hooks/use-actions.ts:42`
+- ✅ **#3** `EssentialRow` counter stacks under the deed name below `sm` (`sm:hidden` copy in the text column, `hidden sm:block` inline on the right) — `src/modules/essentials/components/EssentialRow.tsx:60`
+- ✅ **#4** `EssentialsSummary` count relabelled to "N logs on this Path" (was "completed all-time"), so it reads as a per-Path lens distinct from the win balance — `src/modules/essentials/components/EssentialsSummary.tsx:47`
+- ✅ **#5** `title={essential.name}` / `title={essential.detail}` on the clamped row text — `src/modules/essentials/components/EssentialRow.tsx:73`
+- ✅ **#8** Reorder toast copy unified to `Moved “X”` for both drag and the row menu — `src/modules/essentials/components/EssentialsPage.tsx:73,79`
+- ✅ **#12** `break-words` on the Essentials-tab `<h1>` — `src/modules/essentials/components/EssentialsPage.tsx:89`
+- ✅ (bonus) Row counter carries an explicit `aria-label` ("Logged N times today, M in total") — `src/modules/essentials/components/EssentialRow.tsx:39`
+
+**Deferred (5):**
+- ❌ **#6** Input length limits — deferred project-wide (paths-edgecases #13); revisit when the app adopts one convention.
+- ❌ **#7** Per-render counter recompute — prototype-scale performance is fine; a memoised `Map` in `useActions` is a `proto-polish` / real-build concern.
+- ❌ **#9** Path-aware seed examples — `proto-detail` left the final call; the current labelled body-Path set is an acceptable lo-fi illustration. Fold into `proto-design`.
+- ❌ **#10** Rescheduling a logged-completion Action from the Actions view — harmless and self-correcting (the derived count fixes itself); not worth special-casing in the prototype.
+- ❌ **#11** In-flight "Log it" guard — creation is synchronous; matches the project-wide deferred double-submit stance (paths #17).

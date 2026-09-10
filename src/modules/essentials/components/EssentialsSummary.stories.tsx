@@ -22,12 +22,12 @@ type Story = StoryObj<typeof EssentialsSummary>
 
 /** A Path with essentials and logged history. */
 export const WithData: Story = {
-  decorators: [withEssentials(MOCK_ESSENTIALS, '/paths/path-sport', undefined)],
+  decorators: [withEssentials(MOCK_ESSENTIALS, '/paths/path-sport', '/paths/:pathId')],
   render: () => <EssentialsSummary pathId="path-sport" />,
 }
 
 /** A Path that has none yet — the one-line prompt into the tab. */
 export const NoEssentials: Story = {
-  decorators: [withEssentials([], '/paths/path-craft', undefined)],
+  decorators: [withEssentials([], '/paths/path-craft', '/paths/:pathId')],
   render: () => <EssentialsSummary pathId="path-craft" />,
 }

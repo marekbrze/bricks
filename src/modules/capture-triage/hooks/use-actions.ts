@@ -39,29 +39,42 @@ export function useActions() {
   // stale day (from before its Path vanished) would otherwise silently
   // reappear on that old date the moment it's re-triaged. See
   // docs/modules/today-edgecases.md #1.
+  //
+  // Exception: a *logged Essential completion* (a `done` Action carrying an
+  // `essentialId`) is history, not a to-do — resurrecting it in the Inbox as
+  // an un-triaged idea would be wrong (essentials-edgecases.md #2). When its
+  // Path is deleted it goes with the Path, matching the cascade the
+  // `essentials` module documents.
   useEffect(() => {
     const validPathIds = new Set(paths.map((p) => p.id))
-    const orphaned = actions.filter((a) => a.pathId && !validPathIds.has(a.pathId))
+    const isOrphan = (a: Action) => Boolean(a.pathId) && !validPathIds.has(a.pathId as string)
+    const isEssentialLog = (a: Action) => a.state === 'done' && Boolean(a.essentialId)
+    const orphaned = actions.filter(isOrphan)
     if (orphaned.length === 0) return
+    const restored = orphaned.filter((a) => !isEssentialLog(a))
     setActions((prev) =>
-      prev.map((a) =>
-        a.pathId && !validPathIds.has(a.pathId)
-          ? {
-              ...a,
-              updatedAt: new Date().toISOString(),
-              state: 'inbox',
-              pathId: null,
-              goalId: null,
-              scheduledDate: null,
-              completedAt: null,
-            }
-          : a,
-      ),
+      prev
+        // Drop orphaned Essential-completion logs entirely (cascade with the Path).
+        .filter((a) => !(isOrphan(a) && isEssentialLog(a)))
+        .map((a) =>
+          isOrphan(a)
+            ? {
+                ...a,
+                updatedAt: new Date().toISOString(),
+                state: 'inbox',
+                pathId: null,
+                goalId: null,
+                scheduledDate: null,
+                completedAt: null,
+              }
+            : a,
+        ),
     )
+    if (restored.length === 0) return
     showToast(
-      orphaned.length === 1
-        ? `“${orphaned[0].name}” moved back to the Inbox — its Path was deleted`
-        : `${orphaned.length} items moved back to the Inbox — their Path was deleted`,
+      restored.length === 1
+        ? `“${restored[0].name}” moved back to the Inbox — its Path was deleted`
+        : `${restored.length} items moved back to the Inbox — their Path was deleted`,
     )
   }, [paths, actions, setActions, showToast])
 

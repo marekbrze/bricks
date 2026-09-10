@@ -56,8 +56,8 @@ overview, not a decoration on the row.
    `goalId` = null, `frog` = false.
 4. A toast confirms — "Logged “Hang from a bar”" — with **Undo** (removes exactly
    that Action).
-5. The row's **today** count increments (`done today · 3`); the **all-time**
-   count increments (`128 total`).
+5. The row's counter updates — `3 today · 128 logged` (or `128 logged`
+   when nothing today, `Not logged yet` at zero).
 6. The Owner can log the same Essential again immediately — each log is its own
    Action with its own comment and its own Undo window.
 7. The created Action is a normal completed Action: it shows in the **WinLog**
@@ -68,7 +68,7 @@ overview, not a decoration on the row.
 
 1. User opens `/paths/:pathId` → below **Wins**, above **Goals**, an
    **Essentials** section.
-2. It shows `N essentials · M completed all-time` and, when today's count is
+2. It shows `N essentials · M logs on this Path` and, when today's count is
    above zero, `· K today`.
 3. A Path with no Essentials shows a single line — "Define this Path's necessary
    deeds" — linking to the tab.
@@ -98,7 +98,8 @@ overview, not a decoration on the row.
   back to Paths, `PathTabs` with the new **Essentials** entry) → **New
   essential** button → list of **EssentialRow** items. Each row: drag handle,
   name (clamped to 2 lines, `break-words`), optional detail (1 line, muted),
-  `done today · N` / `N total` counters (plain numerals, right-aligned), a
+  a `today · logged` counter (plain numerals; right-aligned on `sm`+, stacked
+  under the name below it), a
   primary **Log** button, an overflow menu (Edit, Move up, Move down, Delete).
   **Empty state** when the Path has none. **Read-only** banner + stripped
   controls when the Path is archived.
@@ -111,7 +112,7 @@ overview, not a decoration on the row.
 - **DeleteEssentialDialog** (`AlertDialog`): destructive confirm; states that
   logged completions are kept; Cancel / Delete essential.
 - **EssentialsSummary**: the component `paths` embeds on the overview —
-  `N essentials · M completed all-time · K today`, or the "define this Path's
+  `N essentials · M logs on this Path · K today`, or the "define this Path's
   necessary deeds" one-liner when empty. Exported from this module the way
   `winlog` exports `WinBalance`. Same section rhythm as **Wins**
   (`text-sm font-semibold` heading).
@@ -132,7 +133,7 @@ overview, not a decoration on the row.
 | Reorder Essentials | Drag handle + keyboard Move up / Move down; manual `order` within the Path | `Essential` | Undo toast per move; inert with a single Essential |
 | Delete Essential | Row overflow → `AlertDialog`; logged completions are **kept** | `Essential` | Undo toast; a dangling `Action.essentialId` is inert |
 | Log Essential completion | Primary **Log** on the row → dialog with an optional comment → creates an already-`done` `Action` | `Action` | `completedAt` = now, `scheduledDate` = null, `name` = Essential name, `note` = comment, `essentialId` set; Undo toast; feeds `WinLog` as a small win |
-| View Essentials progress | Path overview **Essentials** section: `N essentials · M completed all-time · K today` | `Essential` / `Action` | Counts derived by counting `Action`s with this Path's `essentialId`s |
+| View Essentials progress | Path overview **Essentials** section: `N essentials · M logs on this Path · K today` | `Essential` / `Action` | Counts derived by counting `Action`s with this Path's `essentialId`s |
 
 `Action`-level effects of a log (owned by `capture-triage` / `today` /
 `winlog`, unchanged here): the new Action can be renamed, rescheduled,
@@ -141,8 +142,8 @@ abandoned, deleted, or moved through the normal Actions-view surfaces; its
 
 ## Edge Cases
 
-Captured here from the plan; `proto-edgecases essentials` will run the
-systematic audit once the screens exist.
+Systematically audited in `docs/modules/essentials-edgecases.md` and hardened
+(proto-harden, 2026-09-10, ADR 0053 — 7 closed, 5 deferred). Decided behaviors:
 
 - **No Essentials for the Path**: the tab shows a concept empty state +
   **Add your first essential** + seed examples; the overview shows the "define
@@ -155,10 +156,12 @@ systematic audit once the screens exist.
 - **Delete an Essential with completions**: completions survive as standalone
   `done` Actions under the Path; the confirm dialog says so; the per-Essential
   count stops including them.
-- **Delete / archive the Path**: on delete, the Path's Essentials are wiped by
-  the cascade (`deleteEssentialsForPath`) and the delete-confirm summary counts
-  them ("N Essentials"); on archive, the tab is read-only and the overview
-  summary still reads.
+- **Delete / archive the Path**: on delete, the Path's Essentials are wiped
+  (self-heal) **and their logged-completion Actions are deleted with them** —
+  `useActions`' orphan self-heal drops orphaned `done` + `essentialId` rows
+  instead of resurrecting them in the Inbox (ADR 0053). The delete-confirm
+  summary counts the Essentials ("N Essentials"). On archive, the tab is
+  read-only and the overview summary still reads.
 - **Two Essentials with the same name**: allowed (personal tool, no uniqueness);
   each keeps its own count because the link is by `essentialId`, not name.
 - **Very long name / detail**: name clamps to 2 lines with `break-words`; detail
@@ -177,6 +180,16 @@ systematic audit once the screens exist.
 - **Reorder with one Essential**: the drag handle and Move up/down are inert.
 - **Timezone**: "today's count" uses the local calendar date (`todayLocalIso`),
   matching `overdueActions` and the win-day keys.
+- **No-op reorder**: a drag that lands where it started returns no Undo and
+  shows no toast (`reorderEssential` returns `null`) — the toast is also the
+  screen-reader announcement, so it must reflect a real change.
+- **Long deed text**: name clamps to 2 lines, detail to 1, both `break-words`
+  and carry a `title` tooltip with the full text.
+- **Narrow screens**: the per-row completion counter stacks under the deed name
+  below the `sm` breakpoint so the name and the Log button both stay usable.
+- **Overview vs win balance**: the Essentials summary reads "N logs on this
+  Path" — a per-Path lens, deliberately worded to not look like a duplicate of
+  the win balance's small-win count (both move when a deed is logged; ADR 0051).
 
 ## Integration Points
 
