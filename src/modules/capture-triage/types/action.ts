@@ -30,4 +30,17 @@ export interface Action extends BaseEntity {
    * valid and sort after sequenced ones by creation order — no migration.
    */
   order?: number
+  /**
+   * Free-text comment. Set when the Action was logged from an `Essential`
+   * (the `essentials` module's `LogEssentialDialog`); editable later from the
+   * Actions view. Optional — absent on every pre-Essentials row, no migration.
+   */
+  note?: string
+  /**
+   * Soft link to the `Essential` this completion was logged from (`essentials`
+   * module). null / absent for a normal Action. Nothing hard-depends on it —
+   * deleting the Essential leaves the Action (its `name` preserves what was
+   * done) and only stops the per-Essential count. See ADR 0050/0051.
+   */
+  essentialId?: string | null
 }

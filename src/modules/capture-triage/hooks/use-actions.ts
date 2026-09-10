@@ -419,6 +419,89 @@ export function useActions() {
     [actions, setActions],
   )
 
+  /**
+   * Log a completion of an `Essential` (the `essentials` module). Creates an
+   * Action that is *already* `done` — a one-tap shortcut for "I did a necessary
+   * deed today". Unlike `createAction` it skips `assigned` entirely: standalone
+   * under the Path (`goalId` null), `completedAt` stamped now, `scheduledDate`
+   * null (it never belongs on a day view — only the Log and the flat Actions
+   * list), `note` carrying the optional comment, `essentialId` the back-link the
+   * Essentials tab counts by. No-op on an empty/whitespace name. Returns an Undo
+   * that removes exactly this Action (and its Win), same contract as
+   * `deleteAction`. See ADR 0050/0051.
+   */
+  const logEssentialCompletion = useCallback(
+    (data: { pathId: string; essentialId: string; name: string; note?: string }): UndoFn => {
+      const trimmed = data.name.trim()
+      if (!trimmed) return () => {}
+      const note = data.note?.trim()
+      const now = new Date().toISOString()
+      const snapshot = actions
+      const newAction: Action = {
+        id: generateId(),
+        createdAt: now,
+        updatedAt: now,
+        name: trimmed,
+        state: 'done',
+        pathId: data.pathId,
+        goalId: null,
+        frog: false,
+        scheduledDate: null,
+        completedAt: now,
+        essentialId: data.essentialId,
+        ...(note ? { note } : {}),
+      }
+      setActions([...actions, newAction])
+      return restoreSnapshot(snapshot)
+    },
+    [actions, setActions, restoreSnapshot],
+  )
+
+  /**
+   * All-time and today's completion counts for one Essential — the Essentials
+   * tab rows and the Path overview summary read this. "Today" is the local
+   * calendar day of `completedAt` (offset-shifted like `todayLocalIso`), so it
+   * doesn't flip at UTC midnight.
+   */
+  const essentialCompletionCounts = useCallback(
+    (essentialId: string): { total: number; today: number } => {
+      const today = todayLocalIso()
+      let total = 0
+      let todayCount = 0
+      for (const a of actions) {
+        if (a.essentialId !== essentialId || a.state !== 'done' || !a.completedAt) continue
+        total += 1
+        const d = new Date(a.completedAt)
+        const localDay = new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+        if (localDay === today) todayCount += 1
+      }
+      return { total, today: todayCount }
+    },
+    [actions],
+  )
+
+  /**
+   * Path-wide Essentials completion totals for the overview summary
+   * (`M completed all-time · K today`) — every `done` Action tagged with any
+   * `essentialId` under this Path.
+   */
+  const essentialCompletionCountsForPath = useCallback(
+    (pathId: string): { total: number; today: number } => {
+      const today = todayLocalIso()
+      let total = 0
+      let todayCount = 0
+      for (const a of actions) {
+        if (a.pathId !== pathId || !a.essentialId || a.state !== 'done' || !a.completedAt) continue
+        total += 1
+        const d = new Date(a.completedAt)
+        const localDay = new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+        if (localDay === today) todayCount += 1
+      }
+      return { total, today: todayCount }
+    },
+    [actions],
+  )
+
   /** Rename from the Actions view's row menu — no-op on an empty/whitespace name. */
   const renameAction = useCallback(
     (id: string, name: string) => {
@@ -512,6 +595,9 @@ export function useActions() {
     inboxActions,
     actionCountForPath,
     createAction,
+    logEssentialCompletion,
+    essentialCompletionCounts,
+    essentialCompletionCountsForPath,
     renameAction,
     moveActionToGoal,
     reorderAction,
