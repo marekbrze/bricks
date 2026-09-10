@@ -39,6 +39,20 @@ export const EmptyState: Story = {
   decorators: [withGoals([])],
 }
 
+/**
+ * A frog Goal floats to the very top of the open list regardless of its
+ * manual priority, and renders loud — tinted row + a solid "Frog" pill.
+ * "Pull-up program" carries manual order 4 but still leads.
+ */
+export const FrogGoalFloatsToTop: Story = {
+  decorators: [withGoals(MOCK_GOALS)],
+  play: async ({ canvas }) => {
+    const goalLinks = canvas.getAllByRole('link', { name: /program|training block|mobility/i })
+    expect(goalLinks[0]).toHaveAccessibleName('Pull-up program')
+    expect(canvas.getByText('Frog')).toBeInTheDocument()
+  },
+}
+
 export const SingleTopLevelGoal: Story = {
   decorators: [withGoals([{ ...MOCK_GOALS[0], parentGoalId: null }])],
 }

@@ -73,6 +73,10 @@ export function GoalRow({
   const children = childGoals(goal.id)
   const actionCount = actionCountFor(goal.id)
 
+  // A frog only shouts while it's still the work in front of you — once the
+  // Goal is achieved or abandoned the flag drops back to a quiet marker.
+  const isActiveFrog = goal.frog && goal.state === 'active'
+
   const draggedGoal = dragId ? getGoal(dragId) : undefined
   // Dragging never crosses sibling groups — only allow the drop (and its
   // "you can drop here" cursor) when the hovered row shares the dragged
@@ -102,6 +106,7 @@ export function GoalRow({
         style={{ paddingLeft: Math.min(depth, MAX_INDENT_DEPTH) * INDENT_PX }}
         className={cn(
           'group flex items-center gap-2 rounded-lg border border-border bg-card p-2',
+          isActiveFrog && 'border-frog/70 bg-frog-soft ring-1 ring-frog/40',
           dragId === goal.id && 'opacity-50',
         )}
       >
@@ -120,11 +125,16 @@ export function GoalRow({
         >
           {goal.name}
         </Link>
-        {goal.frog && (
-          <span aria-label="Frog" className="inline-flex shrink-0">
-            <Flame className="size-4 text-frog" aria-hidden="true" />
-          </span>
-        )}
+        {goal.frog &&
+          (isActiveFrog ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-frog-strong px-2 py-0.5 text-xs font-semibold text-background">
+              <Flame className="size-3.5" aria-hidden="true" /> Frog
+            </span>
+          ) : (
+            <span aria-label="Frog" className="inline-flex shrink-0">
+              <Flame className="size-4 text-frog" aria-hidden="true" />
+            </span>
+          ))}
         {goal.deadline && <DeadlineBadge deadline={goal.deadline} />}
         {goal.state !== 'active' && <StateBadge state={goal.state} />}
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">

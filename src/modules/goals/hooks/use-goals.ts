@@ -24,15 +24,23 @@ function todayLocalIso(): string {
 }
 
 /**
- * Sibling sort: achieved Goals always sink below the open ones (ADR 0046),
- * regardless of their manual `order`. Within each group manual priority
- * still rules. `abandoned` stays in place — it's a deliberate "not doing",
- * not a finished item worth tucking away.
+ * Sibling sort, three bands regardless of manual `order`:
+ *   1. active frogs — float to the very top of the group (the whole point of
+ *      flagging a frog is that it should be the next thing you look at)
+ *   2. everything else — active non-frogs, plus abandoned Goals, which stay
+ *      in place (a deliberate "not doing", not a finished item to tuck away)
+ *   3. achieved Goals — always sink below the open ones (ADR 0046)
+ * Within each band manual priority still rules.
  */
+function priorityBand(g: Goal): number {
+  if (g.state === 'achieved') return 2
+  if (g.frog && g.state === 'active') return 0
+  return 1
+}
+
 function byPriority(a: Goal, b: Goal): number {
-  const aDone = a.state === 'achieved' ? 1 : 0
-  const bDone = b.state === 'achieved' ? 1 : 0
-  if (aDone !== bDone) return aDone - bDone
+  const bandDelta = priorityBand(a) - priorityBand(b)
+  if (bandDelta !== 0) return bandDelta
   return a.order - b.order
 }
 

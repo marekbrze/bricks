@@ -28,7 +28,9 @@ export const MOCK_GOALS: Goal[] = [
     pathId: 'path-sport',
     name: 'Pull-up program',
     description: 'Progressive overload toward a strict pull-up, then weighted work.',
-    order: 0,
+    // Manual priority 4, but flagged a frog — it floats to the very top of the
+    // Path's Goal list ahead of the lower-numbered Goals.
+    order: 4,
     deadline: '2026-11-01',
     frog: true,
   }),

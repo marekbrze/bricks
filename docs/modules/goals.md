@@ -33,6 +33,12 @@ per-Goal progress rollup.
    flag (if set), deadline badge with days-remaining countdown (if set),
    lifecycle badge (only shown for `achieved`/`abandoned` — `active` is the
    unmarked default), and an Action count.
+   - **Frog Goals float to the top and render loud** (ADR 0047). Within any
+     sibling group an `active` Goal flagged a frog sorts above every other
+     open sibling regardless of manual `order`, and its row is tinted with a
+     frog border + ring and carries a solid "Frog" pill instead of the bare
+     flame icon. Once the Goal is `achieved`/`abandoned` the flag drops back
+     to the quiet flame and the row rejoins normal order.
    - **Achieved Goals sink to the end and collapse** (ADR 0046). Within any
      sibling group `achieved` Goals sort below every `active`/`abandoned`
      one (manual `order` still orders each group). On the Path overview the
@@ -87,6 +93,8 @@ per-Goal progress rollup.
 ### Toggle frog
 
 1. Row overflow (or an inline star icon) → toggle **frog** on a Goal.
+   A frogged `active` Goal jumps to the top of its sibling group and its row
+   goes loud (ADR 0047).
 2. Marking a Goal a frog immediately flags all of its current Actions as
    frogs too (one-time propagation at the moment of toggling, not a live
    constraint — an Action added to the Goal afterward is not auto-flagged).
