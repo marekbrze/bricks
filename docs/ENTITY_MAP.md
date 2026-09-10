@@ -9,12 +9,14 @@ erDiagram
     OWNER ||--o{ PATH : owns
     PATH ||--|| VISION : "has one"
     PATH ||--o{ GOAL : "has"
+    PATH ||--o{ ESSENTIAL : "has"
     PATH ||--o{ ACTION : "scopes standalone"
     VISION ||--o{ VISION_NOTE : contains
     VISION ||--o{ VISION_IMAGE : contains
     VISION ||--o{ VISION_ACHIEVEMENT_TILE : contains
     GOAL ||--o{ GOAL : "has subgoal"
     GOAL ||--o{ ACTION : contains
+    ESSENTIAL ||--o{ ACTION : "logged as (soft link)"
     ACTION }o--o| GOAL : "assigned to (max 1)"
 ```
 
@@ -23,6 +25,7 @@ Derived views (not stored entities): **WinLog** (with its `WinBalance` / `WinKin
 Relationship notes:
 - An `Action` lives in exactly one of three places: the **Inbox** (no Path, no Goal), directly under a **Path** (standalone), or under a **Goal**. It never belongs to more than one `Goal`.
 - A `Goal` always belongs to exactly one `Path` and may nest into a tree of sub-`Goal`s.
+- An `Essential` always belongs to exactly one `Path`. Logging an Essential creates a standalone, already-`done` `Action` under that Path carrying `essentialId` — a **soft link**, not a hard FK: deleting the Essential leaves the Action (its `name` preserves what was done) and only stops the per-Essential count. Per-Essential completion progress is **derived** by counting these Actions; nothing is stored on the `Essential`.
 - A `Vision` is a 1:1 container for a `Path`; it holds an ordered mix of `VisionNote`, `VisionImage`, and `VisionAchievementTile` tiles.
 - Achievements are Vision tiles (ADR 0037) — they hang off the Path's Vision, not the Path record. Creating a Path can seed them through `useVision`.
 
@@ -73,6 +76,16 @@ Relationship notes:
 **Contains**: —
 **Belongs to**: `Vision`.
 
+### Essential
+**Description**: An **Absolutely Necessary Deed** for a Path — a repeatable, non-negotiable action the Owner commits to keep doing (Schwarzenegger's autobiography: every area of life has a few; a salesperson's "call clients", a body Path's "hang from a bar"). Habit-like, but with **free tracking** — no cadence target, no streak. Defined once per Path, then logged each time it's done (many times a day is fine). Not a `Goal` (no end, no tree) and not a `VisionAchievementTile` (not a one-time "I can do X").
+**Instances per user**: Many per Path (a handful active per Path).
+**Ownership**: Owner.
+**Lifecycle**: Created with a name + optional one-line detail. Edited, reordered (manual `order` within the Path), deleted. Deleting it keeps the completion `Action`s it produced. Dies with the Path (cascade).
+**States**: none — always loggable while its Path is active; read-only while the Path is archived.
+**Contains**: —
+**Belongs to**: `Path`.
+**Progress**: derived, not stored — count of `Action`s whose `essentialId` is this Essential (all-time), and of those with today's `completedAt` (today's count).
+
 ### Goal
 **Description**: An execution-oriented sub-goal with a work layer — contains tasks and needs concrete actions to move forward. Distinct from Vision and from Achievement.
 **Instances per user**: Many per Path, shown in a manual priority order (not sequential).
@@ -84,7 +97,7 @@ Relationship notes:
 **Flags**: `frog` — marking a Goal as a frog marks all its Actions as frogs too.
 
 ### Action
-**Description**: An atomic thing to do. For now just a name; estimated time/energy, richer fields come later.
+**Description**: An atomic thing to do. Just a name (plus an optional free-text `note`); estimated time/energy, richer fields come later.
 **Instances per user**: Many.
 **Ownership**: Owner.
 **Lifecycle**: Captured (often into the Inbox), triaged (assigned to a Path/Goal, or promoted into a `Goal` if it turns out to need many actions), optionally scheduled to a day, completed or abandoned. Abandoned Actions are reviewed later and then finally deleted.
@@ -92,6 +105,9 @@ Relationship notes:
 **Contains**: —
 **Belongs to**: exactly one of — nothing (`inbox`), a `Path` (standalone), or a `Goal` (max one). Movable between Paths and Goals.
 **Flags**: `frog`; `scheduledDate`; `completedAt`; `order` — optional manual position among its Goal's own Actions, read only on the Goal progress page (ADR 0042); aggregate views keep their automatic sort, and rows without it (legacy) sort after sequenced siblings by creation order.
+**Optional fields**: `note` — free-text comment, set when the Action was logged from an `Essential` (editable later from the Actions view); `essentialId` — soft link to the `Essential` a completion was logged from (null/absent otherwise; a dangling value is inert). Both absent on every pre-Essentials row — no migration.
+
+A **logged Essential completion** is an `Action` created directly in the `done` state (`completedAt` = now, `scheduledDate` = null, `goalId` = null, standalone under the Path, `essentialId` set). It behaves as any completed Action from then on — it feeds `WinLog` as a small win (ADR 0051, accepted not suppressed) and shows in the flat Actions view; it never enters Today/Schedule (no `scheduledDate`).
 
 ## Derived views
 

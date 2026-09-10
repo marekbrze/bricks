@@ -14,6 +14,7 @@ Code Name.
 | Kafelek zdjęcia | `VisionImage` | A photo tile on the Vision board — a separate entity from notes, forming a gallery. From upload or fetched from Unsplash. | "note attachment" |
 | Rzecz po drodze / osiągnięcie | `VisionAchievementTile` | Something to reach along a Path — order-independent, not a task and not requiring hard actions (e.g. "I can do a pull-up", "muscle-up", "100 push-ups"). A tile on the Vision board (ADR 0037) — ticked in place, not a Path-level checklist. State `open` ↔ `achieved` is reversible. | "milestone" (sounds sequential), "execution goal", "task" |
 | Cel egzekucyjny | `Goal` | A concrete sub-goal with an execution layer — contains tasks and needs concrete actions. Always one Path, a tree of sub-goals, manual priority order, optional deadline with a days-remaining countdown. Achieved manually. States: `active` / `achieved` / `abandoned`. | "vision", "achievement", "dream" |
+| AND / absolutnie niezbędne działanie / niezbędny czyn | `Essential` | An **Absolutely Necessary Deed** for a Path — a repeatable, non-negotiable action the Owner commits to keep doing (Schwarzenegger's autobiography; a salesperson's "call clients", a body Path's primal-movement deeds à la Rafał Mazur / zenjaskiniowca.pl). Habit-like but **free-tracked** — no cadence target, no streak. Defined once per Path; logged each time it's done (many per day), each log opening a comment dialog and creating an already-`done` `Action`. Progress is a derived count, never stored. | "habit" (implies a schedule), "goal", "milestone", "streak" |
 | Zadanie / działanie / akcja | `Action` | An atomic thing to do. Lives in the Inbox, under one `Goal` (max 1), or standalone directly under a `Path`. Movable between Paths / Goals. States: `inbox` / `assigned` / `done` / `abandoned`. `scheduled` = presence of `scheduledDate`. Can be promoted to a `Goal` during triage. | "goal", "project"; don't conflate with `Achievement` |
 | Inbox | `Inbox` | A place to quickly capture Action ideas before deciding where they belong. | "task list", "goal backlog" |
 | Przegląd inboxa | `Triage` | A dedicated mode for processing the Inbox one item at a time (DoItDone / AutoWork pattern): assign to a Path/Goal or mark standalone, set priority, optionally schedule or discard. | "browsing a list", "sorting" |
@@ -46,6 +47,7 @@ Module names (folder / code namespace) — see `docs/MODULES.md`.
 | `paths` | Core | Paths + the Path hub screen |
 | `vision` | Core | Vision board (notes + gallery + achievement tiles + Unsplash + export) |
 | `goals` | Core | Goal tree, priorities, frog, achieve/abandon |
+| `essentials` | Core | Per-Path Essentials (Absolutely Necessary Deeds) — define, reorder, log a completion with a comment; nested Path tab + overview summary |
 | `capture-triage` | Core | Inbox + card-by-card review + Action→Goal promotion |
 | `today` | Core | Today view per Path, schedule, planning, complete |
 | `winlog` | Core | `WinLog` + `WinBalance` / `WinKindBadges` |

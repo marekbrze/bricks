@@ -38,6 +38,16 @@ Six of the seven modules are **Core** — this is a focused personal tool with a
 
 ---
 
+### essentials
+**Type**: Core (added after the original 7 — proto-feature, `docs/changes/essentials.md`, ADR 0050/0051)
+**Description**: Per-Path **Essentials** — Absolutely Necessary Deeds, the few repeatable non-negotiable actions that keep a Path moving (Schwarzenegger's autobiography; primal-movement deeds à la Rafał Mazur). Free-tracked (no cadence target, no streak). A nested **Essentials** tab on the Path defines/reorders/deletes them and **logs** each completion via a dialog with an optional comment; each log creates an already-`done` `Action` (`note` + `essentialId`). The Path overview embeds an all-time completion count.
+**Entities**: `Essential` (+ `Action.note` / `Action.essentialId`, owned by `capture-triage`)
+**Key Actions**: Create/edit/reorder/delete Essential, log an Essential completion (with a comment), view Essentials progress on the overview.
+**Connects to**: `paths` (one Path owns many Essentials; 4th Path tab; overview summary between Wins and Goals; cascade on Path delete); `capture-triage` (a log writes a `done` `Action` through `useActions().logEssentialCompletion`); `winlog` (those Actions feed the Log as small wins — accepted, no `winlog` code change, ADR 0051); `app-shell` (nested route `/paths/:pathId/essentials`).
+**Design priority**: Medium — narrow surface (one list tab + three dialogs + a summary line), but the counters must stay calm (no gamification, DESIGN.md) and read in the accumulation spirit of the win balance.
+
+---
+
 ### capture-triage
 **Type**: Core
 **Description**: The front door for actions and the antidote to decision paralysis. Capture an `Action` idea with just a name into the Inbox without deciding anything. Later, enter a dedicated card-by-card review mode (DoItDone / AutoWork pattern) that steps through Inbox items one at a time: assign to a Path or Goal, mark standalone, discard, or promote to a Goal if the item turns out to need many actions.
@@ -105,6 +115,9 @@ graph LR
     PATHS[paths] -->|embeds Vision summary + achievement counts; seeds achievement tiles| VISION[vision]
     PATHS -->|lists / hosts Goals| GOALS[goals]
     PATHS -->|embeds WinBalance / WinKindBadges| WINLOG[winlog]
+    PATHS -->|4th Path tab + overview summary; cascade on delete| ESSENTIALS[essentials]
+    ESSENTIALS -->|log writes a done Action via useActions| CAPTURE
+    ESSENTIALS -->|logged completions feed the Log as small wins| WINLOG
     CAPTURE[capture-triage] -->|assign / promote to Goal| GOALS
     CAPTURE -->|assign standalone| PATHS
     CAPTURE -->|triaged Actions become schedulable| TODAY[today]

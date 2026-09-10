@@ -74,11 +74,25 @@ Complete list of actions the user can perform, organized by entity. Order-indepe
 | Delete Goal | Cascade-deletes sub-Goals and every Action under them | Owner | Confirmation dialog (`AlertDialog` with a cascade summary), same pattern as Path delete; no undo |
 | View Goal progress | Cumulative action count + win balance toward this Goal | Owner | |
 
+### Essential
+
+An **Absolutely Necessary Deed** for a Path — see `docs/modules/essentials.md`.
+
+| Action | Description | Role | Notes |
+|--------|------------|------|-------|
+| Create Essential | **New essential** on the Path's Essentials tab: name (required) + optional one-line detail; lands last in the Path's manual order | Owner | Empty name blocked with an inline error |
+| Edit Essential | Row overflow → dialog prefilled (name, detail) | Owner | Dirty-form confirm before discarding |
+| Reorder Essentials | Drag handle + keyboard Move up / Move down; manual `order` within the Path | Owner | Undo toast per move; inert with a single Essential |
+| Delete Essential | Row overflow → `AlertDialog`; the logged completion Actions are **kept** | Owner | Undo toast; a dangling `Action.essentialId` is inert |
+| Log Essential completion | Primary **Log** on the row → `LogEssentialDialog` with an optional comment → creates an already-`done` `Action` (`name` = Essential name, `note` = comment, `essentialId` set, `scheduledDate` = null) | Owner | Undo toast; feeds `WinLog` as a small win (ADR 0051); many per day allowed |
+| View Essentials progress | Path overview **Essentials** section: `N essentials · M completed all-time · K today` | Owner | Counts derived from `Action`s carrying this Path's `essentialId`s |
+
 ### Action
 
 | Action | Description | Role | Notes |
 |--------|------------|------|-------|
 | Capture to Inbox | Quick-add an Action idea with just a name, unassigned | Owner | |
+| Log an Essential completion | Create an already-`done` standalone Action from an `Essential`, with an optional `note` comment | Owner | Shortcut for "I did a necessary deed" — see the Essential section above; owned by `capture-triage` (`useActions().logEssentialCompletion`) |
 | Create Action under Goal | Add directly to a Goal | Owner | |
 | Create standalone Action | Add directly under a Path, no Goal | Owner | |
 | Edit Action | Change name (more fields later) | Owner | |
