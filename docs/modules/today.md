@@ -197,6 +197,26 @@ Systematically audited in `docs/modules/today-edgecases.md` and hardened
   name and reports how many Actions are waiting on *other* Paths, instead
   of always pointing at the Inbox regardless of why the list is empty.
 
+Hardened again for the Overdue / `SchedulePopover` surface
+(`docs/modules/today-edgecases.md` second pass, proto-harden 2026-09-10):
+
+- **Action on an archived Path**: dropped from the day view *and* the Overdue
+  bucket (it has no section to render in). Only Actions on an active Path
+  count toward "the day is empty" or "there's overdue work".
+- **Overdue work but nothing scheduled exactly today**: the Overdue section
+  shows, and the big "nothing scheduled" empty state is replaced by one quiet
+  line — the day isn't actually empty, so it shouldn't say it is.
+- **Abandon from the Overdue section**: each overdue row has a direct
+  **Abandon** button — no need to reschedule it onto today first.
+- **Completing an overdue Action in place**: it's also pulled onto today, so
+  the finished row shows as a visible win in today's list instead of
+  disappearing (done + past-dated = in no day view).
+- **"No date" in the move / reschedule dialog**: unschedules the Action (with
+  Undo) rather than silently closing; picking the day it's already on is a
+  no-op with no misleading toast.
+- **Malformed `/today/:date`**: canonicalised to `/today` in the address bar,
+  not just fallen back to today's content behind a stale URL.
+
 ## Integration Points
 
 - **paths**: Today's grouping is by Path; an archived Path's Actions drop

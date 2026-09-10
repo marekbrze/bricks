@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, Flame } from 'lucide-react'
+import { AlertTriangle, Ban, CalendarClock, Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ export function OverdueSection({
   getPathName,
   onToggleDone,
   onReschedule,
+  onAbandon,
   onMoveAllToToday,
 }: {
   actions: Action[]
@@ -25,6 +26,8 @@ export function OverdueSection({
   onToggleDone: (action: Action, done: boolean) => void
   /** `iso` is a concrete day from the popover; `null` means "No date" → unschedule. */
   onReschedule: (action: Action, iso: string | null) => void
+  /** Give up on an overdue Action entirely — it leaves the day view for Review abandoned. */
+  onAbandon: (action: Action) => void
   onMoveAllToToday: () => void
 }) {
   return (
@@ -91,6 +94,18 @@ export function OverdueSection({
                   </Button>
                 }
               />
+              {!done && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Abandon “${action.name}”`}
+                  title="Abandon"
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => onAbandon(action)}
+                >
+                  <Ban aria-hidden="true" />
+                </Button>
+              )}
             </li>
           )
         })}

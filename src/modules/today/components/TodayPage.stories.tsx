@@ -3,7 +3,13 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { addDaysIso, todayLocalIso } from '@/shared/lib/date'
 import { TodayPage } from './TodayPage'
-import { withTodayData, seedCorruptActions, seedCorruptPaths, MOCK_ACTIONS } from './story-helpers'
+import {
+  withTodayData,
+  seedCorruptActions,
+  seedCorruptPaths,
+  MOCK_ACTIONS,
+  MOCK_PATHS,
+} from './story-helpers'
 
 const today = todayLocalIso()
 
@@ -82,6 +88,54 @@ export const WithOverdue: Story = {
 /** The Overdue section is hidden on any day that isn't today. */
 export const OverdueHiddenOnOtherDays: Story = {
   decorators: [withTodayData([...MOCK_ACTIONS, ...OVERDUE_ACTIONS], undefined, '/today/2026-12-25')],
+}
+
+/**
+ * Overdue work exists but nothing is scheduled *exactly* today — the day
+ * isn't really empty, so the big "Nothing scheduled" empty state is replaced
+ * by one quiet line under the Overdue section. See docs/modules/today-edgecases.md #14.
+ */
+export const OverdueButNothingToday: Story = {
+  decorators: [withTodayData([...OVERDUE_ACTIONS])],
+  play: async ({ canvas }) => {
+    expect(await canvas.findByRole('heading', { name: /overdue/i })).toBeInTheDocument()
+    expect(canvas.getByText(/nothing new scheduled/i)).toBeInTheDocument()
+    expect(canvas.queryByRole('heading', { name: /nothing scheduled for/i })).not.toBeInTheDocument()
+  },
+}
+
+/**
+ * An Action on an *archived* Path is dropped from the day view entirely — it
+ * has no section to render in. Here `overdue-archived` sits on the archived
+ * "Home & calm" Path: it must not appear in the Overdue bucket, and the
+ * remaining `overdue-2` (active Path) still does. See docs/modules/today-edgecases.md #13.
+ */
+export const ArchivedPathActionsExcluded: Story = {
+  decorators: [
+    withTodayData(
+      [
+        ...OVERDUE_ACTIONS,
+        {
+          id: 'overdue-archived',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+          name: 'Repaint the hallway',
+          state: 'assigned',
+          pathId: 'path-home',
+          goalId: null,
+          frog: false,
+          scheduledDate: addDaysIso(today, -2),
+          completedAt: null,
+        },
+      ],
+      MOCK_PATHS, // includes the archived "Home & calm"
+    ),
+  ],
+  play: async ({ canvas }) => {
+    expect(await canvas.findByRole('heading', { name: /overdue/i })).toBeInTheDocument()
+    expect(canvas.getByText('Book the physio appointment')).toBeInTheDocument()
+    expect(canvas.queryByText('Repaint the hallway')).not.toBeInTheDocument()
+  },
 }
 
 /** "Move all to today" empties the Overdue section and shows an Undo toast. */

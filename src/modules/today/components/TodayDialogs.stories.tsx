@@ -120,6 +120,32 @@ export const MoveToAnotherDay: Story = {
   },
 }
 
+/**
+ * The move dialog with a clear handler wired — the "No date" quick row (shown
+ * because a date is already set) unschedules the Action instead of silently
+ * closing. See docs/modules/today-edgecases.md #12.
+ */
+export const MoveToAnotherDayWithClear: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    const [status, setStatus] = useState('date set')
+    return (
+      <>
+        <Button onClick={() => setOpen(true)}>Open</Button>
+        <p className="mt-2 text-sm text-muted-foreground">Status: {status}</p>
+        <ScheduleActionDialog
+          open={open}
+          onOpenChange={setOpen}
+          actionName="Tempo run, 5K pace"
+          initialDate="2026-09-04"
+          onSchedule={(date) => setStatus(`moved to ${date}`)}
+          onClear={() => setStatus('unscheduled')}
+        />
+      </>
+    )
+  },
+}
+
 export const RescheduleAbandoned: Story = {
   render: () => {
     const [open, setOpen] = useState(true)

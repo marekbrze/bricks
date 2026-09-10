@@ -247,6 +247,28 @@ export function useActions() {
     [actions, setActions],
   )
 
+  /**
+   * Complete an Action straight from the Overdue bucket. Same as
+   * `completeAction`, but also pulls `scheduledDate` forward to today so the
+   * finished row lands in today's completed list as a visible win instead of
+   * disappearing (it's `done` and still past-dated, so it would otherwise
+   * fall out of both `overdueActions` and `scheduledActionsForDate(today)`).
+   * See docs/modules/today-edgecases.md #21.
+   */
+  const completeOverdueAction = useCallback(
+    (id: string) => {
+      const today = todayLocalIso()
+      setActions(
+        actions.map((a) =>
+          a.id === id
+            ? touch({ ...a, state: 'done', completedAt: new Date().toISOString(), scheduledDate: today })
+            : a,
+        ),
+      )
+    },
+    [actions, setActions],
+  )
+
   /** Reverses completion — back to `assigned`, clears `completedAt`. Removes the Win from `winlog`. */
   const uncompleteAction = useCallback(
     (id: string) => {
@@ -497,6 +519,7 @@ export function useActions() {
     scheduleAction,
     unscheduleAction,
     completeAction,
+    completeOverdueAction,
     uncompleteAction,
     abandonAction,
     deleteAction,

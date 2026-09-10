@@ -110,6 +110,14 @@ export function SchedulePage() {
             scheduleAction(moving.id, newDate)
             showToast(`“${moving.name}” moved to ${formatDayLabel(newDate).toLowerCase()}`)
           }}
+          onClear={() => {
+            const { id, name, scheduledDate } = moving
+            unscheduleAction(id)
+            showToast(`“${name}” unscheduled`, {
+              label: 'Undo',
+              onClick: () => scheduledDate && scheduleAction(id, scheduledDate),
+            })
+          }}
         />
       )}
     </div>

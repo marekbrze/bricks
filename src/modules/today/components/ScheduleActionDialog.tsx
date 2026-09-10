@@ -52,8 +52,10 @@ export function ScheduleActionDialog({
         <SchedulePopoverPanel
           value={initialDate}
           onSelect={(iso) => {
-            if (iso) onSchedule(iso)
-            else onClear?.()
+            // Picking the day it's already on is a no-op — close without a
+            // misleading "moved to …" toast. See docs/modules/today-edgecases.md #22.
+            if (iso && iso !== initialDate) onSchedule(iso)
+            else if (!iso) onClear?.()
             onOpenChange(false)
           }}
         />

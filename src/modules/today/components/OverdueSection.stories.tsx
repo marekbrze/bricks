@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { ToastProvider } from '@/shared/components/toast/toast-context'
 import type { Action } from '@/modules/capture-triage/types/action'
 import { addDaysIso, todayLocalIso } from '@/shared/lib/date'
@@ -43,12 +44,14 @@ type Story = StoryObj<typeof OverdueSection>
 
 function Harness({ initial }: { initial: Action[] }) {
   const [actions, setActions] = useState(initial)
+  const drop = (action: Action) => setActions((prev) => prev.filter((a) => a.id !== action.id))
   return (
     <OverdueSection
       actions={actions}
       getPathName={() => 'Earnings'}
-      onToggleDone={() => {}}
-      onReschedule={(action) => setActions((prev) => prev.filter((a) => a.id !== action.id))}
+      onToggleDone={(action, done) => done && drop(action)}
+      onReschedule={drop}
+      onAbandon={drop}
       onMoveAllToToday={() => setActions([])}
     />
   )
@@ -68,4 +71,19 @@ export const Several: Story = {
 
 export const SingleRow: Story = {
   render: () => <Harness initial={[make('o1', 'Renew the domain', 2)]} />,
+}
+
+/** Each row can be abandoned in place — no need to reschedule it onto today first. */
+export const AbandonARow: Story = {
+  render: () => (
+    <Harness
+      initial={[make('o1', 'Send the overdue invoice', 3, true), make('o2', 'Reply to the landlord', 8)]}
+    />
+  ),
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: /abandon “reply to the landlord”/i }))
+    await waitFor(() =>
+      expect(canvas.queryByText('Reply to the landlord')).not.toBeInTheDocument(),
+    )
+  },
 }

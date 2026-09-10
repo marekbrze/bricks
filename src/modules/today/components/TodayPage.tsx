@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, CalendarDays, History, Signpost } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -28,6 +28,16 @@ export function TodayPage() {
   const goToDate = (next: string) =>
     navigate(next === todayLocalIso() ? '/today' : `/today/${next}`, { replace: true })
 
+  // A hand-edited / stale `:date` that isn't a real calendar date still renders
+  // today's content (above), but the bad URL lingers in the address bar and a
+  // refresh just re-runs the fallback — canonicalise it to `/today`. See
+  // docs/modules/today-edgecases.md #18.
+  useEffect(() => {
+    if (params.date !== undefined && !isValidIso(params.date)) {
+      navigate('/today', { replace: true })
+    }
+  }, [params.date, navigate])
+
   const [dialog, setDialog] = useState<DialogState>(null)
   const { showToast } = useToast()
 
@@ -41,15 +51,31 @@ export function TodayPage() {
     scheduleAction,
     unscheduleAction,
     completeAction,
+    completeOverdueAction,
     uncompleteAction,
     abandonAction,
     dataUnreadable: actionsUnreadable,
     resetActions,
   } = useActions()
 
-  const dayActions = useMemo(() => scheduledActionsForDate(date), [scheduledActionsForDate, date])
+  // Only Actions on a still-active Path belong in the day view. An archived
+  // Path's Actions have a valid `pathId` (archiving isn't deleting, so the
+  // self-heal leaves them alone) but no section to render in — without this
+  // filter a today-dated one silently blocks the empty state, and an overdue
+  // one leaks into the Overdue bucket + "Move all to today". See
+  // docs/modules/today-edgecases.md #13.
+  const activePathIds = useMemo(() => new Set(activePaths.map((p) => p.id)), [activePaths])
+
+  const dayActions = useMemo(
+    () => scheduledActionsForDate(date).filter((a) => a.pathId != null && activePathIds.has(a.pathId)),
+    [scheduledActionsForDate, date, activePathIds],
+  )
+  const visibleOverdue = useMemo(
+    () => overdueActions.filter((a) => a.pathId != null && activePathIds.has(a.pathId)),
+    [overdueActions, activePathIds],
+  )
   const isToday = date === todayLocalIso()
-  const showOverdue = isToday && overdueActions.length > 0
+  const showOverdue = isToday && visibleOverdue.length > 0
 
   if (pathsUnreadable) return <PathsDataUnreadable onReset={resetPaths} />
   if (actionsUnreadable) return <ActionsDataUnreadable onReset={resetActions} />
@@ -57,6 +83,19 @@ export function TodayPage() {
   const handleToggleDone = (action: Action, done: boolean) => {
     if (done) {
       completeAction(action.id)
+      showToast(`“${action.name}” done`)
+    } else {
+      uncompleteAction(action.id)
+    }
+  }
+
+  // Completing straight from the Overdue bucket also pulls the Action onto
+  // today, so a finished overdue row shows as a win in today's list rather
+  // than vanishing (past-dated + done = in no day view). See
+  // docs/modules/today-edgecases.md #21.
+  const handleToggleDoneOverdue = (action: Action, done: boolean) => {
+    if (done) {
+      completeOverdueAction(action.id)
       showToast(`“${action.name}” done`)
     } else {
       uncompleteAction(action.id)
@@ -91,7 +130,7 @@ export function TodayPage() {
   }
 
   const handleMoveAllOverdue = () => {
-    const count = overdueActions.length
+    const count = visibleOverdue.length
     const undo = rescheduleOverdueToday()
     showToast(`${count} ${count === 1 ? 'Action' : 'Actions'} moved to today`, {
       label: 'Undo',
@@ -114,7 +153,9 @@ export function TodayPage() {
             >
               <ChevronLeft aria-hidden="true" />
             </Button>
-            <h1 className="min-w-32 text-center text-xl font-semibold">{formatDayLabel(date)}</h1>
+            <h1 className="min-w-32 px-1 text-center text-xl font-semibold whitespace-nowrap">
+              {formatDayLabel(date)}
+            </h1>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -147,10 +188,11 @@ export function TodayPage() {
 
       {showOverdue && (
         <OverdueSection
-          actions={overdueActions}
+          actions={visibleOverdue}
           getPathName={getPathName}
-          onToggleDone={handleToggleDone}
+          onToggleDone={handleToggleDoneOverdue}
           onReschedule={handleRescheduleOverdue}
+          onAbandon={handleAbandon}
           onMoveAllToToday={handleMoveAllOverdue}
         />
       )}
@@ -169,6 +211,16 @@ export function TodayPage() {
             Go to Paths
           </Link>
         </section>
+      ) : dayActions.length === 0 && showOverdue ? (
+        // The day isn't really empty — the Overdue section above needs
+        // attention. One quiet line instead of a second full-height empty
+        // state contradicting it. See docs/modules/today-edgecases.md #14.
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-card px-3 py-2.5 text-sm text-muted-foreground">
+          <span>Nothing new scheduled — clear the overdue list above, or add something.</span>
+          <Button variant="outline" size="sm" onClick={() => setDialog({ type: 'add', pathId: null })}>
+            Add to this day
+          </Button>
+        </div>
       ) : dayActions.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card py-16 text-center">
           <CalendarDays className="size-8 text-muted-foreground" aria-hidden="true" />
@@ -226,6 +278,11 @@ export function TodayPage() {
           onSchedule={(newDate) => {
             scheduleAction(dialog.action.id, newDate)
             showToast(`“${dialog.action.name}” moved to ${formatDayLabel(newDate).toLowerCase()}`)
+          }}
+          onClear={() => {
+            const { id, name } = dialog.action
+            unscheduleAction(id)
+            showToast(`“${name}” unscheduled`, { label: 'Undo', onClick: () => scheduleAction(id, date) })
           }}
         />
       )}
