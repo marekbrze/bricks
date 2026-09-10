@@ -83,3 +83,80 @@ The top-priority gaps a harden pass should implement first:
 | 9 | ✅ | Each Path section's **Add** button now carries `aria-label="Add to {path.name}"`, giving it a distinct accessible name for screen-reader users navigating button-to-button | `src/modules/today/components/PathSection.tsx:34` |
 | 10 | ❌ deferred | No virtualization/pagination on a large day or agenda list — not worth solving at prototype scale, matches `goals`/`capture-triage` precedent |
 | 11 | ❌ deferred | No double-submit guard on `ScheduleActionDialog`/`AddToTodayDialog` — harmless while every mutation is synchronous; same deferred class as every other module's dialogs, revisit with a real backend |
+
+---
+
+# Second pass (2026-09-10) — Overdue section + SchedulePopover
+
+Scope: the surface added by `docs/changes/smart-due-dates-and-overdue-rollover.md`
+(ADR 0045) — the **Overdue** bucket on `/today`, the shared
+`SchedulePopover` / `SchedulePopoverPanel`, the `ScheduleActionDialog`
+refactor to a thin shell around that panel, and the `overdueActions` /
+`rescheduleOverdueToday` selectors in `capture-triage`'s `use-actions.ts`.
+Audited against the change doc and the built code. The 2026-09-04 pass
+(gaps #1–11 above) still stands; this pass does not re-litigate it.
+
+## Coverage
+
+- **Spec already captured** (change doc → "Edge cases" per module): viewing
+  a past/future day hides the Overdue section; overdue **and** frog → flame
+  still shows, frog-first sort within the bucket; "Move all" with a large
+  list → single write, one toast; local midnight staleness (deferred);
+  Undo-after-"Move all" when a moved row was completed in between →
+  `restoreSnapshot` reverts everything, accepted; `value` failing
+  `isValidIso` → treat as no selection; calendar navigating years out is
+  fine (matches `formatDayLabel`).
+- **Already handled in code**:
+  - Past/future day → Overdue hidden — `TodayPage.tsx:52` (`showOverdue = isToday && …`)
+  - Frog-first + oldest-slip-first sort in the bucket — `use-actions.ts:309`
+  - "Move all to today" is one snapshot / one write / one Undo toast — `use-actions.ts:322`, `TodayPage.tsx:93`
+  - Per-row reschedule Undo restores the row's *previous* `scheduledDate` — `TodayPage.tsx:76`
+  - Empty `value` / invalid ISO into the popover → no selection, `quickOptions(false)` (no "No date" row) — `SchedulePopover.tsx:105`
+  - "This weekend" hidden Sat/Sun; "No date" shown only when a date is set — `SchedulePopover.tsx:60`, `:89`
+  - Completing an overdue row drops it from `overdueActions` (it's `done`) with no extra toast — `use-actions.ts:308` (state filter)
+  - Corrupt `actions`/`paths` storage → recovery screens on all three routes (unchanged from pass 1)
+- **New gaps found**: 11
+- **By severity**: 🔴 0 · 🟡 3 · 🟢 8
+
+## Inventory
+
+| # | Severity | Category | Edge case | Behavior today | Suggested behavior | Where |
+|---|----------|----------|-----------|----------------|--------------------|-------|
+| 12 | 🟡 | Forms / dead control | **"No date" in the move/reschedule dialog is a dead button.** `ScheduleActionDialog` shows the "No date" quick row whenever `value` (its `initialDate`) is set, but its `onSelect(null)` branch calls `onClear?.()` — and the two move callers (`TodayPage` move, `SchedulePage` move) don't pass `onClear`. Clicking "No date" (or clicking the already-selected calendar day again) just closes the dialog; the Action is unchanged, no toast, no feedback | A visible control that silently does nothing | Either wire `onClear` to `unscheduleAction` + an Undo toast in both move callers, or add an `allowClear` prop and only render the "No date" row when a clear handler exists (Review-abandoned already passes no `initialDate`, so it's hidden there regardless) | `src/modules/today/components/ScheduleActionDialog.tsx:52`, `src/modules/today/components/TodayPage.tsx:220`, `src/modules/today/components/SchedulePage.tsx:103` |
+| 13 | 🟡 | Cross-module / lifecycle | **Archived-Path Actions aren't filtered out of the day.** `dayActions` (`scheduledActionsForDate`) and `overdueActions` filter by `state`, never by active Path. The self-heal only catches *deleted* Paths, not *archived* ones. Result: an overdue Action on an archived Path still shows in the Overdue section and is swept by "Move all to today"; a *today*-dated Action on an archived Path counts toward `dayActions.length` (so the "Nothing scheduled" empty state is suppressed) but has no section to render in — every active Path shows "Nothing scheduled today" and the Action is invisible with no explanation | Archived-Path Actions leak into Overdue and silently vanish from the day view while blocking its empty state | Filter both `dayActions` and the list passed to `OverdueSection` to active Path ids in `TodayPage` (mirror how `activePaths.map` already drops them); decide whether an archived-Path overdue Action should be quietly excluded or self-healed back to the Inbox like a deleted-Path one | `src/modules/today/components/TodayPage.tsx:50`, `src/modules/today/components/TodayPage.tsx:52`, `src/modules/capture-triage/hooks/use-actions.ts:305` |
+| 14 | 🟡 | Data states / conflicting messaging | **Overdue + "nothing scheduled today" render together.** When there's overdue work but nothing dated *exactly* today, `TodayPage` shows the Overdue section and, directly below it, the full-height "Nothing scheduled for today — pull something in" empty-state CTA. The feature plan called for overdue to count as "the day isn't actually empty"; the day now both screams "you're behind" and "you have nothing planned" | Two contradictory primary messages stacked | When `showOverdue` is true, drop the big empty CTA (or replace it with a single quiet line: "Nothing new scheduled — clear the overdue list above or add something") | `src/modules/today/components/TodayPage.tsx:172` |
+| 15 | 🟢 | Consistency / sort | **Day-view rows aren't frog-first.** `scheduledActionsForDate` sorts by `createdAt` only. The Overdue bucket, and `goals`/`paths` lists (per ADR 0046/0047), all float frogs to the top; inside a `PathSection` a frog Action is only flame-tagged, still competing on `createdAt` order — against the module's "frogs don't compete on equal footing" intent | Frog rows sit wherever creation order put them | Apply the same frog-first comparator `overdueActions` uses, within each Path's slice | `src/modules/capture-triage/hooks/use-actions.ts:285` |
+| 16 | 🟢 | Action outcomes | **No Abandon from the Overdue section.** Overdue rows offer only checkbox + per-row reschedule + "Move all". Deciding an overdue Action is dead means rescheduling it onto today first, then abandoning it from its Path section | The one bucket most likely to contain "never going to do this" has no discard path | Give the Overdue row the same overflow menu `ActionRow` has (at least **Abandon**) | `src/modules/today/components/OverdueSection.tsx:78` |
+| 17 | 🟢 | Navigation / flow | **Schedule (agenda) view never shows overdue.** `upcomingScheduledDates` is `scheduledDate >= today`, so the backlog is invisible to someone planning ahead in `/today/schedule` — the one screen framed as "a wider look ahead" | Overdue exists only on `/today` | Prepend an "Overdue" block to the agenda (reuse `OverdueSection`), or badge the "← Today" back-link with the count | `src/modules/today/components/SchedulePage.tsx:38` |
+| 18 | 🟢 | Navigation / deep-linking | **Malformed `/today/:date` keeps the bad URL.** `/today/banana` or `/today/2026-13-40` correctly falls back to today's *content*, but the address bar still shows the invalid path — a refresh re-runs the same fallback, and the URL is misleading if shared | Content right, URL wrong | In an effect, `navigate('/today', { replace: true })` when `params.date` is present but fails `isValidIso` | `src/modules/today/components/TodayPage.tsx:27` |
+| 19 | 🟢 | Navigation | **Day-nav is `replace`, so Back doesn't step days.** `goToDate` always `navigate(…, { replace: true })`; after stepping forward several days the browser Back button jumps out of Today entirely instead of walking back one day at a time | Back button doesn't undo day steps | Push for step-nav; keep `replace` only for the malformed-date cleanup (#18) and the today→`/today` canonicalisation — or accept and document as "not a calendar" | `src/modules/today/components/TodayPage.tsx:29` |
+| 20 | 🟢 | Formatting / layout | **Out-of-year day label wraps in the header.** `formatDayLabel` appends the year for a non-current-year date ("Wed, Sep 10, 2027"); centered in the `min-w-32` `<h1>` between the two chevrons it wraps to two lines and shoves the nav buttons apart | Header jumps around on far dates | Let the heading size to content / raise its min-width, or use a shorter far-date format in the header | `src/modules/today/components/TodayPage.tsx:117` |
+| 21 | 🟢 | Action outcomes | **Completing an overdue row makes it vanish, not "win".** Checking off an overdue Action sets `done` but leaves `scheduledDate` in the past — so it's not in `overdueActions` (state filter) and not in today's `dayActions` (exact-date match). It disappears from `/today` entirely; only a 5s toast marks it, and it won't show in the agenda either (`>= today`). The spec's "finishing feels like a visible win" is weakened | Finished overdue work leaves no trace on the day it was finished | On completing an overdue row, also set `scheduledDate = todayLocalIso()` so it lands in today's completed list | `src/modules/today/components/OverdueSection.tsx:53`, `src/modules/capture-triage/hooks/use-actions.ts:239` |
+| 22 | 🟢 | Action outcomes | **Move dialog re-confirms a no-op move.** In `ScheduleActionDialog`'s move flow the currently-viewed day is pre-selected; clicking it fires `onSchedule(sameDate)` → a "moved to \[today\]" toast even though nothing changed | Toast lies about a move that didn't happen | No-op + silent close when the picked iso equals `initialDate` | `src/modules/today/components/ScheduleActionDialog.tsx:54` |
+
+### Categories checked with no new gaps
+
+- **Empty / one / many** — Overdue section only renders with ≥1 item (absent = nothing overdue, by design, no empty state); single item reads "1"; large lists handled by one bulk write. Deferred virtualization is gap #10 (pass 1).
+- **Long / unicode / emoji field values** — Overdue row name span is `min-w-0 flex-1 break-words`; chip / frog / reschedule button are `shrink-0`. Same plain-text display as every other module.
+- **Boundary values** — no numeric inputs; `react-day-picker` grid + local-calendar ISO helpers, no free-typing.
+- **Double-submit on "Move all to today"** — the Overdue section unmounts the instant `overdueActions` empties (`showOverdue` flips false), so the button is gone before a second click can land; a spurious "0 Actions moved" toast on an extremely fast double-tap is possible but harmless (toasts stack, the first Undo still restores the real pre-move state).
+- **Storage write failure / quota / offline** — inherited from `useLocalStorageState` + the app-wide `StorageHealthBanner`; no module-specific gap (unchanged from pass 1).
+- **Popover viewport collision** — base-ui `Popover` handles flip/shift; `align="end"` on the Overdue reschedule trigger is within its collision model.
+- **`SchedulePopover` calendar a11y** — `DayPicker` keeps its own grid keyboard model; quick rows are real `<button>`s in a list, tab-reachable, each with its resolved-day hint. (The change doc sketched `role="menu"`; the plainer button list is an acceptable deviation, not a gap.)
+- **Referenced Goal deleted while an Action is overdue** — `goals`' `deleteActionsForGoals` cascade removes the Action outright; it can't dangle in the Overdue bucket.
+- **Reschedule-overdue Undo when `previous` is null** — not reachable: `overdueActions` guarantees a non-null `scheduledDate`, so `handleRescheduleOverdue`'s `previous` is always set.
+
+## Priority list
+
+1. **"No date" is a dead button in the move/reschedule dialog (#12)** — a visible control that silently does nothing is the one gap that reads as broken; either wire it or hide it.
+2. **Archived-Path Actions not filtered from the day / Overdue (#13)** — the only gap with a cross-module correctness consequence: Actions leak into Overdue and "Move all", or vanish from the day while suppressing its empty state.
+3. **Overdue + "nothing scheduled today" shown together (#14)** — a half-implemented plan point; the day contradicts itself.
+4. **Frog-first day rows (#15)** and **Abandon from Overdue (#16)** — cheap consistency fixes that bring the new surface in line with the rest of the module.
+
+## Hand-off to proto-harden
+
+The top-priority gaps a harden pass should implement first:
+- Decide "No date" in `ScheduleActionDialog`: wire `onClear` → `unscheduleAction` + Undo, or gate the row behind an `allowClear` prop (#12)
+- Filter `dayActions` **and** the Overdue list to active Path ids in `TodayPage`; decide archived-Path overdue = excluded vs. self-healed (#13)
+- Suppress / soften the day-view empty CTA when `showOverdue` is true (#14)
+- Frog-first sort in `scheduledActionsForDate` (#15); Abandon affordance on the Overdue row (#16)
