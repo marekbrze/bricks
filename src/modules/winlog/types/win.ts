@@ -24,6 +24,18 @@ export interface Win {
   /** Full ISO timestamp/date used for sort order. */
   at: string
   /**
+   * True when this action Win was logged from an `Essential` (the Action
+   * carries an `essentialId`) — the row labels it and shows `note`. Always
+   * false for a goal Win. See docs/modules/essentials.md.
+   */
+  viaEssential: boolean
+  /**
+   * The free-text comment left when the Win was logged — only ever set on an
+   * Essential-logged action Win (`LogEssentialDialog`'s optional note), which
+   * records *what the completion was about*. Null otherwise.
+   */
+  note: string | null
+  /**
    * For an action Win: the Action's *current* `scheduledDate`, if it still
    * has one — a completed Action can be moved to another day afterward
    * (docs/modules/today.md "Move to another day"), so this can differ from

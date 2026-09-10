@@ -61,7 +61,9 @@ overview, not a decoration on the row.
 6. The Owner can log the same Essential again immediately — each log is its own
    Action with its own comment and its own Undo window.
 7. The created Action is a normal completed Action: it shows in the **WinLog**
-   under today as a small win and in the flat **Actions** view; it never appears
+   under today as a small win — the row is labelled `· Essential` and, when a
+   comment was left, quotes it under the name so the Log says *what the
+   completion was about* — and in the flat **Actions** view; it never appears
    in Today or Schedule (no `scheduledDate`).
 
 ### Read progress on the Path overview
@@ -207,10 +209,13 @@ Systematically audited in `docs/modules/essentials-edgecases.md` and hardened
   achievements). The existing Path-deleted self-heal loop is unaffected — a
   `done` completion Action under a live Path is not orphaned; under a deleted
   Path it is wiped by the cascade like any other.
-- **winlog**: **no code change.** A logged Essential is a `done` `Action`, so it
-  appears in the `WinLog` under its completion day and bumps the Path's small-win
-  count in every `WinBalance` / `WinKindBadges` scope (PathCard, Path overview,
-  the Log). This is **accepted, not suppressed** (ADR 0051): an Essential done is
+- **winlog**: a logged Essential is a `done` `Action`, so it appears in the
+  `WinLog` under its completion day and bumps the Path's small-win count in every
+  `WinBalance` / `WinKindBadges` scope (PathCard, Path overview, the Log). The
+  Win now also carries `viaEssential` + `note` (derived from the Action's
+  `essentialId` / `note`), so `WinRow` labels the row `· Essential` and quotes
+  the comment beneath the name — the Log entry says what the completion was
+  about. This is **accepted, not suppressed** (ADR 0051): an Essential done is
   a genuine small win, it keeps `winlog` derivation-only, and it is consistent
   with "accumulation is the reward" (DESIGN.md). The Essentials-tab counter and
   `WinBalance` answer different questions — this specific deed vs everything done
@@ -221,6 +226,12 @@ Systematically audited in `docs/modules/essentials-edgecases.md` and hardened
 - **actions**: the flat Actions view shows Essential-completion Actions like any
   other completed Action (under their Path, standalone, behind **Show
   completed**). Editing the `note` happens there, later.
+- **data-sync**: the `essentials` LocalStorage key is a synced collection like
+  `paths` / `goals` / `actions` / `visions` — `SYNCED_KEYS` (`lib/mirror.ts`),
+  the `essentials: 'id, pathId'` table (`lib/db.ts`, added in DB `version(2)`),
+  `SYNCED_TABLES`, and `LocalData` / `describeCounts` (`lib/local-data.ts`) all
+  list it, so Essentials replicate across a signed-in Owner's devices. The
+  completion Actions ride along on the `actions` collection, already synced.
 - **app-shell**: one nested route `/paths/:pathId/essentials` registered via
   `essentialsRoutes` spread into `src/App.tsx` (same handoff as
   `visionRoutes` / `goalsRoutes`, replacing any `NestedModulePlaceholder`). No

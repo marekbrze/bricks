@@ -35,6 +35,8 @@ export function useWinLog() {
         date: localIso(a.completedAt as string),
         at: a.completedAt as string,
         currentScheduledDate: a.scheduledDate,
+        viaEssential: Boolean(a.essentialId),
+        note: a.note?.trim() ? a.note.trim() : null,
       }))
     const goalWins: Win[] = goals
       .filter((g) => g.state === 'achieved' && g.achievedOn)
@@ -47,6 +49,8 @@ export function useWinLog() {
         date: g.achievedOn as string,
         at: g.achievedOn as string,
         currentScheduledDate: null,
+        viaEssential: false,
+        note: null,
       }))
     return [...actionWins, ...goalWins].sort((a, b) => b.at.localeCompare(a.at))
   }, [actions, goals])

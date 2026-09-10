@@ -50,7 +50,10 @@ subtree, `WinBalance sm`), and a `WinKindBadges` win line on each **PathCard**
 ### Read a Win row
 
 1. A completed-Action Win shows the checkmark icon, the Action's name, its
-   Path (and Goal, if it had one), and the time it was completed.
+   Path (and Goal, if it had one), and the time it was completed. When the
+   Action was logged from an `Essential` (`essentials` module) the meta line
+   ends `· Essential` and, if a comment was left when logging, it is quoted
+   under the name — the Log entry says what that completion was about.
 2. An achieved-Goal Win shows the trophy icon, the Goal's name, its Path, and
    a "Goal achieved" suffix — distinguishable at a glance since achieving a
    Goal is a bigger deal than finishing one Action toward it.

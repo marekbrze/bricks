@@ -10,7 +10,9 @@ import type { Win } from '../types/win'
  * An action Win links to the Action's *current* `scheduledDate` when it still
  * has one (it may have been moved to another day since completing — see
  * docs/modules/winlog-edgecases.md #2), falling back to the day it was
- * completed on; a goal Win links into that Goal's progress page. See
+ * completed on; a goal Win links into that Goal's progress page. A Win logged
+ * from an `Essential` (`win.viaEssential`) is labelled `· Essential` and, when
+ * a comment was left (`win.note`), quotes it under the name. See
  * docs/modules/winlog.md → "Read a Win row" and ADR 0013.
  */
 export function WinRow({ win, pathName, goalName }: { win: Win; pathName: string; goalName: string | null }) {
@@ -36,7 +38,13 @@ export function WinRow({ win, pathName, goalName }: { win: Win; pathName: string
             {pathName}
             {goalName && ` · ${goalName}`}
             {win.kind === 'goal' && ' · Goal achieved'}
+            {win.viaEssential && ' · Essential'}
           </p>
+          {win.note && (
+            <p className="mt-0.5 line-clamp-2 text-xs italic text-muted-foreground">
+              “{win.note}”
+            </p>
+          )}
         </div>
         {win.kind === 'action' && (
           <time
